@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { MapPin, Layers, ZoomIn, ZoomOut, Trash2, Edit3, Upload, HelpCircle, ChevronRight, Square } from 'lucide-react';
-import Sidebar from './Sidebar';
-import { NavigateFn } from '../App';
+import { cropOptions } from '../data/newEvaluationData';
+import Sidebar from '../layouts/Sidebar';
+import { NavigateFn } from '../types/navigation';
 
 interface Props { navigate: NavigateFn; }
 
-const crops = ['Maíz', 'Papa', 'Tomate', 'Palta', 'Arándano', 'Camote'];
 
 function InteractiveMap({ drawn }: { drawn: boolean }) {
   return (
@@ -179,7 +179,7 @@ export default function NewEvaluation({ navigate }: Props) {
             <div style={{ marginBottom: 24 }}>
               <div style={{ fontSize: 12.5, fontWeight: 600, color: '#475569', marginBottom: 10 }}>Cultivos a evaluar</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {crops.map(c => {
+                {cropOptions.map(c => {
                   const selected = selectedCrops.includes(c);
                   return (
                     <button

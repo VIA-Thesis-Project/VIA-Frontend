@@ -1,6 +1,6 @@
 import { Download, Share2, Plus, Printer, CheckCircle2, MapPin, FlaskConical, Mountain, Droplets, Satellite, Thermometer, CloudRain, Layers } from 'lucide-react';
-import Sidebar from './Sidebar';
-import { NavigateFn } from '../App';
+import Sidebar from '../layouts/Sidebar';
+import { NavigateFn } from '../types/navigation';
 
 interface Props { navigate: NavigateFn; }
 

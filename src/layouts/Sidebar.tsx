@@ -1,5 +1,5 @@
 import { LayoutDashboard, Plus, Map, BarChart3, FileText, Settings, Leaf, LogOut } from 'lucide-react';
-import { Screen, NavigateFn } from '../App';
+import { Screen, NavigateFn } from '../types/navigation';
 
 interface Props {
   active: Screen;
@@ -121,7 +121,7 @@ export default function Sidebar({ active, navigate }: Props) {
           </div>
         </div>
         <button
-          onClick={() => navigate('landing')}
+          onClick={() => navigate('login')}
           className="w-full flex items-center gap-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
           style={{ padding: '7px 10px', fontSize: 12.5, background: 'transparent', border: 'none', cursor: 'pointer' }}
         >

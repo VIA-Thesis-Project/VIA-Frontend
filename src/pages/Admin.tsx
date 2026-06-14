@@ -1,33 +1,11 @@
 import { useState } from 'react';
 import { Shield, Upload, RefreshCw, CheckCircle2, Clock, AlertTriangle, Database, BookOpen, FileText, Settings, Plus, Search, Filter } from 'lucide-react';
-import { NavigateFn } from '../App';
+import { adminNav, adminStats, ragDocs, rulebooks } from '../data/adminData';
+import { adminNav, adminStats, ragDocs, rulebooks } from '../data/adminData';
+import { NavigateFn } from '../types/navigation';
 
 interface Props { navigate: NavigateFn; }
 
-const rulebooks = [
-  { cultivo: '🍠 Camote', version: 'v1.2', criterios: 7, estado: 'Activo', estadoColor: '#16a34a', estadoBg: '#dcfce7', updated: '01 jun 2025' },
-  { cultivo: '🌽 Maíz', version: 'v2.0', criterios: 8, estado: 'Activo', estadoColor: '#16a34a', estadoBg: '#dcfce7', updated: '15 may 2025' },
-  { cultivo: '🍅 Tomate', version: 'v1.5', criterios: 9, estado: 'Activo', estadoColor: '#16a34a', estadoBg: '#dcfce7', updated: '10 may 2025' },
-  { cultivo: '🥔 Papa', version: 'v1.1', criterios: 7, estado: 'En revisión', estadoColor: '#d97706', estadoBg: '#fef3c7', updated: '28 abr 2025' },
-  { cultivo: '🫐 Arándano', version: 'v0.9', criterios: 6, estado: 'Borrador', estadoColor: '#7c3aed', estadoBg: '#ede9fe', updated: '20 abr 2025' },
-  { cultivo: '🥑 Palta', version: 'v1.0', criterios: 8, estado: 'Activo', estadoColor: '#16a34a', estadoBg: '#dcfce7', updated: '05 jun 2025' },
-];
-
-const ragDocs = [
-  { name: 'Manejo agronómico del camote (Ipomoea batatas)', source: 'INIA Perú', estado: 'Indexado', estadoColor: '#16a34a', estadoBg: '#dcfce7', fragmentos: 124, updated: '01 jun 2025' },
-  { name: 'Crop Water Requirements – Vegetables', source: 'FAO', estado: 'Indexado', estadoColor: '#16a34a', estadoBg: '#dcfce7', fragmentos: 88, updated: '28 may 2025' },
-  { name: 'Boletín climático Lima costera 2024', source: 'SENAMHI', estado: 'Indexado', estadoColor: '#16a34a', estadoBg: '#dcfce7', fragmentos: 56, updated: '20 may 2025' },
-  { name: 'Guía de fertilización para suelos alcalinos', source: 'INIA Perú', estado: 'Procesando', estadoColor: '#d97706', estadoBg: '#fef3c7', fragmentos: 0, updated: '08 jun 2025' },
-  { name: 'Potato crop management guidelines', source: 'CIP Lima', estado: 'Indexado', estadoColor: '#16a34a', estadoBg: '#dcfce7', fragmentos: 97, updated: '15 may 2025' },
-  { name: 'Índices espectrales para monitoreo agrícola', source: 'USGS/NASA', estado: 'Error', estadoColor: '#dc2626', estadoBg: '#fee2e2', fragmentos: 0, updated: '05 jun 2025' },
-];
-
-const adminNav = [
-  { id: 'rulebooks', icon: BookOpen, label: 'Rulebooks', count: 6 },
-  { id: 'docs', icon: FileText, label: 'Documentos RAG', count: 6 },
-  { id: 'validations', icon: CheckCircle2, label: 'Validaciones', count: 3 },
-  { id: 'settings', icon: Settings, label: 'Configuración', count: null },
-];
 
 export default function Admin({ navigate }: Props) {
   const [activeTab, setActiveTab] = useState('rulebooks');

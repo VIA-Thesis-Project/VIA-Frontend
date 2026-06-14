@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Leaf, Eye, EyeOff, Shield, Users, Lock } from 'lucide-react';
-import { NavigateFn } from '../App';
+import { NavigateFn } from '../types/navigation';
 
 interface Props { navigate: NavigateFn; }
 
