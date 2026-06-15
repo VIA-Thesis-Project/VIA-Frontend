@@ -1,1 +1,1 @@
-export const cropOptions = ['MaÃ­z', 'Papa', 'Tomate', 'Palta', 'ArÃ¡ndano', 'Camote'];
+export const cropOptions = ['Maíz', 'Papa', 'Tomate', 'Palta', 'Arándano', 'Camote'];

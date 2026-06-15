@@ -1,3 +1,4 @@
+import { JSX } from 'react/jsx-runtime';
 import Admin from '../pages/Admin';
 import CropDetail from '../pages/CropDetail';
 import Dashboard from '../pages/Dashboard';

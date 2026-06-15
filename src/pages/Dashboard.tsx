@@ -1,4 +1,4 @@
-import { Plus, MapPin, AlertTriangle, ChevronRight, Eye, Download, Map } from 'lucide-react';
+import { Plus, MapPin, AlertTriangle, ChevronRight, Eye, Download, Map,TrendingUp, Sprout, FileText  } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, XAxis, Tooltip } from 'recharts';
 import { alerts, areaData, dashboardStats, recentEvals } from '../data/dashboardData';
 import Sidebar from '../layouts/Sidebar';

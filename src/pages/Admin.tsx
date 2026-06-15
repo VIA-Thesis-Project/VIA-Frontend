@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Shield, Upload, RefreshCw, CheckCircle2, Clock, AlertTriangle, Database, BookOpen, FileText, Settings, Plus, Search, Filter } from 'lucide-react';
 import { adminNav, adminStats, ragDocs, rulebooks } from '../data/adminData';
-import { adminNav, adminStats, ragDocs, rulebooks } from '../data/adminData';
 import { NavigateFn } from '../types/navigation';
 
 interface Props { navigate: NavigateFn; }

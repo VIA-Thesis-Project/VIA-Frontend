@@ -7,17 +7,17 @@ export const areaData = [
 
 export const recentEvals = [
   { parcela: 'Parcela Fundo Loreto - Lote A', fecha: '08 jun 2025', cultivo: 'Camote', score: 86, estado: 'Completado', estColor: '#16a34a', estBg: '#f0fdf4' },
-  { parcela: 'Parcela CaÃ±ete 01', fecha: '05 jun 2025', cultivo: 'MaÃ­z', score: 78, estado: 'Completado', estColor: '#0891b2', estBg: '#ecfeff' },
+  { parcela: 'Parcela Cañete 01', fecha: '05 jun 2025', cultivo: 'Maíz', score: 78, estado: 'Completado', estColor: '#0891b2', estBg: '#ecfeff' },
   { parcela: 'Parcela Huaral Norte', fecha: '01 jun 2025', cultivo: 'Tomate', score: 64, estado: 'Completado', estColor: '#d97706', estBg: '#fffbeb' },
-  { parcela: 'Parcela Santa Rosa B2', fecha: '28 may 2025', cultivo: 'Papa', score: 51, estado: 'En revisiÃ³n', estColor: '#7c3aed', estBg: '#faf5ff' },
-  { parcela: 'Parcela Chilca Sur', fecha: '20 may 2025', cultivo: 'ArÃ¡ndano', score: 39, estado: 'Completado', estColor: '#64748b', estBg: '#f8fafc' },
+  { parcela: 'Parcela Santa Rosa B2', fecha: '28 may 2025', cultivo: 'Papa', score: 51, estado: 'En revisión', estColor: '#7c3aed', estBg: '#faf5ff' },
+  { parcela: 'Parcela Chilca Sur', fecha: '20 may 2025', cultivo: 'Arándano', score: 39, estado: 'Completado', estColor: '#64748b', estBg: '#f8fafc' },
 ];
 
 export const alerts = [
-  { label: 'Salinidad alta', count: 3, color: '#dc2626', bg: '#fee2e2', icon: 'âš ï¸' },
-  { label: 'pH fuera de rango', count: 2, color: '#d97706', bg: '#fef3c7', icon: 'ðŸ§ª' },
-  { label: 'Humedad baja', count: 4, color: '#0891b2', bg: '#ecfeff', icon: 'ðŸ’§' },
-  { label: 'Pendiente elevada', count: 1, color: '#7c3aed', bg: '#faf5ff', icon: 'â›°ï¸' },
+  { label: 'Salinidad alta', count: 3, color: '#dc2626', bg: '#fee2e2', icon: '⚠️' },
+  { label: 'pH fuera de rango', count: 2, color: '#d97706', bg: '#fef3c7', icon: '🧪' },
+  { label: 'Humedad baja', count: 4, color: '#0891b2', bg: '#ecfeff', icon: '💧' },
+  { label: 'Pendiente elevada', count: 1, color: '#7c3aed', bg: '#faf5ff', icon: '⛰️' },
 ];
 
 export const dashboardStats = [
