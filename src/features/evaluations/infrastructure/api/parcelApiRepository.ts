@@ -14,6 +14,14 @@ type ParcelResponse = {
 };
 
 export class ParcelApiRepository implements ParcelRepository {
+  async listParcels(accessToken: string): Promise<Parcel[]> {
+    const response = await apiRequest<ParcelResponse[]>('/parcelas', {
+      token: accessToken,
+    });
+
+    return response.map(toParcel);
+  }
+
   async createParcel(input: CreateParcelInput, accessToken: string): Promise<Parcel> {
     const response = await apiRequest<ParcelResponse>('/parcelas', {
       method: 'POST',
@@ -24,11 +32,15 @@ export class ParcelApiRepository implements ParcelRepository {
       },
     });
 
-    return {
-      id: response.id,
-      ownerId: response.owner_id,
-      geometry: response.geometry,
-      metadata: response.metadata,
-    };
+    return toParcel(response);
   }
+}
+
+function toParcel(response: ParcelResponse): Parcel {
+  return {
+    id: response.id,
+    ownerId: response.owner_id,
+    geometry: response.geometry,
+    metadata: response.metadata,
+  };
 }

@@ -94,6 +94,42 @@ export default function NewEvaluation({ navigate }: Props) {
     setSelectedCrops(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
   };
 
+  const handleStartEvaluation = async () => {
+    if (!drawn && method === 'draw') {
+      setError('Debes dibujar la parcela primero');
+      return;
+    }
+    if (selectedCrops.length === 0) {
+      setError('Selecciona al menos un cultivo');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const result = await startEvaluationWorkflow(
+        parcelRepository,
+        evaluationRepository,
+        {
+          name,
+          district,
+          areaHa: area,
+          selectedCropIds: selectedCrops,
+          geometry: demoParcelGeometry,
+        }
+      );
+      
+      saveCurrentEvaluation(result);
+      navigate('processing');
+    } catch (err: any) {
+      setError(err.message || 'Error al iniciar evaluación');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc' }}>
       <Sidebar active="new-evaluation" navigate={navigate} />
@@ -193,8 +229,8 @@ export default function NewEvaluation({ navigate }: Props) {
                   const selected = selectedCrops.includes(c.id);
                   return (
                     <button
-                      key={c}
-                      onClick={() => toggleCrop(c)}
+                      key={c.id}
+                      onClick={() => toggleCrop(c.id)}
                       style={{
                         padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: 500, cursor: 'pointer',
                         border: `1.5px solid ${selected ? '#16a34a' : '#e2e8f0'}`,
@@ -202,7 +238,7 @@ export default function NewEvaluation({ navigate }: Props) {
                         color: selected ? '#15803d' : '#64748b',
                       }}
                     >
-                      {c}
+                      {c.label}
                     </button>
                   );
                 })}

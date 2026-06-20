@@ -73,6 +73,39 @@ export type EvaluationMcdaResult = {
   failureReason: string | null;
 };
 
+export type RecommendationSection = {
+  sectionType: string;
+  title: string;
+  content: string;
+};
+
+export type RecommendationEvidence = {
+  fragmentId: string;
+};
+
+export type EvaluationRecommendation = {
+  recommendationId: string;
+  evaluationId: string;
+  parcelId: string | null;
+  cropId: string;
+  status: string;
+  title: string;
+  sections: RecommendationSection[];
+  evidence: RecommendationEvidence[];
+  createdAt: string;
+  provider: string;
+};
+
+export type FinalRecommendationResult =
+  | {
+      status: 'available';
+      recommendation: EvaluationRecommendation;
+    }
+  | {
+      status: 'pending';
+      detail: string;
+    };
+
 export type CurrentEvaluationContext = {
   parcelId: string;
   parcelName: string;

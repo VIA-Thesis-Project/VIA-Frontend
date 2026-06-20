@@ -1,11 +1,13 @@
 import { EvaluationRepository } from '@/features/evaluations/application/evaluationRepositories';
 import {
   EvaluationAccepted,
+  EvaluationRecommendation,
+  FinalRecommendationResult,
   EvaluationMcdaResult,
   EvaluationStatusSnapshot,
   StartEvaluationInput,
 } from '@/features/evaluations/domain/evaluation';
-import { apiRequest } from '@/shared/infrastructure/http/apiClient';
+import { ApiError, apiRequest } from '@/shared/infrastructure/http/apiClient';
 
 type StartEvaluationResponse = {
   evaluation_id: string;
@@ -51,6 +53,31 @@ type McdaResultResponse = {
     unrecognized_variables: string[];
   }>;
   failure_reason: string | null;
+};
+
+type RecommendationResponse = {
+  recommendation_id: string;
+  evaluation_id: string;
+  parcel_id: string | null;
+  crop_id: string;
+  status: string;
+  title: string;
+  sections: Array<{
+    section_type: string;
+    title: string;
+    content: string;
+  }>;
+  evidence: Array<{
+    fragment_id: string;
+  }>;
+  created_at: string;
+  provider: string;
+};
+
+type PendingRecommendationResponse = {
+  evaluation_id: string;
+  status: 'pending';
+  detail: string;
 };
 
 export class EvaluationApiRepository implements EvaluationRepository {
@@ -117,4 +144,53 @@ export class EvaluationApiRepository implements EvaluationRepository {
       })),
     };
   }
+
+  async getFinalRecommendation(evaluationId: string): Promise<FinalRecommendationResult> {
+    try {
+      const response = await apiRequest<RecommendationResponse | PendingRecommendationResponse>(
+        `/evaluaciones/${evaluationId}/recomendacion-final`,
+      );
+
+      if ('recommendation_id' in response) {
+        return {
+          status: 'available',
+          recommendation: toRecommendation(response),
+        };
+      }
+
+      return {
+        status: 'pending',
+        detail: response.detail,
+      };
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 202) {
+        return {
+          status: 'pending',
+          detail: 'Recomendacion aun no disponible.',
+        };
+      }
+      throw error;
+    }
+  }
+}
+
+function toRecommendation(response: RecommendationResponse): EvaluationRecommendation {
+  return {
+    recommendationId: response.recommendation_id,
+    evaluationId: response.evaluation_id,
+    parcelId: response.parcel_id,
+    cropId: response.crop_id,
+    status: response.status,
+    title: response.title,
+    sections: response.sections.map((section) => ({
+      sectionType: section.section_type,
+      title: section.title,
+      content: section.content,
+    })),
+    evidence: response.evidence.map((item) => ({
+      fragmentId: item.fragment_id,
+    })),
+    createdAt: response.created_at,
+    provider: response.provider,
+  };
 }
