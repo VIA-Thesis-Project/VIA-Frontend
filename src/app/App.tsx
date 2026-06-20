@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { initialScreen, screenRoutes } from '../routes/screenRoutes';
-import { NavigateFn, Screen } from '../types/navigation';
+import { initialScreen, screenRoutes } from '@/app/routes/screenRoutes';
+import { NavigateFn, Screen } from '@/app/navigation/navigation';
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>(initialScreen);

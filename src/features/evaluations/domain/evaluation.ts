@@ -1,0 +1,83 @@
+export type EvaluationStatus =
+  | 'INICIADA'
+  | 'EXTRACCION_COMPLETADA'
+  | 'EVALUACION_COMPLETADA'
+  | 'RECOMENDACION_COMPLETADA'
+  | 'FALLIDA'
+  | string;
+
+export type CropCandidate = {
+  id: string;
+  label: string;
+};
+
+export type StartEvaluationInput = {
+  parcelId: string;
+  requestedBy: string;
+  cropCandidates: string[];
+  temporalWindow: {
+    start: string;
+    end: string;
+  };
+};
+
+export type EvaluationAccepted = {
+  evaluationId: string;
+  status: EvaluationStatus;
+};
+
+export type EvaluationStatusSnapshot = {
+  evaluationId: string;
+  status: EvaluationStatus;
+  currentPhase: string;
+  lastTransition: string | null;
+  failureReason: string | null;
+};
+
+export type AgronomyGap = {
+  criterionId: string;
+  phaseId: string;
+  mostLimitingPeriod: string;
+  observedValue: number;
+  optimalLimit: number;
+  gapValue: number;
+};
+
+export type LimitingFactor = {
+  criterionId: string;
+  phaseId: string;
+  policy: string;
+  penaltyFactor: number | null;
+  observedValue: number;
+  optimalLimit: number;
+  membership: number;
+  docSource: string | null;
+};
+
+export type CropEvaluationResult = {
+  cropId: string;
+  score: number | null;
+  rankPosition: number | null;
+  calcCondition: string;
+  viabilityCategory: string;
+  gaps: AgronomyGap[];
+  limitingFactors: LimitingFactor[];
+  missingCriteria: string[];
+  unrecognizedVariables: string[];
+};
+
+export type EvaluationMcdaResult = {
+  evaluationId: string;
+  status: EvaluationStatus;
+  results: CropEvaluationResult[];
+  failureReason: string | null;
+};
+
+export type CurrentEvaluationContext = {
+  parcelId: string;
+  parcelName: string;
+  parcelLocation: string;
+  areaHa: string;
+  evaluationId: string;
+  cropCandidates: CropCandidate[];
+};
