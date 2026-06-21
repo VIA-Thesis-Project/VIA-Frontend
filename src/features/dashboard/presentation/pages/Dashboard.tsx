@@ -81,12 +81,6 @@ export default function Dashboard({ navigate }: Props) {
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <button
-              onClick={() => navigate('admin')}
-              style={{ background: 'white', color: '#475569', border: '1.5px solid #e2e8f0', padding: '9px 16px', borderRadius: 9, fontSize: 13.5, fontWeight: 600, cursor: 'pointer' }}
-            >
-              Panel tecnico
-            </button>
-            <button
               onClick={() => navigate('new-evaluation')}
               style={{ background: '#16a34a', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 9, fontSize: 13.5, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}
             >

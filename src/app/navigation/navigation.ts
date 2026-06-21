@@ -6,7 +6,6 @@ export type Screen =
   | 'results'
   | 'crop-detail'
   | 'recommendations'
-  | 'report'
-  | 'admin';
+  | 'report';
 
 export type NavigateFn = (screen: Screen) => void;

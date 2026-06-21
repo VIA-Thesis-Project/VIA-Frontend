@@ -1,5 +1,4 @@
 import { JSX } from 'react/jsx-runtime';
-import Admin from '@/features/admin/presentation/pages/Admin';
 import CropDetail from '@/features/evaluations/presentation/pages/CropDetail';
 import Dashboard from '@/features/dashboard/presentation/pages/Dashboard';
 import Login from '@/features/auth/presentation/pages/Login';
@@ -21,5 +20,4 @@ export const screenRoutes: Record<Screen, (navigate: NavigateFn) => JSX.Element>
   'crop-detail': (navigate) => <CropDetail navigate={navigate} />,
   recommendations: (navigate) => <Recommendations navigate={navigate} />,
   report: (navigate) => <Report navigate={navigate} />,
-  admin: (navigate) => <Admin navigate={navigate} />,
 };
