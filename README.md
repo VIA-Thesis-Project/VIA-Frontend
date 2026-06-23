@@ -93,11 +93,15 @@ Uso actual:
 
 - Dashboard lista parcelas reales.
 - Nueva evaluacion crea parcela real.
+- Nueva evaluacion permite dibujar poligonos con Leaflet.
+- El poligono se convierte a GeoJSON en orden `[lng, lat]`, como espera el backend.
+- Tambien se puede cargar un archivo GeoJSON con `Polygon` o `MultiPolygon`.
 
 Limitacion:
 
-- Todavia no hay mapa Leaflet real.
-- Se usa `demoParcelGeometry.ts` para enviar GeoJSON valido.
+- La seleccion de parcelas existentes queda pendiente.
+- KML queda pendiente de parser; por ahora se acepta GeoJSON.
+- El area se calcula de forma aproximada en frontend para ayudar al usuario.
 
 ### Evaluaciones
 
@@ -130,10 +134,21 @@ Estado:
 
 ## Mock o provisional
 
-- Geometria demo de parcela: `src/features/evaluations/infrastructure/mock/demoParcelGeometry.ts`.
 - Cards visuales de procesamiento: `processingData.ts`.
 - Reporte: `Report.tsx` todavia es visual/prototipo.
 - Algunas referencias de RAG en resultados/reporte son informativas hasta que backend exponga datos completos.
+
+## Delimitacion con Leaflet y Google Earth Engine
+
+La delimitacion de parcela se realiza en frontend con Leaflet:
+
+- El usuario hace click sobre el mapa para agregar vertices.
+- Con 3 o mas vertices se arma un poligono.
+- Leaflet trabaja con coordenadas `[lat, lng]`.
+- El frontend convierte la geometria a GeoJSON `[lng, lat]`.
+- El GeoJSON se envia a `POST /parcelas`.
+
+Google Earth Engine no se usa desde React. Las credenciales GEE deben vivir solo en backend. El frontend solo envia la geometria; el backend usa GEE para extraer variables agroambientales y luego calcular MCDA.
 
 ## Separacion realizada
 
@@ -153,10 +168,9 @@ El `package.json` fue renombrado a:
 
 ## Siguientes pasos
 
-- Implementar mapa real con Leaflet.
-- Convertir coordenadas Leaflet `[lat, lng]` a GeoJSON `[lng, lat]`.
-- Permitir cargar GeoJSON de ejemplo o dibujar parcela.
 - Permitir seleccionar parcelas existentes al iniciar evaluacion.
+- Mejorar la edicion de vertices del poligono.
+- Agregar busqueda por lugar/distrito en el mapa.
 - Agregar endpoint/listado historico de evaluaciones cuando backend lo tenga.
 - Conectar Report a datos reales o endpoint de reporte.
 - Revisar roles cuando backend distinga Usuario Agricola vs Admin.
