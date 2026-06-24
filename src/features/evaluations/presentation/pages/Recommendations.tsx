@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronLeft, ExternalLink, FileText, Sprout } from 'lucide-react';
 import { NavigateFn } from '@/app/navigation/navigation';
 import { getCropLabel } from '@/features/evaluations/application/cropCatalog';
+import { isEvaluationPending } from '@/features/evaluations/application/evaluationStatus';
 import {
   CropEvaluationResult,
   EvaluationMcdaResult,
@@ -108,6 +109,7 @@ export default function Recommendations({ navigate }: Props) {
   const cropLabel = topCrop ? getCropLabel(topCrop.cropId) : '-';
   const backendRecommendation = recommendation?.status === 'available' ? recommendation.recommendation : null;
   const pendingDetail = recommendation?.status === 'pending' ? recommendation.detail : null;
+  const mcdaPending = isEvaluationPending(mcdaResult?.status);
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc' }}>
@@ -152,6 +154,12 @@ export default function Recommendations({ navigate }: Props) {
 
         {!loading && (
           <>
+            {mcdaPending && (
+              <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', borderRadius: 12, padding: 16, marginBottom: 16, fontSize: 13.5, lineHeight: 1.6 }}>
+                El backend aun no tiene ranking MCDA para esta evaluacion. Estado actual: <strong>{mcdaResult?.status}</strong>. Vuelve a procesamiento y espera que la saga llegue a EVALUACION_COMPLETADA.
+              </div>
+            )}
+
             <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', padding: '24px 28px', marginBottom: 20 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
                 <div style={{ width: 36, height: 36, borderRadius: 10, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

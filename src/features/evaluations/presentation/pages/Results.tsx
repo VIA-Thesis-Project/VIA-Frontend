@@ -3,6 +3,7 @@ import { AlertTriangle, ChevronRight, Download, Eye, Sprout, TrendingUp } from '
 import Sidebar from '@/shared/presentation/layouts/Sidebar';
 import { NavigateFn } from '@/app/navigation/navigation';
 import { getCropLabel } from '@/features/evaluations/application/cropCatalog';
+import { isEvaluationFailed, isEvaluationPending } from '@/features/evaluations/application/evaluationStatus';
 import { CropEvaluationResult, EvaluationMcdaResult } from '@/features/evaluations/domain/evaluation';
 import { EvaluationApiRepository } from '@/features/evaluations/infrastructure/api/evaluationApiRepository';
 import { readCurrentEvaluation } from '@/features/evaluations/infrastructure/session/currentEvaluationStorage';
@@ -45,6 +46,7 @@ function sortResults(results: CropEvaluationResult[]): CropEvaluationResult[] {
 export default function Results({ navigate }: Props) {
   const [currentEvaluation] = useState(() => readCurrentEvaluation());
   const [mcdaResult, setMcdaResult] = useState<EvaluationMcdaResult | null>(null);
+  const [refreshCount, setRefreshCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(currentEvaluation ? null : 'No hay una evaluacion activa.');
 
@@ -58,6 +60,7 @@ export default function Results({ navigate }: Props) {
 
     const fetchResult = async () => {
       try {
+        setLoading(true);
         const result = await evaluationRepository.getMcdaResult(currentEvaluation.evaluationId);
         if (!cancelled) {
           setMcdaResult(result);
@@ -76,9 +79,12 @@ export default function Results({ navigate }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [currentEvaluation]);
+  }, [currentEvaluation, refreshCount]);
 
   const sortedResults = useMemo(() => sortResults(mcdaResult?.results ?? []), [mcdaResult]);
+  const pending = isEvaluationPending(mcdaResult?.status);
+  const failed = isEvaluationFailed(mcdaResult?.status);
+  const canUseResults = sortedResults.length > 0;
   const limitingFactors = sortedResults.flatMap((result) => result.limitingFactors.slice(0, 2).map((factor) => ({
     cropId: result.cropId,
     factor,
@@ -122,7 +128,8 @@ export default function Results({ navigate }: Props) {
               </button>
               <button
                 onClick={() => navigate('recommendations')}
-                style={{ background: '#16a34a', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 9, fontSize: 13.5, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}
+                disabled={!canUseResults}
+                style={{ background: canUseResults ? '#16a34a' : '#bbf7d0', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 9, fontSize: 13.5, fontWeight: 600, cursor: canUseResults ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', gap: 7 }}
               >
                 <Sprout style={{ width: 14, height: 14 }} />
                 Generar recomendaciones
@@ -150,7 +157,30 @@ export default function Results({ navigate }: Props) {
 
               {!loading && sortedResults.length === 0 && (
                 <div style={{ padding: 24, color: '#64748b', fontSize: 14 }}>
-                  Aun no hay resultados MCDA disponibles. Vuelve a procesamiento y espera que el estado sea EVALUACION_COMPLETADA.
+                  <div style={{ fontWeight: 700, color: failed ? '#991b1b' : '#0f172a', marginBottom: 6 }}>
+                    {failed ? 'La evaluacion fallo en backend' : pending ? 'Resultado MCDA aun en procesamiento' : 'Sin resultados MCDA disponibles'}
+                  </div>
+                  <div style={{ lineHeight: 1.6, marginBottom: 14 }}>
+                    {failed
+                      ? (mcdaResult?.failureReason ?? 'El backend marco la evaluacion como fallida.')
+                      : pending
+                        ? `Estado actual: ${mcdaResult?.status}. Vuelve a procesamiento o reconsulta cuando el backend complete la saga.`
+                        : 'El backend respondio sin cultivos rankeados para esta evaluacion.'}
+                  </div>
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    <button
+                      onClick={() => navigate('processing')}
+                      style={{ background: '#16a34a', color: 'white', border: 'none', padding: '9px 14px', borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                    >
+                      Volver a procesamiento
+                    </button>
+                    <button
+                      onClick={() => setRefreshCount((count) => count + 1)}
+                      style={{ background: 'white', color: '#475569', border: '1.5px solid #e2e8f0', padding: '9px 14px', borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                    >
+                      Reconsultar MCDA
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -234,7 +264,8 @@ export default function Results({ navigate }: Props) {
 
             <button
               onClick={() => navigate('recommendations')}
-              style={{ background: 'linear-gradient(135deg, #15803d, #0891b2)', color: 'white', border: 'none', padding: '14px', borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+              disabled={!canUseResults}
+              style={{ background: canUseResults ? 'linear-gradient(135deg, #15803d, #0891b2)' : '#bbf7d0', color: 'white', border: 'none', padding: '14px', borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: canUseResults ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
             >
               Generar recomendaciones
               <ChevronRight style={{ width: 16, height: 16 }} />

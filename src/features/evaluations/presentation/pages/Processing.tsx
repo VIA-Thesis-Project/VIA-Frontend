@@ -4,13 +4,13 @@ import { processingSteps, processingVariables } from '@/features/evaluations/inf
 import Sidebar from '@/shared/presentation/layouts/Sidebar';
 import { NavigateFn } from '@/app/navigation/navigation';
 import { EvaluationStatusSnapshot } from '@/features/evaluations/domain/evaluation';
+import { isEvaluationFailed, isMcdaReadyStatus } from '@/features/evaluations/application/evaluationStatus';
 import { EvaluationApiRepository } from '@/features/evaluations/infrastructure/api/evaluationApiRepository';
 import { readCurrentEvaluation } from '@/features/evaluations/infrastructure/session/currentEvaluationStorage';
 
 interface Props { navigate: NavigateFn; }
 
 const evaluationRepository = new EvaluationApiRepository();
-const completedStatuses = new Set(['EVALUACION_COMPLETADA', 'RECOMENDACION_COMPLETADA']);
 const stepByStatus: Record<string, number> = {
   INICIADA: 1,
   EXTRACCION_COMPLETADA: 3,
@@ -51,8 +51,8 @@ export default function Processing({ navigate }: Props) {
   }, [currentEvaluation]);
 
   const currentStep = status ? stepByStatus[status.status] ?? 1 : 0;
-  const done = status ? completedStatuses.has(status.status) : false;
-  const failed = status?.status === 'FALLIDA';
+  const done = isMcdaReadyStatus(status?.status);
+  const failed = isEvaluationFailed(status?.status);
   const progress = done ? 100 : Math.round((currentStep / (processingSteps.length - 1)) * 100);
 
   return (
