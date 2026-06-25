@@ -47,10 +47,10 @@ npm run build
 El proxy de Vite esta configurado asi:
 
 ```text
-/api -> http://127.0.0.1:8000
+/api -> https://via-api-j4r1.onrender.com
 ```
 
-Por eso el backend debe estar corriendo en `http://127.0.0.1:8000`.
+En desarrollo local, Vite reenvia `/api` al backend desplegado en Render para evitar CORS.
 
 ## Backend esperado
 
@@ -134,9 +134,30 @@ Estado:
 
 ## Mock o provisional
 
-- Cards visuales de procesamiento: `processingData.ts`.
-- Reporte: `Report.tsx` todavia es visual/prototipo.
-- Algunas referencias de RAG en resultados/reporte son informativas hasta que backend exponga datos completos.
+- Reporte: `Report.tsx` usa endpoints reales disponibles, pero la descarga PDF queda pendiente de endpoint.
+- Algunas referencias de RAG en recomendaciones/reporte son informativas hasta que backend exponga secciones completas.
+
+## Deploy en Vercel
+
+Este frontend esta preparado para desplegarse como Vite Static Site en Vercel.
+
+Configuracion recomendada:
+
+```text
+Framework Preset: Vite
+Build Command: npm run build
+Output Directory: dist
+Install Command: npm install
+```
+
+`vercel.json` define:
+
+```text
+/api/* -> https://via-api-j4r1.onrender.com/*
+/*     -> /index.html
+```
+
+Esto mantiene al frontend consumiendo `/api` en produccion y evita depender de CORS del backend. No se requiere configurar `VITE_API_BASE_URL` en Vercel mientras se mantenga el valor por defecto `/api`.
 
 ## Delimitacion con Leaflet y Google Earth Engine
 
