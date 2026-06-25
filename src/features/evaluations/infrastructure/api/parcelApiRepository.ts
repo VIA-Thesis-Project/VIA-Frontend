@@ -34,6 +34,27 @@ export class ParcelApiRepository implements ParcelRepository {
 
     return toParcel(response);
   }
+
+  async getParcel(parcelId: string, accessToken: string): Promise<Parcel> {
+    const response = await apiRequest<ParcelResponse>(`/parcelas/${parcelId}`, {
+      token: accessToken,
+    });
+
+    return toParcel(response);
+  }
+
+  async updateParcel(parcelId: string, input: Partial<CreateParcelInput>, accessToken: string): Promise<Parcel> {
+    const response = await apiRequest<ParcelResponse>(`/parcelas/${parcelId}`, {
+      method: 'PATCH',
+      token: accessToken,
+      body: {
+        geometry: input.geometry,
+        metadata: input.metadata,
+      },
+    });
+
+    return toParcel(response);
+  }
 }
 
 function toParcel(response: ParcelResponse): Parcel {

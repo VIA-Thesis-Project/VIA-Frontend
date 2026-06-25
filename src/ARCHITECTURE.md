@@ -25,7 +25,7 @@ C:\Users\fmall\Downloads\Prototipo web AgroDesicions Admin
 
 `shared` contiene UI reutilizable, layouts, estilos, contratos comunes e infraestructura transversal como el cliente HTTP.
 
-Los archivos en `infrastructure/mock` son datos temporales del prototipo Figma Make. Deben reemplazarse gradualmente por adaptadores en `infrastructure/api`.
+El perfil agricola consume el backend mediante adaptadores en `infrastructure/api`. Las pantallas no deben depender de fixtures `mock`; si el backend aun no expone una capacidad, la UI debe mostrar el pendiente explicitamente.
 
 ## Regla de separacion
 

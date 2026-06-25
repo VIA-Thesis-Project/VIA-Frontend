@@ -172,6 +172,16 @@ export class EvaluationApiRepository implements EvaluationRepository {
       throw error;
     }
   }
+
+  async getRecommendationsForEvaluation(evaluationId: string): Promise<EvaluationRecommendation[]> {
+    const response = await apiRequest<RecommendationResponse[]>(`/evaluaciones/${evaluationId}/recomendaciones`);
+    return response.map(toRecommendation);
+  }
+
+  async getRecommendation(recommendationId: string): Promise<EvaluationRecommendation> {
+    const response = await apiRequest<RecommendationResponse>(`/recomendaciones/${recommendationId}`);
+    return toRecommendation(response);
+  }
 }
 
 function toRecommendation(response: RecommendationResponse): EvaluationRecommendation {

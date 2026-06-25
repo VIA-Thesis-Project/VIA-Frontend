@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Leaf, Eye, EyeOff, Shield, Users, Lock } from 'lucide-react';
 import { NavigateFn } from '@/app/navigation/navigation';
 import { authenticateUser } from '@/features/auth/application/authenticateUser';
+import { registerUser } from '@/features/auth/application/registerUser';
 import { AuthApiRepository } from '@/features/auth/infrastructure/api/authApiRepository';
 import { saveAuthSession } from '@/features/auth/infrastructure/session/authSessionStorage';
 
@@ -10,22 +11,26 @@ interface Props { navigate: NavigateFn; }
 const authRepository = new AuthApiRepository();
 
 export default function Login({ navigate }: Props) {
+  const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = async () => {
+  const handleSubmit = async () => {
     setLoading(true);
     setError(null);
 
     try {
+      if (mode === 'register') {
+        await registerUser(authRepository, { email, password });
+      }
       const session = await authenticateUser(authRepository, { email, password });
       saveAuthSession(session);
       navigate('dashboard');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo iniciar sesion.');
+      setError(err instanceof Error ? err.message : 'No se pudo completar la autenticacion.');
     } finally {
       setLoading(false);
     }
@@ -65,7 +70,7 @@ export default function Login({ navigate }: Props) {
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') void handleLogin(); }}
+                onKeyDown={e => { if (e.key === 'Enter') void handleSubmit(); }}
                 placeholder="usuario@agro.pe"
                 style={{
                   width: '100%', padding: '11px 14px', border: '1.5px solid #e2e8f0', borderRadius: 10,
@@ -84,7 +89,7 @@ export default function Login({ navigate }: Props) {
                   type={showPw ? 'text' : 'password'}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') void handleLogin(); }}
+                  onKeyDown={e => { if (e.key === 'Enter') void handleSubmit(); }}
                   placeholder="••••••••"
                   style={{
                     width: '100%', padding: '11px 44px 11px 14px', border: '1.5px solid #e2e8f0', borderRadius: 10,
@@ -112,7 +117,7 @@ export default function Login({ navigate }: Props) {
             )}
 
             <button
-              onClick={() => void handleLogin()}
+              onClick={() => void handleSubmit()}
               disabled={loading}
               style={{
                 width: '100%', background: loading ? '#86efac' : '#16a34a', color: 'white', border: 'none',
@@ -123,12 +128,12 @@ export default function Login({ navigate }: Props) {
               {loading ? (
                 <>
                   <div style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.4)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
-                  Verificando...
+                  {mode === 'login' ? 'Verificando...' : 'Creando cuenta...'}
                 </>
               ) : (
                 <>
                   <Lock style={{ width: 15, height: 15 }} />
-                  Ingresar al sistema
+                  {mode === 'login' ? 'Ingresar al sistema' : 'Crear cuenta agricola'}
                 </>
               )}
             </button>
@@ -139,13 +144,16 @@ export default function Login({ navigate }: Props) {
             </div>
 
             <button
-              onClick={() => navigate('dashboard')}
+              onClick={() => {
+                setError(null);
+                setMode((currentMode) => (currentMode === 'login' ? 'register' : 'login'));
+              }}
               style={{
                 width: '100%', background: '#f8fafc', color: '#475569', border: '1.5px solid #e2e8f0',
                 padding: '12px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer',
               }}
             >
-              Continuar como demo
+              {mode === 'login' ? 'Crear cuenta de usuario agricola' : 'Ya tengo cuenta'}
             </button>
 
             <div style={{ marginTop: 24, padding: 14, background: '#f0fdf4', borderRadius: 10, border: '1px solid #bbf7d0' }}>

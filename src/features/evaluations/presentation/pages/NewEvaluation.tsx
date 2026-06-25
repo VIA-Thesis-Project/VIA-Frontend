@@ -1,12 +1,13 @@
-import { ChangeEvent, useState } from 'react';
+import { ChangeEvent, useEffect, useState } from 'react';
 import { ChevronRight, Edit3, HelpCircle, MapPin, Square, Upload } from 'lucide-react';
 import { NavigateFn } from '@/app/navigation/navigation';
-import { cropOptions } from '@/features/evaluations/infrastructure/mock/newEvaluationData';
+import { cropCatalog } from '@/features/evaluations/application/cropCatalog';
 import { startEvaluationWorkflow } from '@/features/evaluations/application/startEvaluationWorkflow';
 import { EvaluationApiRepository } from '@/features/evaluations/infrastructure/api/evaluationApiRepository';
 import { ParcelApiRepository } from '@/features/evaluations/infrastructure/api/parcelApiRepository';
+import { readAuthSession } from '@/features/auth/infrastructure/session/authSessionStorage';
 import { saveCurrentEvaluation } from '@/features/evaluations/infrastructure/session/currentEvaluationStorage';
-import { GeoJsonGeometry } from '@/features/evaluations/domain/parcel';
+import { GeoJsonGeometry, Parcel } from '@/features/evaluations/domain/parcel';
 import { geoJsonToPoints, ParcelDrawMap } from '@/features/evaluations/presentation/components/ParcelDrawMap';
 import Sidebar from '@/shared/presentation/layouts/Sidebar';
 
@@ -16,6 +17,7 @@ type InputMethod = 'draw' | 'upload' | 'select';
 
 const parcelRepository = new ParcelApiRepository();
 const evaluationRepository = new EvaluationApiRepository();
+const cropOptions = cropCatalog;
 
 function extractGeoJsonGeometry(payload: unknown): GeoJsonGeometry {
   if (!payload || typeof payload !== 'object') {
@@ -54,12 +56,47 @@ export default function NewEvaluation({ navigate }: Props) {
   const [method, setMethod] = useState<InputMethod>('draw');
   const [mapPoints, setMapPoints] = useState<Array<{ lat: number; lng: number }>>([]);
   const [geometry, setGeometry] = useState<GeoJsonGeometry | null>(null);
+  const [existingParcels, setExistingParcels] = useState<Parcel[]>([]);
+  const [selectedParcelId, setSelectedParcelId] = useState('');
   const [selectedCrops, setSelectedCrops] = useState<string[]>(['demo_maiz', 'demo_papa', 'demo_quinua']);
   const [loading, setLoading] = useState(false);
+  const [parcelsLoading, setParcelsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>('Dibuja la parcela en el mapa. El frontend enviara GeoJSON al backend y el backend usara Google Earth Engine.');
 
   const hasValidGeometry = geometry !== null;
+  const selectedParcel = existingParcels.find((parcel) => parcel.id === selectedParcelId) ?? null;
+
+  useEffect(() => {
+    if (method !== 'select') return undefined;
+
+    const session = readAuthSession();
+    if (!session) {
+      setError('Inicia sesion para listar tus parcelas.');
+      return undefined;
+    }
+
+    let cancelled = false;
+    const loadParcels = async () => {
+      setParcelsLoading(true);
+      try {
+        const parcels = await parcelRepository.listParcels(session.accessToken);
+        if (!cancelled) {
+          setExistingParcels(parcels);
+          setSelectedParcelId((current) => current || parcels[0]?.id || '');
+        }
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : 'No se pudieron cargar las parcelas existentes.');
+      } finally {
+        if (!cancelled) setParcelsLoading(false);
+      }
+    };
+
+    void loadParcels();
+    return () => {
+      cancelled = true;
+    };
+  }, [method]);
 
   const toggleCrop = (cropId: string) => {
     setSelectedCrops((prev) => prev.includes(cropId) ? prev.filter((id) => id !== cropId) : [...prev, cropId]);
@@ -69,7 +106,7 @@ export default function NewEvaluation({ navigate }: Props) {
     setMethod(nextMethod);
     setError(null);
     if (nextMethod === 'select') {
-      setNotice('La seleccion de parcelas existentes queda pendiente hasta completar esa pantalla. Por ahora usa dibujo o carga GeoJSON.');
+      setNotice('Selecciona una parcela ya registrada en el backend para iniciar una nueva evaluacion sin crear geometria nueva.');
     } else if (nextMethod === 'upload') {
       setNotice('Puedes cargar un archivo GeoJSON con Polygon o MultiPolygon. KML queda pendiente de parser.');
     } else {
@@ -104,7 +141,12 @@ export default function NewEvaluation({ navigate }: Props) {
   };
 
   const handleStartEvaluation = async () => {
-    if (!hasValidGeometry) {
+    if (method === 'select' && !selectedParcel) {
+      setError('Selecciona una parcela existente antes de iniciar la evaluacion.');
+      return;
+    }
+
+    if (method !== 'select' && !hasValidGeometry) {
       setError('Delimita una parcela en el mapa o carga un GeoJSON antes de iniciar la evaluacion.');
       return;
     }
@@ -127,6 +169,7 @@ export default function NewEvaluation({ navigate }: Props) {
           areaHa: area || 'Area no calculada',
           selectedCropIds: selectedCrops,
           geometry,
+          existingParcel: method === 'select' ? selectedParcel : null,
         },
       );
 
@@ -231,6 +274,34 @@ export default function NewEvaluation({ navigate }: Props) {
                   <input type="file" accept=".json,.geojson,application/geo+json,application/json" onChange={handleGeoJsonUpload} style={{ display: 'none' }} />
                 </label>
               )}
+
+              {method === 'select' && (
+                <div style={{ marginTop: 10, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: 12 }}>
+                  {parcelsLoading && <div style={{ fontSize: 12.5, color: '#64748b' }}>Consultando parcelas registradas...</div>}
+                  {!parcelsLoading && existingParcels.length === 0 && (
+                    <div style={{ fontSize: 12.5, color: '#64748b', lineHeight: 1.5 }}>No hay parcelas registradas para este usuario. Usa dibujo o carga GeoJSON.</div>
+                  )}
+                  {!parcelsLoading && existingParcels.length > 0 && (
+                    <>
+                      <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Parcela existente</label>
+                      <select
+                        value={selectedParcelId}
+                        onChange={(event) => setSelectedParcelId(event.target.value)}
+                        style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: 9, fontSize: 13, color: '#0f172a', background: 'white', outline: 'none' }}
+                      >
+                        {existingParcels.map((parcel) => (
+                          <option key={parcel.id} value={parcel.id}>{parcel.metadata.name}</option>
+                        ))}
+                      </select>
+                      {selectedParcel && (
+                        <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 8, lineHeight: 1.45 }}>
+                          {selectedParcel.metadata.description} · {selectedParcel.metadata.crs} · ID {selectedParcel.id.slice(0, 8)}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
             </div>
 
             <div style={{ marginBottom: 24 }}>
@@ -260,12 +331,12 @@ export default function NewEvaluation({ navigate }: Props) {
               </div>
             </div>
 
-            <div style={{ marginBottom: 16, background: hasValidGeometry ? '#f0fdf4' : '#f8fafc', border: `1px solid ${hasValidGeometry ? '#bbf7d0' : '#e2e8f0'}`, borderRadius: 10, padding: '10px 12px' }}>
-              <div style={{ fontSize: 12.5, color: hasValidGeometry ? '#15803d' : '#64748b', fontWeight: 700 }}>
-                {hasValidGeometry ? 'GeoJSON listo para backend' : 'Parcela pendiente de delimitar'}
+            <div style={{ marginBottom: 16, background: hasValidGeometry || selectedParcel ? '#f0fdf4' : '#f8fafc', border: `1px solid ${hasValidGeometry || selectedParcel ? '#bbf7d0' : '#e2e8f0'}`, borderRadius: 10, padding: '10px 12px' }}>
+              <div style={{ fontSize: 12.5, color: hasValidGeometry || selectedParcel ? '#15803d' : '#64748b', fontWeight: 700 }}>
+                {selectedParcel ? 'Parcela existente lista para evaluar' : hasValidGeometry ? 'GeoJSON listo para backend' : 'Parcela pendiente de delimitar'}
               </div>
               <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 4 }}>
-                Vertices: {mapPoints.length} {area ? `- Area aprox.: ${area} ha` : ''}
+                {selectedParcel ? `ID ${selectedParcel.id.slice(0, 8)} · ${selectedParcel.metadata.crs}` : `Vertices: ${mapPoints.length} ${area ? `- Area aprox.: ${area} ha` : ''}`}
               </div>
             </div>
 

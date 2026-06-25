@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, ChevronRight, Info } from 'lucide-react';
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { NavigateFn } from '@/app/navigation/navigation';
+import { toUserFriendlyFailureReason } from '@/features/evaluations/application/backendFailureMessages';
 import { getCropLabel } from '@/features/evaluations/application/cropCatalog';
 import { CropEvaluationResult, EvaluationMcdaResult } from '@/features/evaluations/domain/evaluation';
 import { EvaluationApiRepository } from '@/features/evaluations/infrastructure/api/evaluationApiRepository';
@@ -85,7 +86,7 @@ export default function CropDetail({ navigate }: Props) {
         const result = await evaluationRepository.getMcdaResult(currentEvaluation.evaluationId);
         if (!cancelled) {
           setMcdaResult(result);
-          setError(result.failureReason);
+          setError(toUserFriendlyFailureReason(result.failureReason));
         }
       } catch (err) {
         if (!cancelled) {

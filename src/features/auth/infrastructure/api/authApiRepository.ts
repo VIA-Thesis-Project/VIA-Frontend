@@ -1,5 +1,5 @@
 import { AuthRepository } from '@/features/auth/application/authRepository';
-import { AuthSession, LoginCredentials } from '@/features/auth/domain/authSession';
+import { AuthSession, LoginCredentials, RegisteredUser, RegisterCredentials } from '@/features/auth/domain/authSession';
 import { readUserFromAccessToken } from '@/features/auth/infrastructure/api/jwtPayload';
 import { apiRequest } from '@/shared/infrastructure/http/apiClient';
 
@@ -9,7 +9,26 @@ type LoginResponse = {
   expires_in_seconds: number;
 };
 
+type RegisterResponse = {
+  user_id: string;
+  email: string;
+  role: string;
+};
+
 export class AuthApiRepository implements AuthRepository {
+  async register(credentials: RegisterCredentials): Promise<RegisteredUser> {
+    const response = await apiRequest<RegisterResponse>('/auth/register', {
+      method: 'POST',
+      body: credentials,
+    });
+
+    return {
+      userId: response.user_id,
+      email: response.email,
+      role: response.role,
+    };
+  }
+
   async login(credentials: LoginCredentials): Promise<AuthSession> {
     const response = await apiRequest<LoginResponse>('/auth/login', {
       method: 'POST',

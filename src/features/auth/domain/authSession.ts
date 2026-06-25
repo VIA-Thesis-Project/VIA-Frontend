@@ -5,6 +5,11 @@ export type LoginCredentials = {
   password: string;
 };
 
+export type RegisterCredentials = {
+  email: string;
+  password: string;
+};
+
 export type AuthenticatedUser = {
   id: string;
   email: string;
@@ -17,4 +22,10 @@ export type AuthSession = {
   expiresInSeconds: number;
   expiresAt: string;
   user: AuthenticatedUser;
+};
+
+export type RegisteredUser = {
+  userId: string;
+  email: string;
+  role: UserRole;
 };

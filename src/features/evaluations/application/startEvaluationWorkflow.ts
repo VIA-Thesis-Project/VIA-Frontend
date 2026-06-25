@@ -2,14 +2,15 @@ import { readAuthSession } from '@/features/auth/infrastructure/session/authSess
 import { cropCatalog } from '@/features/evaluations/application/cropCatalog';
 import { EvaluationRepository, ParcelRepository } from '@/features/evaluations/application/evaluationRepositories';
 import { CurrentEvaluationContext } from '@/features/evaluations/domain/evaluation';
-import { GeoJsonGeometry } from '@/features/evaluations/domain/parcel';
+import { GeoJsonGeometry, Parcel } from '@/features/evaluations/domain/parcel';
 
 type StartEvaluationWorkflowInput = {
   name: string;
   district: string;
   areaHa: string;
   selectedCropIds: string[];
-  geometry: GeoJsonGeometry;
+  geometry: GeoJsonGeometry | null;
+  existingParcel?: Parcel | null;
 };
 
 export async function startEvaluationWorkflow(
@@ -26,12 +27,16 @@ export async function startEvaluationWorkflow(
     throw new Error('Selecciona al menos un cultivo para evaluar.');
   }
 
-  const parcel = await parcelRepository.createParcel(
+  if (!input.existingParcel && !input.geometry) {
+    throw new Error('Delimita una parcela o selecciona una parcela existente.');
+  }
+
+  const parcel = input.existingParcel ?? await parcelRepository.createParcel(
     {
-      geometry: input.geometry,
+      geometry: input.geometry as GeoJsonGeometry,
       metadata: {
         name: input.name.trim() || 'Parcela demo',
-        description: `${input.district.trim() || 'Ubicacion no indicada'} - ${input.areaHa || '?'} ha`,
+        description: `${input.district.trim() || 'Ubicacion no indicada'} - Area estimada: ${input.areaHa || '?'}`,
         crs: 'EPSG:4326',
       },
     },
@@ -51,8 +56,8 @@ export async function startEvaluationWorkflow(
   return {
     parcelId: parcel.id,
     parcelName: parcel.metadata.name,
-    parcelLocation: input.district,
-    areaHa: input.areaHa,
+    parcelLocation: input.existingParcel ? parcel.metadata.description : input.district,
+    areaHa: input.existingParcel ? 'Area no registrada' : input.areaHa,
     evaluationId: accepted.evaluationId,
     cropCandidates: input.selectedCropIds.map((cropId) => cropCatalog.find((crop) => crop.id === cropId) ?? { id: cropId, label: cropId }),
   };

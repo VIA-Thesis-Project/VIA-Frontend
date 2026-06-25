@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, ChevronRight, Download, Eye, Sprout, TrendingUp } from 'lucide-react';
 import Sidebar from '@/shared/presentation/layouts/Sidebar';
 import { NavigateFn } from '@/app/navigation/navigation';
+import { isNoRankedCropFailure, toUserFriendlyFailureReason } from '@/features/evaluations/application/backendFailureMessages';
 import { getCropLabel } from '@/features/evaluations/application/cropCatalog';
 import { isEvaluationFailed, isEvaluationPending } from '@/features/evaluations/application/evaluationStatus';
 import { CropEvaluationResult, EvaluationMcdaResult } from '@/features/evaluations/domain/evaluation';
@@ -64,7 +65,7 @@ export default function Results({ navigate }: Props) {
         const result = await evaluationRepository.getMcdaResult(currentEvaluation.evaluationId);
         if (!cancelled) {
           setMcdaResult(result);
-          setError(result.failureReason);
+          setError(toUserFriendlyFailureReason(result.failureReason));
         }
       } catch (err) {
         if (!cancelled) {
@@ -84,6 +85,7 @@ export default function Results({ navigate }: Props) {
   const sortedResults = useMemo(() => sortResults(mcdaResult?.results ?? []), [mcdaResult]);
   const pending = isEvaluationPending(mcdaResult?.status);
   const failed = isEvaluationFailed(mcdaResult?.status);
+  const noRankedCropFailure = isNoRankedCropFailure(mcdaResult?.failureReason);
   const canUseResults = sortedResults.length > 0;
   const limitingFactors = sortedResults.flatMap((result) => result.limitingFactors.slice(0, 2).map((factor) => ({
     cropId: result.cropId,
@@ -162,17 +164,17 @@ export default function Results({ navigate }: Props) {
                   </div>
                   <div style={{ lineHeight: 1.6, marginBottom: 14 }}>
                     {failed
-                      ? (mcdaResult?.failureReason ?? 'El backend marco la evaluacion como fallida.')
+                      ? (toUserFriendlyFailureReason(mcdaResult?.failureReason) ?? 'El backend marco la evaluacion como fallida.')
                       : pending
                         ? `Estado actual: ${mcdaResult?.status}. Vuelve a procesamiento o reconsulta cuando el backend complete la saga.`
                         : 'El backend respondio sin cultivos rankeados para esta evaluacion.'}
                   </div>
                   <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                     <button
-                      onClick={() => navigate('processing')}
+                      onClick={() => navigate(noRankedCropFailure ? 'new-evaluation' : 'processing')}
                       style={{ background: '#16a34a', color: 'white', border: 'none', padding: '9px 14px', borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
                     >
-                      Volver a procesamiento
+                      {noRankedCropFailure ? 'Nueva evaluacion' : 'Volver a procesamiento'}
                     </button>
                     <button
                       onClick={() => setRefreshCount((count) => count + 1)}

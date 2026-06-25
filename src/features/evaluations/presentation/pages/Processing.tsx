@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle2, ChevronRight, Circle, Loader2 } from 'lucide-react';
-import { processingSteps, processingVariables } from '@/features/evaluations/infrastructure/mock/processingData';
 import Sidebar from '@/shared/presentation/layouts/Sidebar';
 import { NavigateFn } from '@/app/navigation/navigation';
+import { isNoRankedCropFailure, toUserFriendlyFailureReason } from '@/features/evaluations/application/backendFailureMessages';
 import { EvaluationStatusSnapshot } from '@/features/evaluations/domain/evaluation';
 import { isEvaluationFailed, isMcdaReadyStatus } from '@/features/evaluations/application/evaluationStatus';
 import { EvaluationApiRepository } from '@/features/evaluations/infrastructure/api/evaluationApiRepository';
@@ -11,9 +11,15 @@ import { readCurrentEvaluation } from '@/features/evaluations/infrastructure/ses
 interface Props { navigate: NavigateFn; }
 
 const evaluationRepository = new EvaluationApiRepository();
+const processingSteps = [
+  { id: 1, label: 'Evaluacion iniciada', sub: 'La saga fue registrada en el backend' },
+  { id: 2, label: 'Extraccion agroambiental', sub: 'El worker procesa datos para la parcela' },
+  { id: 3, label: 'Evaluacion MCDA', sub: 'El backend calcula ranking, brechas y factores limitantes' },
+  { id: 4, label: 'Recomendacion', sub: 'Se persiste la recomendacion final cuando corresponde' },
+];
 const stepByStatus: Record<string, number> = {
   INICIADA: 1,
-  EXTRACCION_COMPLETADA: 3,
+  EXTRACCION_COMPLETADA: 2,
   EVALUACION_COMPLETADA: processingSteps.length - 1,
   RECOMENDACION_COMPLETADA: processingSteps.length - 1,
   FALLIDA: processingSteps.length - 1,
@@ -34,7 +40,7 @@ export default function Processing({ navigate }: Props) {
         const snapshot = await evaluationRepository.getEvaluationStatus(currentEvaluation.evaluationId);
         if (cancelled) return;
         setStatus(snapshot);
-        setError(snapshot.failureReason);
+        setError(toUserFriendlyFailureReason(snapshot.failureReason));
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'No se pudo consultar el estado de la evaluacion.');
@@ -53,6 +59,7 @@ export default function Processing({ navigate }: Props) {
   const currentStep = status ? stepByStatus[status.status] ?? 1 : 0;
   const done = isMcdaReadyStatus(status?.status);
   const failed = isEvaluationFailed(status?.status);
+  const noRankedCropFailure = isNoRankedCropFailure(status?.failureReason);
   const progress = done ? 100 : Math.round((currentStep / (processingSteps.length - 1)) * 100);
 
   return (
@@ -124,23 +131,20 @@ export default function Processing({ navigate }: Props) {
 
           <div>
             <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', padding: 24, marginBottom: 16 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', marginBottom: 20 }}>Variables agroambientales obtenidas</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
-                {processingVariables.map(({ icon: Icon, label, value, unit, status: variableStatus, statusColor, statusBg, color, bg, detail }) => (
-                  <div key={label} style={{ background: '#fafafa', borderRadius: 12, padding: 16, border: '1px solid #f1f5f9', position: 'relative', overflow: 'hidden' }}>
-                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: statusColor }} />
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                      <div style={{ width: 36, height: 36, borderRadius: 10, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Icon style={{ width: 18, height: 18, color }} />
-                      </div>
-                      <div style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 12, background: statusBg, color: statusColor }}>{variableStatus}</div>
-                    </div>
-                    <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 4 }}>{label}</div>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                      <span style={{ fontSize: 24, fontWeight: 800, color: '#0f172a' }}>{value}</span>
-                      <span style={{ fontSize: 13, color: '#64748b' }}>{unit}</span>
-                    </div>
-                    <div style={{ fontSize: 11.5, color: '#94a3b8', marginTop: 4 }}>{detail}</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', marginBottom: 6 }}>Estado real del backend</div>
+              <div style={{ fontSize: 13, color: '#64748b', lineHeight: 1.6, marginBottom: 18 }}>
+                El backend aun no expone las variables agroambientales crudas por endpoint publico. Esta pantalla muestra la trazabilidad disponible de la saga y habilita resultados cuando MCDA esta persistido.
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+                {[
+                  { label: 'Evaluacion', value: currentEvaluation?.evaluationId ?? '-' },
+                  { label: 'Estado', value: status?.status ?? 'Consultando...' },
+                  { label: 'Fase actual', value: status?.currentPhase ?? '-' },
+                  { label: 'Ultima transicion', value: status?.lastTransition ? new Date(status.lastTransition).toLocaleString() : '-' },
+                ].map(({ label, value }) => (
+                  <div key={label} style={{ background: '#fafafa', borderRadius: 12, padding: 14, border: '1px solid #f1f5f9' }}>
+                    <div style={{ fontSize: 11.5, color: '#94a3b8', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</div>
+                    <div style={{ fontSize: 13, color: '#0f172a', fontWeight: 700, overflowWrap: 'anywhere' }}>{value}</div>
                   </div>
                 ))}
               </div>
@@ -156,6 +160,14 @@ export default function Processing({ navigate }: Props) {
                 </div>
                 {error && <div style={{ fontSize: 12.5, color: failed ? '#991b1b' : '#92400e', marginTop: 8 }}>{error}</div>}
               </div>
+              {failed && noRankedCropFailure && (
+                <button
+                  onClick={() => navigate('new-evaluation')}
+                  style={{ background: '#991b1b', color: 'white', border: 'none', padding: '12px 18px', borderRadius: 10, fontSize: 13.5, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}
+                >
+                  Nueva evaluacion
+                </button>
+              )}
               {done && (
                 <button
                   onClick={() => navigate('results')}

@@ -77,7 +77,7 @@ export default function Dashboard({ navigate }: Props) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
           <div>
             <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', margin: 0, marginBottom: 4 }}>Dashboard</h1>
-            <p style={{ fontSize: 13.5, color: '#64748b', margin: 0 }}>Vista conectada al backend local de AgroViabilidad DSS.</p>
+            <p style={{ fontSize: 13.5, color: '#64748b', margin: 0 }}>Vista conectada al backend desplegado de AgroViabilidad DSS.</p>
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <button

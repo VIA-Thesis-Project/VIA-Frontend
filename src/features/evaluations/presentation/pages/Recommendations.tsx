@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronLeft, ExternalLink, FileText, Sprout } from 'lucide-react';
 import { NavigateFn } from '@/app/navigation/navigation';
+import { toUserFriendlyFailureReason } from '@/features/evaluations/application/backendFailureMessages';
 import { getCropLabel } from '@/features/evaluations/application/cropCatalog';
 import { isEvaluationPending } from '@/features/evaluations/application/evaluationStatus';
 import {
@@ -66,6 +67,7 @@ export default function Recommendations({ navigate }: Props) {
   const [currentEvaluation] = useState(() => readCurrentEvaluation());
   const [mcdaResult, setMcdaResult] = useState<EvaluationMcdaResult | null>(null);
   const [recommendation, setRecommendation] = useState<FinalRecommendationResult | null>(null);
+  const [allRecommendations, setAllRecommendations] = useState<FinalRecommendationResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(currentEvaluation ? null : 'No hay una evaluacion activa.');
 
@@ -82,11 +84,13 @@ export default function Recommendations({ navigate }: Props) {
           evaluationRepository.getMcdaResult(currentEvaluation.evaluationId),
           evaluationRepository.getFinalRecommendation(currentEvaluation.evaluationId),
         ]);
+        const recommendations = await evaluationRepository.getRecommendationsForEvaluation(currentEvaluation.evaluationId);
 
         if (!cancelled) {
           setMcdaResult(mcda);
           setRecommendation(finalRecommendation);
-          setError(mcda.failureReason);
+          setAllRecommendations(recommendations.map((item) => ({ status: 'available' as const, recommendation: item })));
+          setError(toUserFriendlyFailureReason(mcda.failureReason));
         }
       } catch (err) {
         if (!cancelled) {
@@ -180,6 +184,7 @@ export default function Recommendations({ navigate }: Props) {
                       <div style={{ background: '#f0fdf4', color: '#15803d', fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 20 }}>Estado: {backendRecommendation.status}</div>
                       <div style={{ background: '#ecfeff', color: '#0891b2', fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 20 }}>Proveedor: {backendRecommendation.provider}</div>
                       <div style={{ background: '#faf5ff', color: '#7c3aed', fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 20 }}>Evidencias: {backendRecommendation.evidence.length}</div>
+                      <div style={{ background: '#f8fafc', color: '#475569', fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 20 }}>Recomendaciones: {allRecommendations.length}</div>
                     </div>
                   </>
                 ) : (
@@ -189,6 +194,23 @@ export default function Recommendations({ navigate }: Props) {
                 )}
               </div>
             </div>
+
+            {allRecommendations.length > 1 && (
+              <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', padding: '18px 22px', marginBottom: 20 }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', marginBottom: 12 }}>Recomendaciones persistidas</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {allRecommendations.map((item) => item.status === 'available' && (
+                    <div key={item.recommendation.recommendationId} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, background: '#fafafa', border: '1px solid #f1f5f9', borderRadius: 10, padding: '10px 12px' }}>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>{item.recommendation.title}</div>
+                        <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 2 }}>{getCropLabel(item.recommendation.cropId)} · {item.recommendation.provider}</div>
+                      </div>
+                      <div style={{ fontSize: 11.5, color: '#94a3b8', whiteSpace: 'nowrap' }}>{new Date(item.recommendation.createdAt).toLocaleDateString()}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
               {derivedActions.map(({ title, items }) => (
