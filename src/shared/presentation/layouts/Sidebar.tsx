@@ -1,5 +1,6 @@
-import { BarChart3, FileText, LayoutDashboard, Leaf, LogOut, Map, Plus, Settings } from 'lucide-react';
+import { BarChart3, FileText, LayoutDashboard, LogOut, Map, Plus, Settings } from 'lucide-react';
 import { NavigateFn, Screen } from '@/app/navigation/navigation';
+import { ViaMark } from '@/shared/presentation/components/ViaMark';
 
 interface Props {
   active: Screen;
@@ -23,15 +24,10 @@ export default function Sidebar({ active, navigate }: Props) {
     >
       <div className="p-5 border-b border-slate-100">
         <div className="flex items-center gap-2.5">
-          <div
-            className="flex items-center justify-center rounded-xl"
-            style={{ width: 36, height: 36, background: 'linear-gradient(135deg, #16a34a, #0891b2)' }}
-          >
-            <Leaf className="text-white" style={{ width: 18, height: 18 }} />
-          </div>
+          <ViaMark size={36} />
           <div>
-            <div className="text-slate-900" style={{ fontSize: 14, fontWeight: 700 }}>AgroViabilidad</div>
-            <div className="text-slate-400" style={{ fontSize: 11 }}>App Agricola - Lima, Peru</div>
+            <div className="text-slate-900" style={{ fontSize: 15, fontWeight: 800 }}>VIA</div>
+            <div className="text-slate-400" style={{ fontSize: 11 }}>Viabilidad Agricola - Lima, Peru</div>
           </div>
         </div>
       </div>

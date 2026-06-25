@@ -134,7 +134,7 @@ export default function Report({ navigate }: Props) {
             <div style={{ background: 'white', borderRadius: 4, boxShadow: '0 4px 24px rgba(0,0,0,0.12)', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
               <div style={{ background: 'linear-gradient(135deg, #15803d, #0891b2)', padding: '24px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: 'white', marginBottom: 4 }}>AgroViabilidad DSS</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: 'white', marginBottom: 4 }}>VIA</div>
                   <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>Informe de evaluacion de viabilidad agricola</div>
                 </div>
                 <div style={{ textAlign: 'right', color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>

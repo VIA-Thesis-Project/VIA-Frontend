@@ -149,7 +149,7 @@ export function ParcelDrawMap({ points, onPointsChange, onGeometryChange, onArea
         ))}
       </MapContainer>
 
-      <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 500, background: 'white', borderRadius: 10, padding: '10px 12px', boxShadow: '0 2px 10px rgba(15,23,42,0.14)', border: '1px solid #e2e8f0', maxWidth: 280 }}>
+      <div style={{ position: 'absolute', top: 12, left: 58, zIndex: 500, background: 'white', borderRadius: 10, padding: '10px 12px', boxShadow: '0 2px 10px rgba(15,23,42,0.14)', border: '1px solid #e2e8f0', width: 300, maxWidth: 'calc(100% - 150px)' }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>Delimitacion con Leaflet</div>
         <div style={{ fontSize: 11.5, color: '#64748b', lineHeight: 1.45 }}>
           Haz click sobre el mapa para agregar vertices. Con 3 o mas vertices se genera GeoJSON para el backend.

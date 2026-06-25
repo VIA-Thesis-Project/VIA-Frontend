@@ -163,7 +163,7 @@ Se removio de este repo:
 El `package.json` fue renombrado a:
 
 ```json
-"name": "via-agricultural-frontend"
+"name": "via-frontend"
 ```
 
 ## Siguientes pasos

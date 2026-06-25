@@ -183,18 +183,18 @@ export default function NewEvaluation({ navigate }: Props) {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc' }}>
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#f8fafc' }}>
       <Sidebar active="new-evaluation" navigate={navigate} />
 
       <main style={{ marginLeft: 240, flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        <div style={{ background: 'white', borderBottom: '1px solid #f1f5f9', padding: '16px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ background: 'white', borderBottom: '1px solid #f1f5f9', padding: '12px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
               <div style={{ fontSize: 12, color: '#94a3b8', cursor: 'pointer' }} onClick={() => navigate('dashboard')}>Dashboard</div>
               <span style={{ color: '#e2e8f0' }}>/</span>
               <div style={{ fontSize: 12, color: '#16a34a', fontWeight: 600 }}>Nueva evaluacion</div>
             </div>
-            <h1 style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', margin: 0 }}>Delimitacion de parcela</h1>
+            <h1 style={{ fontSize: 17, fontWeight: 700, color: '#0f172a', margin: 0 }}>Delimitacion de parcela</h1>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             {['Delimitar parcela', 'Procesar variables', 'Ver resultados'].map((step, index) => (
@@ -207,17 +207,17 @@ export default function NewEvaluation({ navigate }: Props) {
           </div>
         </div>
 
-        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '380px 1fr', gap: 0, minHeight: 0 }}>
-          <div style={{ background: 'white', borderRight: '1px solid #f1f5f9', overflowY: 'auto', padding: '24px 24px' }}>
-            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '12px 14px', marginBottom: 20, display: 'flex', gap: 10 }}>
+        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '380px 1fr', gap: 0, minHeight: 0, overflow: 'hidden' }}>
+          <div style={{ background: 'white', borderRight: '1px solid #f1f5f9', overflowY: 'auto', padding: '16px 20px' }}>
+            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '10px 12px', marginBottom: 14, display: 'flex', gap: 10 }}>
               <HelpCircle style={{ width: 16, height: 16, color: '#16a34a', flexShrink: 0, marginTop: 1 }} />
               <p style={{ fontSize: 12.5, color: '#166534', margin: 0, lineHeight: 1.6 }}>
                 {notice}
               </p>
             </div>
 
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0f172a', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0f172a', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
                 <MapPin style={{ width: 15, height: 15, color: '#16a34a' }} />
                 Datos de la parcela
               </div>
@@ -227,14 +227,14 @@ export default function NewEvaluation({ navigate }: Props) {
                 { label: 'Ubicacion / Distrito', value: district, setter: setDistrict, placeholder: 'Ej: Huaral, Lima' },
                 { label: 'Area estimada (ha)', value: area, setter: setArea, placeholder: 'Se calcula al delimitar' },
               ].map(({ label, value, setter, placeholder }) => (
-                <div key={label} style={{ marginBottom: 14 }}>
-                  <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#475569', marginBottom: 6 }}>{label}</label>
+                <div key={label} style={{ marginBottom: 10 }}>
+                  <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#475569', marginBottom: 4 }}>{label}</label>
                   <input
                     type="text"
                     value={value}
                     onChange={(event) => setter(event.target.value)}
                     placeholder={placeholder}
-                    style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: 9, fontSize: 13.5, color: '#0f172a', background: '#fafafa', outline: 'none', boxSizing: 'border-box' }}
+                    style={{ width: '100%', padding: '8px 12px', border: '1.5px solid #e2e8f0', borderRadius: 9, fontSize: 13.5, color: '#0f172a', background: '#fafafa', outline: 'none', boxSizing: 'border-box' }}
                     onFocus={(event) => (event.target.style.borderColor = '#16a34a')}
                     onBlur={(event) => (event.target.style.borderColor = '#e2e8f0')}
                   />
@@ -242,9 +242,9 @@ export default function NewEvaluation({ navigate }: Props) {
               ))}
             </div>
 
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 12.5, fontWeight: 600, color: '#475569', marginBottom: 10 }}>Metodo de ingreso de parcela</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 600, color: '#475569', marginBottom: 8 }}>Metodo de ingreso de parcela</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                 {[
                   { id: 'draw' as InputMethod, label: 'Dibujar poligono en mapa', icon: Edit3 },
                   { id: 'upload' as InputMethod, label: 'Cargar archivo GeoJSON', icon: Upload },
@@ -255,7 +255,7 @@ export default function NewEvaluation({ navigate }: Props) {
                     type="button"
                     onClick={() => handleMethodChange(id)}
                     style={{
-                      display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 9, border: `1.5px solid ${method === id ? '#16a34a' : '#e2e8f0'}`,
+                      display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 9, border: `1.5px solid ${method === id ? '#16a34a' : '#e2e8f0'}`,
                       background: method === id ? '#f0fdf4' : 'white', cursor: 'pointer', textAlign: 'left',
                     }}
                   >
@@ -269,14 +269,14 @@ export default function NewEvaluation({ navigate }: Props) {
               </div>
 
               {method === 'upload' && (
-                <label style={{ display: 'block', marginTop: 10, background: '#f8fafc', border: '1.5px dashed #cbd5e1', borderRadius: 10, padding: '12px', cursor: 'pointer', textAlign: 'center', color: '#475569', fontSize: 13, fontWeight: 600 }}>
+                <label style={{ display: 'block', marginTop: 8, background: '#f8fafc', border: '1.5px dashed #cbd5e1', borderRadius: 10, padding: '10px', cursor: 'pointer', textAlign: 'center', color: '#475569', fontSize: 13, fontWeight: 600 }}>
                   Cargar GeoJSON
                   <input type="file" accept=".json,.geojson,application/geo+json,application/json" onChange={handleGeoJsonUpload} style={{ display: 'none' }} />
                 </label>
               )}
 
               {method === 'select' && (
-                <div style={{ marginTop: 10, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: 12 }}>
+                <div style={{ marginTop: 8, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: 10 }}>
                   {parcelsLoading && <div style={{ fontSize: 12.5, color: '#64748b' }}>Consultando parcelas registradas...</div>}
                   {!parcelsLoading && existingParcels.length === 0 && (
                     <div style={{ fontSize: 12.5, color: '#64748b', lineHeight: 1.5 }}>No hay parcelas registradas para este usuario. Usa dibujo o carga GeoJSON.</div>
@@ -304,8 +304,8 @@ export default function NewEvaluation({ navigate }: Props) {
               )}
             </div>
 
-            <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 12.5, fontWeight: 600, color: '#475569', marginBottom: 10 }}>Cultivos a evaluar</div>
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 600, color: '#475569', marginBottom: 8 }}>Cultivos a evaluar</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {cropOptions.map((crop) => {
                   const selected = selectedCrops.includes(crop.id);
@@ -315,7 +315,7 @@ export default function NewEvaluation({ navigate }: Props) {
                       type="button"
                       onClick={() => toggleCrop(crop.id)}
                       style={{
-                        padding: '6px 14px', borderRadius: 20, fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                        padding: '5px 12px', borderRadius: 20, fontSize: 13, fontWeight: 500, cursor: 'pointer',
                         border: `1.5px solid ${selected ? '#16a34a' : '#e2e8f0'}`,
                         background: selected ? '#f0fdf4' : 'white',
                         color: selected ? '#15803d' : '#64748b',
@@ -331,7 +331,7 @@ export default function NewEvaluation({ navigate }: Props) {
               </div>
             </div>
 
-            <div style={{ marginBottom: 16, background: hasValidGeometry || selectedParcel ? '#f0fdf4' : '#f8fafc', border: `1px solid ${hasValidGeometry || selectedParcel ? '#bbf7d0' : '#e2e8f0'}`, borderRadius: 10, padding: '10px 12px' }}>
+            <div style={{ marginBottom: 10, background: hasValidGeometry || selectedParcel ? '#f0fdf4' : '#f8fafc', border: `1px solid ${hasValidGeometry || selectedParcel ? '#bbf7d0' : '#e2e8f0'}`, borderRadius: 10, padding: '8px 12px' }}>
               <div style={{ fontSize: 12.5, color: hasValidGeometry || selectedParcel ? '#15803d' : '#64748b', fontWeight: 700 }}>
                 {selectedParcel ? 'Parcela existente lista para evaluar' : hasValidGeometry ? 'GeoJSON listo para backend' : 'Parcela pendiente de delimitar'}
               </div>
@@ -349,15 +349,15 @@ export default function NewEvaluation({ navigate }: Props) {
             <button
               onClick={() => void handleStartEvaluation()}
               disabled={loading}
-              style={{ width: '100%', background: loading ? '#86efac' : '#16a34a', color: 'white', border: 'none', padding: '12px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+              style={{ width: '100%', background: loading ? '#86efac' : '#16a34a', color: 'white', border: 'none', padding: '10px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
             >
               {loading ? 'Registrando e iniciando evaluacion...' : 'Procesar variables agroambientales'}
               <ChevronRight style={{ width: 16, height: 16 }} />
             </button>
           </div>
 
-          <div style={{ padding: 20, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-            <div style={{ background: 'white', border: '1px solid #f1f5f9', borderRadius: 10, padding: '10px 16px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+          <div style={{ padding: 16, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0 }}>
+            <div style={{ background: 'white', border: '1px solid #f1f5f9', borderRadius: 10, padding: '8px 14px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 1px 4px rgba(0,0,0,0.04)', flexShrink: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>Mapa de delimitacion</div>
               <div style={{ fontSize: 12, color: '#64748b' }}>Leaflet + OpenStreetMap</div>
               <div style={{ marginLeft: 'auto', background: '#ecfeff', color: '#0891b2', padding: '6px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 700 }}>
@@ -365,7 +365,7 @@ export default function NewEvaluation({ navigate }: Props) {
               </div>
             </div>
 
-            <div style={{ flex: 1, borderRadius: 12, overflow: 'hidden', border: '1.5px solid #e2e8f0', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', minHeight: 500 }}>
+            <div style={{ flex: 1, borderRadius: 12, overflow: 'hidden', border: '1.5px solid #e2e8f0', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', minHeight: 0 }}>
               <ParcelDrawMap
                 points={mapPoints}
                 onPointsChange={setMapPoints}

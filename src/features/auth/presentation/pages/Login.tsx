@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Leaf, Eye, EyeOff, Shield, Users, Lock } from 'lucide-react';
+import { Eye, EyeOff, Shield, Users, Lock } from 'lucide-react';
 import { NavigateFn } from '@/app/navigation/navigation';
 import { authenticateUser } from '@/features/auth/application/authenticateUser';
 import { registerUser } from '@/features/auth/application/registerUser';
 import { AuthApiRepository } from '@/features/auth/infrastructure/api/authApiRepository';
 import { saveAuthSession } from '@/features/auth/infrastructure/session/authSessionStorage';
+import { ViaMark } from '@/shared/presentation/components/ViaMark';
 
 interface Props { navigate: NavigateFn; }
 
@@ -55,10 +56,10 @@ export default function Login({ navigate }: Props) {
         <div style={{ background: 'white', borderRadius: 20, boxShadow: '0 20px 60px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
           {/* Header strip */}
           <div style={{ background: 'linear-gradient(135deg, #15803d, #0891b2)', padding: '28px 32px', textAlign: 'center' }}>
-            <div style={{ width: 52, height: 52, background: 'rgba(255,255,255,0.2)', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
-              <Leaf style={{ width: 28, height: 28, color: 'white' }} />
+            <div style={{ width: 56, height: 56, background: 'rgba(255,255,255,0.18)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+              <ViaMark size={48} />
             </div>
-            <div style={{ fontSize: 20, fontWeight: 700, color: 'white', marginBottom: 4 }}>AgroViabilidad DSS</div>
+            <div style={{ fontSize: 24, fontWeight: 800, color: 'white', marginBottom: 4 }}>VIA</div>
             <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)' }}>Sistema de apoyo a decisiones agrícolas</div>
           </div>
 
