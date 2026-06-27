@@ -55,6 +55,13 @@ export class ParcelApiRepository implements ParcelRepository {
 
     return toParcel(response);
   }
+
+  async deleteParcel(parcelId: string, accessToken: string): Promise<void> {
+    await apiRequest<void>(`/parcelas/${parcelId}`, {
+      method: 'DELETE',
+      token: accessToken,
+    });
+  }
 }
 
 function toParcel(response: ParcelResponse): Parcel {

@@ -7,6 +7,7 @@ import { EvaluationApiRepository } from '@/features/evaluations/infrastructure/a
 import { ParcelApiRepository } from '@/features/evaluations/infrastructure/api/parcelApiRepository';
 import { readAuthSession } from '@/features/auth/infrastructure/session/authSessionStorage';
 import { saveCurrentEvaluation } from '@/features/evaluations/infrastructure/session/currentEvaluationStorage';
+import { clearSelectedParcelId, readSelectedParcelId } from '@/features/evaluations/infrastructure/session/selectedParcelStorage';
 import { GeoJsonGeometry, Parcel } from '@/features/evaluations/domain/parcel';
 import { geoJsonToPoints, ParcelDrawMap } from '@/features/evaluations/presentation/components/ParcelDrawMap';
 import Sidebar from '@/shared/presentation/layouts/Sidebar';
@@ -50,19 +51,22 @@ function extractGeoJsonGeometry(payload: unknown): GeoJsonGeometry {
 }
 
 export default function NewEvaluation({ navigate }: Props) {
+  const selectedParcelFromList = readSelectedParcelId();
   const [name, setName] = useState('Parcela Fundo Loreto - Lote A');
   const [district, setDistrict] = useState('Lima, Peru');
   const [area, setArea] = useState('');
-  const [method, setMethod] = useState<InputMethod>('draw');
+  const [method, setMethod] = useState<InputMethod>(selectedParcelFromList ? 'select' : 'draw');
   const [mapPoints, setMapPoints] = useState<Array<{ lat: number; lng: number }>>([]);
   const [geometry, setGeometry] = useState<GeoJsonGeometry | null>(null);
   const [existingParcels, setExistingParcels] = useState<Parcel[]>([]);
   const [selectedParcelId, setSelectedParcelId] = useState('');
-  const [selectedCrops, setSelectedCrops] = useState<string[]>(['demo_maiz', 'demo_papa', 'demo_quinua']);
+  const [selectedCrops, setSelectedCrops] = useState<string[]>(['maiz_amarillo_duro', 'mandarina_murcott', 'palta_hass']);
   const [loading, setLoading] = useState(false);
   const [parcelsLoading, setParcelsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>('Dibuja la parcela en el mapa. El frontend enviara GeoJSON al backend y el backend usara Google Earth Engine.');
+  const [notice, setNotice] = useState<string | null>(selectedParcelFromList
+    ? 'Parcela seleccionada desde la pantalla Parcelas. Confirma cultivos e inicia la evaluacion.'
+    : 'Dibuja la parcela en el mapa. El frontend enviara GeoJSON al backend y el backend usara Google Earth Engine.');
 
   const hasValidGeometry = geometry !== null;
   const selectedParcel = existingParcels.find((parcel) => parcel.id === selectedParcelId) ?? null;
@@ -82,8 +86,13 @@ export default function NewEvaluation({ navigate }: Props) {
       try {
         const parcels = await parcelRepository.listParcels(session.accessToken);
         if (!cancelled) {
+          const preferredParcelId = readSelectedParcelId();
+          const preferredParcel = preferredParcelId && parcels.some((parcel) => parcel.id === preferredParcelId)
+            ? preferredParcelId
+            : '';
           setExistingParcels(parcels);
-          setSelectedParcelId((current) => current || parcels[0]?.id || '');
+          setSelectedParcelId((current) => current || preferredParcel || parcels[0]?.id || '');
+          clearSelectedParcelId();
         }
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : 'No se pudieron cargar las parcelas existentes.');

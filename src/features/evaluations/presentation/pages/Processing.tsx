@@ -4,7 +4,7 @@ import Sidebar from '@/shared/presentation/layouts/Sidebar';
 import { NavigateFn } from '@/app/navigation/navigation';
 import { isNoRankedCropFailure, toUserFriendlyFailureReason } from '@/features/evaluations/application/backendFailureMessages';
 import { EvaluationStatusSnapshot } from '@/features/evaluations/domain/evaluation';
-import { isEvaluationFailed, isMcdaReadyStatus } from '@/features/evaluations/application/evaluationStatus';
+import { isEvaluationFailed, isMcdaReadyStatus, isRecommendationReadyStatus } from '@/features/evaluations/application/evaluationStatus';
 import { EvaluationApiRepository } from '@/features/evaluations/infrastructure/api/evaluationApiRepository';
 import { readCurrentEvaluation } from '@/features/evaluations/infrastructure/session/currentEvaluationStorage';
 
@@ -58,6 +58,7 @@ export default function Processing({ navigate }: Props) {
 
   const currentStep = status ? stepByStatus[status.status] ?? 1 : 0;
   const done = isMcdaReadyStatus(status?.status);
+  const recommendationDone = isRecommendationReadyStatus(status?.status);
   const failed = isEvaluationFailed(status?.status);
   const noRankedCropFailure = isNoRankedCropFailure(status?.failureReason);
   const progress = done ? 100 : Math.round((currentStep / (processingSteps.length - 1)) * 100);
@@ -153,10 +154,10 @@ export default function Processing({ navigate }: Props) {
             <div style={{ background: failed ? '#fee2e2' : 'linear-gradient(135deg, #f0fdf4, #ecfeff)', borderRadius: 14, border: failed ? '1px solid #fecaca' : '1px solid #bbf7d0', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: failed ? '#991b1b' : '#0f172a', marginBottom: 6 }}>
-                  {failed ? 'Evaluacion fallida' : done ? 'Analisis completado' : 'Procesando analisis MCDA...'}
+                  {failed ? 'Evaluacion fallida' : recommendationDone ? 'Analisis y recomendacion completados' : done ? 'MCDA completado, recomendacion en proceso' : 'Procesando analisis MCDA...'}
                 </div>
                 <div style={{ fontSize: 13.5, color: '#475569' }}>
-                  {done ? 'Resultado MCDA disponible para consulta' : status ? `Estado actual: ${status.status}` : 'Esperando respuesta del backend'}
+                  {recommendationDone ? 'Resultado y recomendacion disponibles para consulta' : done ? 'Puedes ver el ranking mientras el backend termina la recomendacion' : status ? `Estado actual: ${status.status}` : 'Esperando respuesta del backend'}
                 </div>
                 {error && <div style={{ fontSize: 12.5, color: failed ? '#991b1b' : '#92400e', marginTop: 8 }}>{error}</div>}
               </div>

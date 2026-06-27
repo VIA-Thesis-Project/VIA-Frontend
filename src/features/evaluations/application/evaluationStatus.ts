@@ -5,11 +5,22 @@ const MCDA_READY_STATUSES = new Set<EvaluationStatus>([
   'RECOMENDACION_COMPLETADA',
 ]);
 
+const RECOMMENDATION_READY_STATUSES = new Set<EvaluationStatus>([
+  'RECOMENDACION_COMPLETADA',
+]);
+
 /**
  * Indicates whether the backend has persisted MCDA results for an evaluation.
  */
 export function isMcdaReadyStatus(status: EvaluationStatus | null | undefined): boolean {
   return Boolean(status && MCDA_READY_STATUSES.has(status));
+}
+
+/**
+ * Indicates whether the backend has persisted the final recommendation.
+ */
+export function isRecommendationReadyStatus(status: EvaluationStatus | null | undefined): boolean {
+  return Boolean(status && RECOMMENDATION_READY_STATUSES.has(status));
 }
 
 /**

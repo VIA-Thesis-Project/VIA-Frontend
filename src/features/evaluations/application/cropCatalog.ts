@@ -1,11 +1,11 @@
 import { CropCandidate } from '@/features/evaluations/domain/evaluation';
 
 export const cropCatalog: CropCandidate[] = [
-  { id: 'demo_maiz', label: 'Maiz' },
-  { id: 'demo_papa', label: 'Papa' },
-  { id: 'demo_quinua', label: 'Quinua' },
-  { id: 'demo_palta', label: 'Palta' },
-  { id: 'demo_arandano', label: 'Arandano' },
+  { id: 'maiz_amarillo_duro', label: 'Maiz amarillo duro' },
+  { id: 'mandarina_murcott', label: 'Mandarina Murcott' },
+  { id: 'maracuya_criolla_amarilla', label: 'Maracuya criolla amarilla' },
+  { id: 'palta_hass', label: 'Palta Hass' },
+  { id: 'uva_de_mesa_sweet_globe', label: 'Uva de mesa Sweet Globe' },
 ];
 
 export function getCropLabel(cropId: string): string {

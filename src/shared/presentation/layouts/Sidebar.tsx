@@ -10,7 +10,7 @@ interface Props {
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', screen: 'dashboard' as Screen },
   { icon: Plus, label: 'Nueva evaluacion', screen: 'new-evaluation' as Screen },
-  { icon: Map, label: 'Parcelas', screen: 'dashboard' as Screen },
+  { icon: Map, label: 'Parcelas', screen: 'parcels' as Screen },
   { icon: BarChart3, label: 'Resultados', screen: 'results' as Screen },
   { icon: FileText, label: 'Reportes', screen: 'report' as Screen },
   { icon: Settings, label: 'Configuracion', screen: 'dashboard' as Screen },
@@ -38,7 +38,7 @@ export default function Sidebar({ active, navigate }: Props) {
         </div>
         <div className="space-y-0.5">
           {navItems.map(({ icon: Icon, label, screen }) => {
-            const isActive = active === screen && label !== 'Parcelas' && label !== 'Configuracion';
+            const isActive = active === screen && label !== 'Configuracion';
             return (
               <button
                 key={label}

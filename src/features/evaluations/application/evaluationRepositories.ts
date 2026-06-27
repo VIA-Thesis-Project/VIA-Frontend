@@ -13,6 +13,7 @@ export interface ParcelRepository {
   getParcel(parcelId: string, accessToken: string): Promise<Parcel>;
   listParcels(accessToken: string): Promise<Parcel[]>;
   updateParcel(parcelId: string, input: Partial<CreateParcelInput>, accessToken: string): Promise<Parcel>;
+  deleteParcel(parcelId: string, accessToken: string): Promise<void>;
 }
 
 export interface EvaluationRepository {

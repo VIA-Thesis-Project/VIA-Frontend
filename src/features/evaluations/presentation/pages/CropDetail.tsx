@@ -106,7 +106,7 @@ export default function CropDetail({ navigate }: Props) {
   const crop = useMemo(() => sortResults(mcdaResult?.results ?? [])[0] ?? null, [mcdaResult]);
   const criteriaCards = useMemo(() => (crop ? buildCriteriaCards(crop) : []), [crop]);
   const chartData = criteriaCards.map((card) => ({
-    name: card.label.replace(/^demo_/, ''),
+    name: card.label,
     value: Math.round(card.value * 100),
     color: card.color,
   }));

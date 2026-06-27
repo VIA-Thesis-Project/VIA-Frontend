@@ -81,6 +81,13 @@ export type RecommendationSection = {
 
 export type RecommendationEvidence = {
   fragmentId: string;
+  documentId?: string | null;
+  text?: string | null;
+  cropTags?: string[];
+  pageRef?: number | null;
+  score?: number | null;
+  sourceFilename?: string | null;
+  sourceFileId?: string | null;
 };
 
 export type EvaluationRecommendation = {
@@ -92,6 +99,8 @@ export type EvaluationRecommendation = {
   title: string;
   sections: RecommendationSection[];
   evidence: RecommendationEvidence[];
+  structuredOutput: Record<string, unknown>;
+  gapRecommendations: Array<Record<string, unknown>>;
   createdAt: string;
   provider: string;
 };

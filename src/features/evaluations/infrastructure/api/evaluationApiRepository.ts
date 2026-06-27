@@ -69,7 +69,16 @@ type RecommendationResponse = {
   }>;
   evidence: Array<{
     fragment_id: string;
+    document_id?: string | null;
+    text?: string | null;
+    crop_tags?: string[];
+    page_ref?: number | null;
+    score?: number | null;
+    source_filename?: string | null;
+    source_file_id?: string | null;
   }>;
+  structured_output?: Record<string, unknown>;
+  gap_recommendations?: Array<Record<string, unknown>>;
   created_at: string;
   provider: string;
 };
@@ -199,7 +208,16 @@ function toRecommendation(response: RecommendationResponse): EvaluationRecommend
     })),
     evidence: response.evidence.map((item) => ({
       fragmentId: item.fragment_id,
+      documentId: item.document_id,
+      text: item.text,
+      cropTags: item.crop_tags ?? [],
+      pageRef: item.page_ref,
+      score: item.score,
+      sourceFilename: item.source_filename,
+      sourceFileId: item.source_file_id,
     })),
+    structuredOutput: response.structured_output ?? {},
+    gapRecommendations: response.gap_recommendations ?? [],
     createdAt: response.created_at,
     provider: response.provider,
   };
