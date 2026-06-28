@@ -1,4 +1,4 @@
-import { EvaluationStatus } from '@/features/evaluations/domain/evaluation';
+import { CropEvaluationResult, EvaluationStatus } from '@/features/evaluations/domain/evaluation';
 
 const MCDA_READY_STATUSES = new Set<EvaluationStatus>([
   'EVALUACION_COMPLETADA',
@@ -35,4 +35,18 @@ export function isEvaluationFailed(status: EvaluationStatus | null | undefined):
  */
 export function isEvaluationPending(status: EvaluationStatus | null | undefined): boolean {
   return Boolean(status && !isMcdaReadyStatus(status) && !isEvaluationFailed(status));
+}
+
+/**
+ * Matches the backend process-manager gate for recommendation commands.
+ */
+export function isRecommendableViabilityCategory(category: string | null | undefined): boolean {
+  return category === 'VIABLE' || category === 'CONDICIONAL';
+}
+
+/**
+ * Indicates whether MCDA produced at least one crop that can receive a backend recommendation.
+ */
+export function hasRecommendableCrop(results: CropEvaluationResult[]): boolean {
+  return results.some((result) => isRecommendableViabilityCategory(result.viabilityCategory));
 }

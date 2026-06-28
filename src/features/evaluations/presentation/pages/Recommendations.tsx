@@ -3,7 +3,7 @@ import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronLeft, ExternalLink, File
 import { NavigateFn } from '@/app/navigation/navigation';
 import { toUserFriendlyFailureReason } from '@/features/evaluations/application/backendFailureMessages';
 import { getCropLabel } from '@/features/evaluations/application/cropCatalog';
-import { isEvaluationPending } from '@/features/evaluations/application/evaluationStatus';
+import { hasRecommendableCrop, isEvaluationPending } from '@/features/evaluations/application/evaluationStatus';
 import {
   CropEvaluationResult,
   EvaluationRecommendation,
@@ -26,7 +26,13 @@ function toPercent(score: number | null): number {
 }
 
 function sortResults(results: CropEvaluationResult[]): CropEvaluationResult[] {
-  return [...results].sort((a, b) => (a.rankPosition ?? 999) - (b.rankPosition ?? 999));
+  return [...results].sort((a, b) => {
+    const aRanked = a.rankPosition !== null;
+    const bRanked = b.rankPosition !== null;
+    if (aRanked && bRanked) return Number(a.rankPosition) - Number(b.rankPosition);
+    if (aRanked !== bRanked) return aRanked ? -1 : 1;
+    return (b.score ?? -1) - (a.score ?? -1);
+  });
 }
 
 function formatNumber(value: number): string {
@@ -199,10 +205,12 @@ export default function Recommendations({ navigate }: Props) {
   const backendRecommendation = finalRecommendation ?? listRecommendation;
   const pendingDetail = recommendation?.status === 'pending' && !listRecommendation ? recommendation.detail : null;
   const mcdaPending = isEvaluationPending(mcdaResult?.status);
+  const hasMcdaResults = (mcdaResult?.results.length ?? 0) > 0;
+  const noRecommendableCrops = Boolean(!mcdaPending && hasMcdaResults && !hasRecommendableCrop(mcdaResult?.results ?? []));
   const backendSections = backendRecommendation?.sections ?? [];
   const gapRecommendations = backendRecommendation?.gapRecommendations ?? [];
-  const shouldAutoPoll = Boolean(currentEvaluation && !loading && !backendRecommendation && !mcdaPending && pollAttempts < RECOMMENDATION_POLL_MAX_ATTEMPTS);
-  const pollLimitReached = Boolean(currentEvaluation && !backendRecommendation && !mcdaPending && pollAttempts >= RECOMMENDATION_POLL_MAX_ATTEMPTS);
+  const shouldAutoPoll = Boolean(currentEvaluation && !loading && !backendRecommendation && !mcdaPending && !noRecommendableCrops && pollAttempts < RECOMMENDATION_POLL_MAX_ATTEMPTS);
+  const pollLimitReached = Boolean(currentEvaluation && !backendRecommendation && !mcdaPending && !noRecommendableCrops && pollAttempts >= RECOMMENDATION_POLL_MAX_ATTEMPTS);
 
   useEffect(() => {
     if (!shouldAutoPoll || refreshing) return;
@@ -292,30 +300,58 @@ export default function Recommendations({ navigate }: Props) {
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 18 }}>
                     <div>
                       <div style={{ fontSize: 13, color: '#d97706', fontWeight: 800, marginBottom: 6 }}>
-                        {pollLimitReached ? 'Tiempo de espera agotado' : 'Generando recomendacion en backend'}
+                        {noRecommendableCrops ? 'Sin recomendacion por criterio backend' : pollLimitReached ? 'Tiempo de espera agotado' : 'Generando recomendacion en backend'}
                       </div>
                       <p style={{ fontSize: 14.5, color: '#334155', lineHeight: 1.75, margin: 0 }}>
-                        {pollLimitReached
+                        {noRecommendableCrops
+                          ? 'El backend completo MCDA, pero todos los cultivos candidatos quedaron como NO_VIABLE o NO_CONCLUYENTE. Por diseno, VIA solo genera recomendaciones para cultivos VIABLE o CONDICIONAL.'
+                          : pollLimitReached
                           ? 'La recomendacion aun no aparece despues de varios intentos. Puede seguir procesandose en Render; usa Reconsultar para validar nuevamente.'
                           : `${normalizeBackendText(pendingDetail ?? 'La recomendacion aun no esta disponible en el backend.')} La evaluacion ya tiene MCDA, pero la recomendacion puede tardar algunos minutos en persistirse.`}
                       </p>
                       <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 8 }}>
-                        {shouldAutoPoll ? `Reconsulta automatica activa cada 15 s. Intento ${pollAttempts + 1} de ${RECOMMENDATION_POLL_MAX_ATTEMPTS}.` : 'Reconsulta automatica pausada.'}
+                        {noRecommendableCrops ? 'No se reconsulta automaticamente porque el backend no emitira recomendacion para esta evaluacion.' : shouldAutoPoll ? `Reconsulta automatica activa cada 15 s. Intento ${pollAttempts + 1} de ${RECOMMENDATION_POLL_MAX_ATTEMPTS}.` : 'Reconsulta automatica pausada.'}
                         {lastPolledAt ? ` Ultima consulta: ${lastPolledAt.toLocaleTimeString()}.` : ''}
                       </div>
                     </div>
-                    <button
-                      onClick={refreshRecommendation}
-                      disabled={refreshing}
-                      style={{ background: 'white', color: '#475569', border: '1.5px solid #e2e8f0', padding: '9px 14px', borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: refreshing ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0, opacity: refreshing ? 0.7 : 1 }}
-                    >
-                      <RefreshCcw style={{ width: 14, height: 14 }} />
-                      {refreshing ? 'Consultando...' : 'Reconsultar'}
-                    </button>
+                    {noRecommendableCrops ? (
+                      <button
+                        onClick={() => navigate('results')}
+                        style={{ background: 'white', color: '#475569', border: '1.5px solid #e2e8f0', padding: '9px 14px', borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}
+                      >
+                        Ver ranking MCDA
+                      </button>
+                    ) : (
+                      <button
+                        onClick={refreshRecommendation}
+                        disabled={refreshing}
+                        style={{ background: 'white', color: '#475569', border: '1.5px solid #e2e8f0', padding: '9px 14px', borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: refreshing ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0, opacity: refreshing ? 0.7 : 1 }}
+                      >
+                        <RefreshCcw style={{ width: 14, height: 14 }} />
+                        {refreshing ? 'Consultando...' : 'Reconsultar'}
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
             </div>
+
+            {noRecommendableCrops && (
+              <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', padding: '18px 22px', marginBottom: 20 }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', marginBottom: 12 }}>Candidatos evaluados por MCDA</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
+                  {sortResults(mcdaResult?.results ?? []).map((crop) => (
+                    <div key={crop.cropId} style={{ background: '#fafafa', border: '1px solid #f1f5f9', borderRadius: 12, padding: '12px 14px' }}>
+                      <div style={{ fontSize: 13.5, fontWeight: 800, color: '#0f172a', marginBottom: 6 }}>{getCropLabel(crop.cropId)}</div>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        <span style={{ background: '#fee2e2', color: '#dc2626', fontSize: 11.5, fontWeight: 800, padding: '4px 9px', borderRadius: 20 }}>{crop.viabilityCategory}</span>
+                        <span style={{ background: '#f8fafc', color: '#475569', fontSize: 11.5, fontWeight: 700, padding: '4px 9px', borderRadius: 20 }}>Score {toPercent(crop.score)}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {backendSections.length > 0 && (
               <div style={{ background: 'white', borderRadius: 16, border: '1px solid #bbf7d0', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', overflow: 'hidden', marginBottom: 20 }}>

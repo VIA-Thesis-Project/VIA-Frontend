@@ -4,7 +4,7 @@ import Sidebar from '@/shared/presentation/layouts/Sidebar';
 import { NavigateFn } from '@/app/navigation/navigation';
 import { isNoRankedCropFailure, toUserFriendlyFailureReason } from '@/features/evaluations/application/backendFailureMessages';
 import { getCropLabel } from '@/features/evaluations/application/cropCatalog';
-import { isEvaluationFailed, isEvaluationPending } from '@/features/evaluations/application/evaluationStatus';
+import { hasRecommendableCrop, isEvaluationFailed, isEvaluationPending } from '@/features/evaluations/application/evaluationStatus';
 import { CropEvaluationResult, EvaluationMcdaResult } from '@/features/evaluations/domain/evaluation';
 import { EvaluationApiRepository } from '@/features/evaluations/infrastructure/api/evaluationApiRepository';
 import { readCurrentEvaluation } from '@/features/evaluations/infrastructure/session/currentEvaluationStorage';
@@ -41,7 +41,13 @@ function toPercent(score: number | null): number {
 }
 
 function sortResults(results: CropEvaluationResult[]): CropEvaluationResult[] {
-  return [...results].sort((a, b) => (a.rankPosition ?? 999) - (b.rankPosition ?? 999));
+  return [...results].sort((a, b) => {
+    const aRanked = a.rankPosition !== null;
+    const bRanked = b.rankPosition !== null;
+    if (aRanked && bRanked) return Number(a.rankPosition) - Number(b.rankPosition);
+    if (aRanked !== bRanked) return aRanked ? -1 : 1;
+    return (b.score ?? -1) - (a.score ?? -1);
+  });
 }
 
 export default function Results({ navigate }: Props) {
@@ -87,6 +93,8 @@ export default function Results({ navigate }: Props) {
   const failed = isEvaluationFailed(mcdaResult?.status);
   const noRankedCropFailure = isNoRankedCropFailure(mcdaResult?.failureReason);
   const canUseResults = sortedResults.length > 0;
+  const canRequestRecommendations = hasRecommendableCrop(sortedResults);
+  const noRecommendableCrops = canUseResults && !canRequestRecommendations && !pending && !failed;
   const limitingFactors = sortedResults.flatMap((result) => result.limitingFactors.slice(0, 2).map((factor) => ({
     cropId: result.cropId,
     factor,
@@ -131,14 +139,20 @@ export default function Results({ navigate }: Props) {
               <button
                 onClick={() => navigate('recommendations')}
                 disabled={!canUseResults}
-                style={{ background: canUseResults ? '#16a34a' : '#bbf7d0', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 9, fontSize: 13.5, fontWeight: 600, cursor: canUseResults ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', gap: 7 }}
+                style={{ background: canUseResults ? (canRequestRecommendations ? '#16a34a' : '#d97706') : '#bbf7d0', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 9, fontSize: 13.5, fontWeight: 600, cursor: canUseResults ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', gap: 7 }}
               >
                 <Sprout style={{ width: 14, height: 14 }} />
-                Generar recomendaciones
+                {canRequestRecommendations ? 'Ver recomendaciones' : 'Ver criterio backend'}
               </button>
             </div>
           </div>
         </div>
+
+        {noRecommendableCrops && (
+          <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', borderRadius: 12, padding: 16, marginBottom: 16, fontSize: 13.5, lineHeight: 1.6 }}>
+            El backend no generara recomendaciones para esta evaluacion porque ningun cultivo candidato alcanzo categoria <strong>VIABLE</strong> o <strong>CONDICIONAL</strong>. Puedes revisar las brechas MCDA o probar otra parcela/cultivos.
+          </div>
+        )}
 
         {error && (
           <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', borderRadius: 12, padding: 16, marginBottom: 16, fontSize: 13.5 }}>
@@ -267,9 +281,9 @@ export default function Results({ navigate }: Props) {
             <button
               onClick={() => navigate('recommendations')}
               disabled={!canUseResults}
-              style={{ background: canUseResults ? 'linear-gradient(135deg, #15803d, #0891b2)' : '#bbf7d0', color: 'white', border: 'none', padding: '14px', borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: canUseResults ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+              style={{ background: canUseResults ? (canRequestRecommendations ? 'linear-gradient(135deg, #15803d, #0891b2)' : 'linear-gradient(135deg, #d97706, #b45309)') : '#bbf7d0', color: 'white', border: 'none', padding: '14px', borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: canUseResults ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
             >
-              Generar recomendaciones
+              {canRequestRecommendations ? 'Ver recomendaciones' : 'Ver motivo sin recomendacion'}
               <ChevronRight style={{ width: 16, height: 16 }} />
             </button>
           </div>

@@ -4,6 +4,7 @@ import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 
 import { NavigateFn } from '@/app/navigation/navigation';
 import { toUserFriendlyFailureReason } from '@/features/evaluations/application/backendFailureMessages';
 import { getCropLabel } from '@/features/evaluations/application/cropCatalog';
+import { isRecommendableViabilityCategory } from '@/features/evaluations/application/evaluationStatus';
 import { CropEvaluationResult, EvaluationMcdaResult } from '@/features/evaluations/domain/evaluation';
 import { EvaluationApiRepository } from '@/features/evaluations/infrastructure/api/evaluationApiRepository';
 import { readCurrentEvaluation } from '@/features/evaluations/infrastructure/session/currentEvaluationStorage';
@@ -30,7 +31,13 @@ function categoryStyle(category: string) {
 }
 
 function sortResults(results: CropEvaluationResult[]): CropEvaluationResult[] {
-  return [...results].sort((a, b) => (a.rankPosition ?? 999) - (b.rankPosition ?? 999));
+  return [...results].sort((a, b) => {
+    const aRanked = a.rankPosition !== null;
+    const bRanked = b.rankPosition !== null;
+    if (aRanked && bRanked) return Number(a.rankPosition) - Number(b.rankPosition);
+    if (aRanked !== bRanked) return aRanked ? -1 : 1;
+    return (b.score ?? -1) - (a.score ?? -1);
+  });
 }
 
 function formatNumber(value: number): string {
@@ -112,6 +119,7 @@ export default function CropDetail({ navigate }: Props) {
   }));
   const score = toPercent(crop?.score ?? null);
   const style = categoryStyle(crop?.viabilityCategory ?? '');
+  const cropCanReceiveRecommendation = isRecommendableViabilityCategory(crop?.viabilityCategory);
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc' }}>
@@ -162,9 +170,9 @@ export default function CropDetail({ navigate }: Props) {
               </div>
               <button
                 onClick={() => navigate('recommendations')}
-                style={{ background: '#16a34a', color: 'white', border: 'none', padding: '12px 22px', borderRadius: 11, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}
+                style={{ background: cropCanReceiveRecommendation ? '#16a34a' : '#d97706', color: 'white', border: 'none', padding: '12px 22px', borderRadius: 11, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}
               >
-                Ver recomendacion <ChevronRight style={{ width: 15, height: 15 }} />
+                {cropCanReceiveRecommendation ? 'Ver recomendacion' : 'Ver criterio backend'} <ChevronRight style={{ width: 15, height: 15 }} />
               </button>
             </div>
 

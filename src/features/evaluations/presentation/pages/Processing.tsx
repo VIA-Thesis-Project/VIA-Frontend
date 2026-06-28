@@ -3,8 +3,8 @@ import { CheckCircle2, ChevronRight, Circle, Loader2 } from 'lucide-react';
 import Sidebar from '@/shared/presentation/layouts/Sidebar';
 import { NavigateFn } from '@/app/navigation/navigation';
 import { isNoRankedCropFailure, toUserFriendlyFailureReason } from '@/features/evaluations/application/backendFailureMessages';
-import { EvaluationStatusSnapshot } from '@/features/evaluations/domain/evaluation';
-import { isEvaluationFailed, isMcdaReadyStatus, isRecommendationReadyStatus } from '@/features/evaluations/application/evaluationStatus';
+import { EvaluationMcdaResult, EvaluationStatusSnapshot } from '@/features/evaluations/domain/evaluation';
+import { hasRecommendableCrop, isEvaluationFailed, isMcdaReadyStatus, isRecommendationReadyStatus } from '@/features/evaluations/application/evaluationStatus';
 import { EvaluationApiRepository } from '@/features/evaluations/infrastructure/api/evaluationApiRepository';
 import { readCurrentEvaluation } from '@/features/evaluations/infrastructure/session/currentEvaluationStorage';
 
@@ -28,6 +28,7 @@ const stepByStatus: Record<string, number> = {
 export default function Processing({ navigate }: Props) {
   const [currentEvaluation] = useState(() => readCurrentEvaluation());
   const [status, setStatus] = useState<EvaluationStatusSnapshot | null>(null);
+  const [mcdaResult, setMcdaResult] = useState<EvaluationMcdaResult | null>(null);
   const [error, setError] = useState<string | null>(currentEvaluation ? null : 'No hay una evaluacion activa. Inicia una nueva evaluacion.');
 
   useEffect(() => {
@@ -56,10 +57,30 @@ export default function Processing({ navigate }: Props) {
     };
   }, [currentEvaluation]);
 
+  useEffect(() => {
+    if (!currentEvaluation || !isMcdaReadyStatus(status?.status) || mcdaResult) return undefined;
+
+    let cancelled = false;
+    const fetchMcdaResult = async () => {
+      try {
+        const result = await evaluationRepository.getMcdaResult(currentEvaluation.evaluationId);
+        if (!cancelled) setMcdaResult(result);
+      } catch {
+        if (!cancelled) setMcdaResult(null);
+      }
+    };
+
+    void fetchMcdaResult();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentEvaluation, status?.status, mcdaResult]);
+
   const currentStep = status ? stepByStatus[status.status] ?? 1 : 0;
   const done = isMcdaReadyStatus(status?.status);
   const recommendationDone = isRecommendationReadyStatus(status?.status);
   const failed = isEvaluationFailed(status?.status);
+  const noRecommendableCrops = Boolean(done && mcdaResult && mcdaResult.results.length > 0 && !hasRecommendableCrop(mcdaResult.results));
   const noRankedCropFailure = isNoRankedCropFailure(status?.failureReason);
   const progress = done ? 100 : Math.round((currentStep / (processingSteps.length - 1)) * 100);
 
@@ -105,8 +126,8 @@ export default function Processing({ navigate }: Props) {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                 {processingSteps.map((step, i) => {
-                  const completed = done || i < currentStep;
-                  const active = !done && !failed && i === currentStep;
+                  const completed = recommendationDone || i < currentStep;
+                  const active = !failed && !noRecommendableCrops && ((done && !recommendationDone && i === processingSteps.length - 1) || (!done && i === currentStep));
                   return (
                     <div key={step.id} style={{ display: 'flex', gap: 14 }}>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -154,10 +175,10 @@ export default function Processing({ navigate }: Props) {
             <div style={{ background: failed ? '#fee2e2' : 'linear-gradient(135deg, #f0fdf4, #ecfeff)', borderRadius: 14, border: failed ? '1px solid #fecaca' : '1px solid #bbf7d0', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: failed ? '#991b1b' : '#0f172a', marginBottom: 6 }}>
-                  {failed ? 'Evaluacion fallida' : recommendationDone ? 'Analisis y recomendacion completados' : done ? 'MCDA completado, recomendacion en proceso' : 'Procesando analisis MCDA...'}
+                  {failed ? 'Evaluacion fallida' : recommendationDone ? 'Analisis y recomendacion completados' : noRecommendableCrops ? 'MCDA completado sin cultivos recomendables' : done ? 'MCDA completado, recomendacion en proceso' : 'Procesando analisis MCDA...'}
                 </div>
                 <div style={{ fontSize: 13.5, color: '#475569' }}>
-                  {recommendationDone ? 'Resultado y recomendacion disponibles para consulta' : done ? 'Puedes ver el ranking mientras el backend termina la recomendacion' : status ? `Estado actual: ${status.status}` : 'Esperando respuesta del backend'}
+                  {recommendationDone ? 'Resultado y recomendacion disponibles para consulta' : noRecommendableCrops ? 'El backend solo genera recomendaciones para cultivos VIABLE o CONDICIONAL' : done ? 'Puedes ver el ranking mientras el backend termina la recomendacion' : status ? `Estado actual: ${status.status}` : 'Esperando respuesta del backend'}
                 </div>
                 {error && <div style={{ fontSize: 12.5, color: failed ? '#991b1b' : '#92400e', marginTop: 8 }}>{error}</div>}
               </div>
