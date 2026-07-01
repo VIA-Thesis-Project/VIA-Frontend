@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Download, Eye, FileText, MapPin, Plus, Sprout, TrendingUp } from 'lucide-react';
+import { Eye, FileText, MapPin, Plus, Sprout, TrendingUp } from 'lucide-react';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
 import { NavigateFn } from '@/app/navigation/navigation';
 import { cropCatalog } from '@/features/evaluations/application/cropCatalog';
@@ -25,13 +25,29 @@ function getParcelAreaHa(parcel: Parcel): number | null {
   return Number.isFinite(area) ? area : null;
 }
 
-function buildTrendData(parcelCount: number) {
-  const now = Math.max(parcelCount, 1);
-  return [
-    { m: 'Abr', v: 0 },
-    { m: 'May', v: Math.max(0, now - 2) },
-    { m: 'Jun', v: now },
-  ];
+function buildTrendData(parcels: Parcel[]) {
+  const formatter = new Intl.DateTimeFormat('es-PE', { month: 'short' });
+  const today = new Date();
+  const months = Array.from({ length: 6 }, (_, index) => {
+    const date = new Date(today.getFullYear(), today.getMonth() - (5 - index), 1);
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    return {
+      key,
+      m: formatter.format(date).replace('.', ''),
+      v: 0,
+    };
+  });
+  const monthByKey = new Map(months.map((month) => [month.key, month]));
+
+  parcels.forEach((parcel) => {
+    const createdAt = new Date(parcel.createdAt);
+    if (Number.isNaN(createdAt.getTime())) return;
+    const key = `${createdAt.getFullYear()}-${String(createdAt.getMonth() + 1).padStart(2, '0')}`;
+    const bucket = monthByKey.get(key);
+    if (bucket) bucket.v += 1;
+  });
+
+  return months;
 }
 
 export default function Dashboard({ navigate }: Props) {
@@ -68,7 +84,7 @@ export default function Dashboard({ navigate }: Props) {
     };
   }, []);
 
-  const trendData = useMemo(() => buildTrendData(parcels.length), [parcels.length]);
+  const trendData = useMemo(() => buildTrendData(parcels), [parcels]);
   const recentParcels = parcels.slice(0, 5);
   const areaValues = useMemo(() => parcels.map(getParcelAreaHa).filter((area): area is number => area !== null), [parcels]);
   const totalAreaHa = areaValues.reduce((sum, area) => sum + area, 0);
@@ -104,10 +120,10 @@ export default function Dashboard({ navigate }: Props) {
   ];
 
   const stats = [
-    { icon: MapPin, label: 'Parcelas registradas', value: String(parcels.length), trend: loading ? 'Consultando' : 'Backend real', color: '#16a34a', bg: '#f0fdf4', iconBg: '#dcfce7' },
-    { icon: TrendingUp, label: 'Evaluaciones visibles', value: String(localEvaluationCount), trend: 'Sesion local', color: '#0891b2', bg: '#ecfeff', iconBg: '#cffafe' },
-    { icon: Sprout, label: 'Cultivos disponibles', value: String(cropCatalog.length), trend: 'Catalogo local', color: '#d97706', bg: '#fffbeb', iconBg: '#fef3c7' },
-    { icon: FileText, label: 'Recomendaciones', value: String(localRecommendationCount), trend: 'Evaluacion activa', color: '#7c3aed', bg: '#faf5ff', iconBg: '#ede9fe' },
+    { icon: MapPin, label: 'Parcelas registradas', value: String(parcels.length), trend: loading ? 'Cargando...' : 'En linea', color: '#16a34a', bg: '#f0fdf4', iconBg: '#dcfce7' },
+    { icon: TrendingUp, label: 'Evaluacion activa', value: String(localEvaluationCount), trend: currentEvaluation ? 'En curso' : 'Ninguna', color: '#0891b2', bg: '#ecfeff', iconBg: '#cffafe' },
+    { icon: Sprout, label: 'Cultivos disponibles', value: String(cropCatalog.length), trend: 'Catalogo VIA', color: '#d97706', bg: '#fffbeb', iconBg: '#fef3c7' },
+    { icon: FileText, label: 'Recomendaciones', value: String(localRecommendationCount), trend: currentEvaluation ? 'Disponible' : 'Pendiente', color: '#7c3aed', bg: '#faf5ff', iconBg: '#ede9fe' },
   ];
 
   return (
@@ -118,7 +134,7 @@ export default function Dashboard({ navigate }: Props) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
           <div>
             <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', margin: 0, marginBottom: 4 }}>Dashboard</h1>
-            <p style={{ fontSize: 13.5, color: '#64748b', margin: 0 }}>Vista conectada al backend desplegado de VIA.</p>
+            <p style={{ fontSize: 13.5, color: '#64748b', margin: 0 }}>Resumen de parcelas, evaluaciones y recomendaciones recientes.</p>
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <button
@@ -158,7 +174,7 @@ export default function Dashboard({ navigate }: Props) {
               <div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a' }}>Parcelas registradas</div>
                 <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>
-                  {loading ? 'Consultando backend...' : `${recentParcels.length} parcelas recientes desde /parcelas`}
+                  {loading ? 'Cargando...' : `${recentParcels.length} parcelas registradas`}
                 </div>
               </div>
             </div>
@@ -179,7 +195,7 @@ export default function Dashboard({ navigate }: Props) {
                 )}
                 {!loading && recentParcels.length === 0 && (
                   <tr>
-                    <td colSpan={5} style={{ padding: 18, fontSize: 13, color: '#64748b' }}>Aun no hay parcelas guardadas en el backend.</td>
+                    <td colSpan={5} style={{ padding: 18, fontSize: 13, color: '#64748b' }}>Aun no hay parcelas registradas. Crea una nueva evaluacion para comenzar.</td>
                   </tr>
                 )}
                 {recentParcels.map((parcel) => (
@@ -193,7 +209,7 @@ export default function Dashboard({ navigate }: Props) {
                     <td style={{ padding: '13px 16px', fontSize: 13, color: '#64748b' }}>{parcel.metadata.crs}</td>
                     <td style={{ padding: '13px 16px', fontSize: 13, color: '#475569', fontWeight: 600 }}>{formatParcelArea(parcel)}</td>
                     <td style={{ padding: '13px 16px' }}>
-                      <div style={{ background: '#f0fdf4', color: '#15803d', fontSize: 11.5, fontWeight: 600, padding: '4px 10px', borderRadius: 20, display: 'inline-block' }}>Backend</div>
+                      <div style={{ background: '#f0fdf4', color: '#15803d', fontSize: 11.5, fontWeight: 600, padding: '4px 10px', borderRadius: 20, display: 'inline-block' }}>Registrada</div>
                     </td>
                     <td style={{ padding: '13px 16px' }}>
                       <button
@@ -229,7 +245,7 @@ export default function Dashboard({ navigate }: Props) {
 
             <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', padding: '16px 20px' }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>Parcelas por mes</div>
-              <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 14 }}>Calculado localmente desde /parcelas</div>
+              <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 14 }}>Parcelas registradas en los ultimos 6 meses</div>
               <ResponsiveContainer width="100%" height={80}>
                 <AreaChart data={trendData}>
                   <defs>
@@ -264,15 +280,6 @@ export default function Dashboard({ navigate }: Props) {
             <div style={{ textAlign: 'left' }}>
               <div style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>Ver resultados</div>
               <div style={{ fontSize: 12, color: '#64748b' }}>Ranking MCDA de la evaluacion activa</div>
-            </div>
-          </button>
-          <button onClick={() => navigate('report')} style={{ flex: 1, background: 'white', border: '1.5px dashed #e2e8f0', borderRadius: 12, padding: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 36, height: 36, background: '#faf5ff', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Download style={{ width: 18, height: 18, color: '#7c3aed' }} />
-            </div>
-            <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>Generar reporte</div>
-              <div style={{ fontSize: 12, color: '#64748b' }}>Reporte visual de la evaluacion activa</div>
             </div>
           </button>
         </div>

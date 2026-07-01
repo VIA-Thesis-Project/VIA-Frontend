@@ -41,6 +41,12 @@ export type AgronomyGap = {
   observedValue: number;
   optimalLimit: number;
   gapValue: number;
+  criterionName?: string | null;
+  criterionLabel?: string | null;
+  criterionGroup?: string | null;
+  phaseName?: string | null;
+  unit?: string | null;
+  interventionClass?: string | null;
 };
 
 export type LimitingFactor = {
@@ -52,6 +58,12 @@ export type LimitingFactor = {
   optimalLimit: number;
   membership: number;
   docSource: string | null;
+  criterionName?: string | null;
+  criterionLabel?: string | null;
+  criterionGroup?: string | null;
+  phaseName?: string | null;
+  unit?: string | null;
+  interventionClass?: string | null;
 };
 
 export type CropEvaluationResult = {
@@ -71,6 +83,31 @@ export type EvaluationMcdaResult = {
   status: EvaluationStatus;
   results: CropEvaluationResult[];
   failureReason: string | null;
+};
+
+export type AgroenvVariable = {
+  variableName: string;
+  criterionId: string;
+  cropId: string;
+  phaseId: string;
+  periodKey: string;
+  value: number | null;
+  unit: string;
+  status: string;
+  datasetKey: string;
+  band: string;
+  source: string;
+  criterionName?: string | null;
+  criterionLabel?: string | null;
+  criterionGroup?: string | null;
+  phaseName?: string | null;
+  interventionClass?: string | null;
+};
+
+export type AgroenvVector = {
+  evaluationId: string;
+  parcelId: string;
+  variables: AgroenvVariable[];
 };
 
 export type RecommendationSection = {

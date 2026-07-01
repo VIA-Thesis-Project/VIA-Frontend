@@ -14,6 +14,7 @@ export type Parcel = {
   ownerId: string;
   geometry: GeoJsonGeometry;
   metadata: ParcelMetadata;
+  createdAt: string;
 };
 
 export type CreateParcelInput = {

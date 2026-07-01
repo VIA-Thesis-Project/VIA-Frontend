@@ -6,7 +6,6 @@ import NewEvaluation from '@/features/evaluations/presentation/pages/NewEvaluati
 import Parcels from '@/features/parcels/presentation/pages/Parcels';
 import Processing from '@/features/evaluations/presentation/pages/Processing';
 import Recommendations from '@/features/evaluations/presentation/pages/Recommendations';
-import Report from '@/features/evaluations/presentation/pages/Report';
 import Results from '@/features/evaluations/presentation/pages/Results';
 import { NavigateFn, Screen } from '@/app/navigation/navigation';
 
@@ -21,5 +20,4 @@ export const screenRoutes: Record<Screen, (navigate: NavigateFn) => JSX.Element>
   results: (navigate) => <Results navigate={navigate} />,
   'crop-detail': (navigate) => <CropDetail navigate={navigate} />,
   recommendations: (navigate) => <Recommendations navigate={navigate} />,
-  report: (navigate) => <Report navigate={navigate} />,
 };

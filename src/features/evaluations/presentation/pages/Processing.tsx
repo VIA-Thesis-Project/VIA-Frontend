@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, ChevronRight, Circle, Loader2 } from 'lucide-react';
+import { CheckCircle2, ChevronRight, Circle, Loader2, XCircle } from 'lucide-react';
 import Sidebar from '@/shared/presentation/layouts/Sidebar';
 import { NavigateFn } from '@/app/navigation/navigation';
 import { isNoRankedCropFailure, toUserFriendlyFailureReason } from '@/features/evaluations/application/backendFailureMessages';
+import { formatBackendStatus } from '@/features/evaluations/application/displayFormatters';
 import { EvaluationMcdaResult, EvaluationStatusSnapshot } from '@/features/evaluations/domain/evaluation';
 import { hasRecommendableCrop, isEvaluationFailed, isMcdaReadyStatus, isRecommendationReadyStatus } from '@/features/evaluations/application/evaluationStatus';
 import { EvaluationApiRepository } from '@/features/evaluations/infrastructure/api/evaluationApiRepository';
@@ -12,18 +13,31 @@ interface Props { navigate: NavigateFn; }
 
 const evaluationRepository = new EvaluationApiRepository();
 const processingSteps = [
-  { id: 1, label: 'Evaluacion iniciada', sub: 'La saga fue registrada en el backend' },
-  { id: 2, label: 'Extraccion agroambiental', sub: 'El worker procesa datos para la parcela' },
-  { id: 3, label: 'Evaluacion MCDA', sub: 'El backend calcula ranking, brechas y factores limitantes' },
-  { id: 4, label: 'Recomendacion', sub: 'Se persiste la recomendacion final cuando corresponde' },
+  { id: 1, label: 'Evaluacion iniciada', sub: 'La evaluacion fue registrada correctamente' },
+  { id: 2, label: 'Extraccion agroambiental', sub: 'Se analizan los datos climaticos y de suelo de tu parcela' },
+  { id: 3, label: 'Evaluacion MCDA', sub: 'Se calcula la viabilidad de cada cultivo y se identifican las brechas' },
+  { id: 4, label: 'Recomendacion', sub: 'Se genera la recomendacion agronomica para los cultivos viables' },
 ];
 const stepByStatus: Record<string, number> = {
   INICIADA: 1,
   EXTRACCION_COMPLETADA: 2,
   EVALUACION_COMPLETADA: processingSteps.length - 1,
   RECOMENDACION_COMPLETADA: processingSteps.length - 1,
-  FALLIDA: processingSteps.length - 1,
 };
+
+function inferFailureStep(snapshot: EvaluationStatusSnapshot | null): number {
+  const text = `${snapshot?.currentPhase ?? ''} ${snapshot?.failureReason ?? ''}`.toLowerCase();
+  if (text.includes('extraccion') || text.includes('extraction') || text.includes('gee') || text.includes('agroenv')) {
+    return 1;
+  }
+  if (text.includes('recomend') || text.includes('llm') || text.includes('openai') || text.includes('rag')) {
+    return 3;
+  }
+  if (text.includes('evaluacion') || text.includes('mcda') || text.includes('rulebook')) {
+    return 2;
+  }
+  return 0;
+}
 
 export default function Processing({ navigate }: Props) {
   const [currentEvaluation] = useState(() => readCurrentEvaluation());
@@ -35,6 +49,13 @@ export default function Processing({ navigate }: Props) {
     if (!currentEvaluation) return undefined;
 
     let cancelled = false;
+    let timeoutId: number | undefined;
+
+    const scheduleNextFetch = (nextStatus: string) => {
+      if (cancelled || isEvaluationFailed(nextStatus) || isRecommendationReadyStatus(nextStatus)) return;
+      const delayMs = isMcdaReadyStatus(nextStatus) ? 10000 : 3000;
+      timeoutId = window.setTimeout(() => void fetchStatus(), delayMs);
+    };
 
     const fetchStatus = async () => {
       try {
@@ -42,18 +63,19 @@ export default function Processing({ navigate }: Props) {
         if (cancelled) return;
         setStatus(snapshot);
         setError(toUserFriendlyFailureReason(snapshot.failureReason));
+        scheduleNextFetch(snapshot.status);
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'No se pudo consultar el estado de la evaluacion.');
+          timeoutId = window.setTimeout(() => void fetchStatus(), 5000);
         }
       }
     };
 
     void fetchStatus();
-    const timer = window.setInterval(() => void fetchStatus(), 3000);
     return () => {
       cancelled = true;
-      window.clearInterval(timer);
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
     };
   }, [currentEvaluation]);
 
@@ -80,9 +102,11 @@ export default function Processing({ navigate }: Props) {
   const done = isMcdaReadyStatus(status?.status);
   const recommendationDone = isRecommendationReadyStatus(status?.status);
   const failed = isEvaluationFailed(status?.status);
+  const failedStep = failed ? inferFailureStep(status) : null;
+  const visualStep = failedStep ?? currentStep;
   const noRecommendableCrops = Boolean(done && mcdaResult && mcdaResult.results.length > 0 && !hasRecommendableCrop(mcdaResult.results));
   const noRankedCropFailure = isNoRankedCropFailure(status?.failureReason);
-  const progress = done ? 100 : Math.round((currentStep / (processingSteps.length - 1)) * 100);
+  const progress = failed ? Math.round((visualStep / (processingSteps.length - 1)) * 100) : done ? 100 : Math.round((currentStep / (processingSteps.length - 1)) * 100);
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc' }}>
@@ -104,7 +128,7 @@ export default function Processing({ navigate }: Props) {
           </p>
           {status && (
             <p style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>
-              Estado backend: <strong>{status.status}</strong> · Evaluacion: {status.evaluationId}
+              Estado: <strong>{formatBackendStatus(status.status)}</strong> · Evaluacion: {status.evaluationId}
             </p>
           )}
         </div>
@@ -126,22 +150,26 @@ export default function Processing({ navigate }: Props) {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                 {processingSteps.map((step, i) => {
-                  const completed = recommendationDone || i < currentStep;
+                  const failedHere = failed && i === visualStep;
+                  const completed = failed ? i < visualStep : recommendationDone || i < currentStep;
                   const active = !failed && !noRecommendableCrops && ((done && !recommendationDone && i === processingSteps.length - 1) || (!done && i === currentStep));
+                  const iconBg = failedHere ? '#fee2e2' : completed ? '#f0fdf4' : active ? '#ecfeff' : '#f8fafc';
+                  const iconBorder = failedHere ? '#dc2626' : completed ? '#16a34a' : active ? '#0891b2' : '#e2e8f0';
+                  const labelColor = failedHere ? '#dc2626' : completed ? '#15803d' : active ? '#0891b2' : '#94a3b8';
                   return (
                     <div key={step.id} style={{ display: 'flex', gap: 14 }}>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                         <div style={{
                           width: 34, height: 34, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          background: completed ? '#f0fdf4' : active ? '#ecfeff' : '#f8fafc',
-                          border: `2px solid ${completed ? '#16a34a' : active ? '#0891b2' : '#e2e8f0'}`,
+                          background: iconBg,
+                          border: `2px solid ${iconBorder}`,
                         }}>
-                          {completed ? <CheckCircle2 style={{ width: 16, height: 16, color: '#16a34a' }} /> : active ? <Loader2 style={{ width: 16, height: 16, color: '#0891b2', animation: 'spin 1s linear infinite' }} /> : <Circle style={{ width: 16, height: 16, color: '#cbd5e1' }} />}
+                          {failedHere ? <XCircle style={{ width: 16, height: 16, color: '#dc2626' }} /> : completed ? <CheckCircle2 style={{ width: 16, height: 16, color: '#16a34a' }} /> : active ? <Loader2 style={{ width: 16, height: 16, color: '#0891b2', animation: 'spin 1s linear infinite' }} /> : <Circle style={{ width: 16, height: 16, color: '#cbd5e1' }} />}
                         </div>
                         {i < processingSteps.length - 1 && <div style={{ width: 2, height: 32, background: completed ? '#bbf7d0' : '#f1f5f9', margin: '3px 0' }} />}
                       </div>
                       <div style={{ paddingBottom: i < processingSteps.length - 1 ? 16 : 0, paddingTop: 5 }}>
-                        <div style={{ fontSize: 13.5, fontWeight: completed || active ? 600 : 400, color: completed ? '#15803d' : active ? '#0891b2' : '#94a3b8' }}>{step.label}</div>
+                        <div style={{ fontSize: 13.5, fontWeight: completed || active || failedHere ? 600 : 400, color: labelColor }}>{step.label}</div>
                         <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>{step.sub}</div>
                       </div>
                     </div>
@@ -153,15 +181,15 @@ export default function Processing({ navigate }: Props) {
 
           <div>
             <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', padding: 24, marginBottom: 16 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', marginBottom: 6 }}>Estado real del backend</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', marginBottom: 6 }}>Detalle del proceso</div>
               <div style={{ fontSize: 13, color: '#64748b', lineHeight: 1.6, marginBottom: 18 }}>
-                El backend aun no expone las variables agroambientales crudas por endpoint publico. Esta pantalla muestra la trazabilidad disponible de la saga y habilita resultados cuando MCDA esta persistido.
+                Informacion sobre el estado actual del analisis de tu parcela.
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
                 {[
                   { label: 'Evaluacion', value: currentEvaluation?.evaluationId ?? '-' },
-                  { label: 'Estado', value: status?.status ?? 'Consultando...' },
-                  { label: 'Fase actual', value: status?.currentPhase ?? '-' },
+                  { label: 'Estado', value: status?.status ? formatBackendStatus(status.status) : 'Consultando...' },
+                  { label: 'Fase actual', value: status?.currentPhase ? formatBackendStatus(status.currentPhase) : '-' },
                   { label: 'Ultima transicion', value: status?.lastTransition ? new Date(status.lastTransition).toLocaleString() : '-' },
                 ].map(({ label, value }) => (
                   <div key={label} style={{ background: '#fafafa', borderRadius: 12, padding: 14, border: '1px solid #f1f5f9' }}>
@@ -178,7 +206,7 @@ export default function Processing({ navigate }: Props) {
                   {failed ? 'Evaluacion fallida' : recommendationDone ? 'Analisis y recomendacion completados' : noRecommendableCrops ? 'MCDA completado sin cultivos recomendables' : done ? 'MCDA completado, recomendacion en proceso' : 'Procesando analisis MCDA...'}
                 </div>
                 <div style={{ fontSize: 13.5, color: '#475569' }}>
-                  {recommendationDone ? 'Resultado y recomendacion disponibles para consulta' : noRecommendableCrops ? 'El backend solo genera recomendaciones para cultivos VIABLE o CONDICIONAL' : done ? 'Puedes ver el ranking mientras el backend termina la recomendacion' : status ? `Estado actual: ${status.status}` : 'Esperando respuesta del backend'}
+                  {recommendationDone ? 'Resultado y recomendacion disponibles para consulta' : noRecommendableCrops ? 'Solo se generan recomendaciones para cultivos con viabilidad VIABLE o CONDICIONAL' : done ? 'Puedes ver el ranking mientras se prepara la recomendacion' : status ? `Estado actual: ${formatBackendStatus(status.status)}` : 'Iniciando analisis...'}
                 </div>
                 {error && <div style={{ fontSize: 12.5, color: failed ? '#991b1b' : '#92400e', marginTop: 8 }}>{error}</div>}
               </div>

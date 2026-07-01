@@ -6,6 +6,7 @@ type ParcelResponse = {
   id: string;
   owner_id: string;
   geometry: Parcel['geometry'];
+  created_at: string;
   metadata: {
     name: string;
     description: string;
@@ -70,5 +71,6 @@ function toParcel(response: ParcelResponse): Parcel {
     ownerId: response.owner_id,
     geometry: response.geometry,
     metadata: response.metadata,
+    createdAt: response.created_at,
   };
 }

@@ -1,5 +1,6 @@
 import { EvaluationRepository } from '@/features/evaluations/application/evaluationRepositories';
 import {
+  AgroenvVector,
   EvaluationAccepted,
   EvaluationRecommendation,
   FinalRecommendationResult,
@@ -38,6 +39,12 @@ type McdaResultResponse = {
       observed_value: number;
       optimal_limit: number;
       gap_value: number;
+      criterion_name?: string | null;
+      criterion_label?: string | null;
+      criterion_group?: string | null;
+      phase_name?: string | null;
+      unit?: string | null;
+      intervention_class?: string | null;
     }>;
     limiting_factors: Array<{
       criterion_id: string;
@@ -48,11 +55,40 @@ type McdaResultResponse = {
       optimal_limit: number;
       membership: number;
       doc_source: string | null;
+      criterion_name?: string | null;
+      criterion_label?: string | null;
+      criterion_group?: string | null;
+      phase_name?: string | null;
+      unit?: string | null;
+      intervention_class?: string | null;
     }>;
     missing_criteria: string[];
     unrecognized_variables: string[];
   }>;
   failure_reason: string | null;
+};
+
+type AgroenvVectorResponse = {
+  evaluation_id: string;
+  parcel_id: string;
+  variables: Array<{
+    variable_name: string;
+    criterion_id: string;
+    crop_id: string;
+    phase_id: string;
+    period_key: string;
+    value: number | null;
+    unit: string;
+    status: string;
+    dataset_key: string;
+    band: string;
+    source: string;
+    criterion_name?: string | null;
+    criterion_label?: string | null;
+    criterion_group?: string | null;
+    phase_name?: string | null;
+    intervention_class?: string | null;
+  }>;
 };
 
 type RecommendationResponse = {
@@ -137,6 +173,12 @@ export class EvaluationApiRepository implements EvaluationRepository {
           observedValue: gap.observed_value,
           optimalLimit: gap.optimal_limit,
           gapValue: gap.gap_value,
+          criterionName: gap.criterion_name,
+          criterionLabel: gap.criterion_label,
+          criterionGroup: gap.criterion_group,
+          phaseName: gap.phase_name,
+          unit: gap.unit,
+          interventionClass: gap.intervention_class,
         })),
         limitingFactors: result.limiting_factors.map((factor) => ({
           criterionId: factor.criterion_id,
@@ -147,9 +189,41 @@ export class EvaluationApiRepository implements EvaluationRepository {
           optimalLimit: factor.optimal_limit,
           membership: factor.membership,
           docSource: factor.doc_source,
+          criterionName: factor.criterion_name,
+          criterionLabel: factor.criterion_label,
+          criterionGroup: factor.criterion_group,
+          phaseName: factor.phase_name,
+          unit: factor.unit,
+          interventionClass: factor.intervention_class,
         })),
         missingCriteria: result.missing_criteria,
         unrecognizedVariables: result.unrecognized_variables,
+      })),
+    };
+  }
+
+  async getAgroenvVector(evaluationId: string): Promise<AgroenvVector> {
+    const response = await apiRequest<AgroenvVectorResponse>(`/evaluaciones/${evaluationId}/vector-agroambiental`);
+    return {
+      evaluationId: response.evaluation_id,
+      parcelId: response.parcel_id,
+      variables: response.variables.map((entry) => ({
+        variableName: entry.variable_name,
+        criterionId: entry.criterion_id,
+        cropId: entry.crop_id,
+        phaseId: entry.phase_id,
+        periodKey: entry.period_key,
+        value: entry.value,
+        unit: entry.unit,
+        status: entry.status,
+        datasetKey: entry.dataset_key,
+        band: entry.band,
+        source: entry.source,
+        criterionName: entry.criterion_name,
+        criterionLabel: entry.criterion_label,
+        criterionGroup: entry.criterion_group,
+        phaseName: entry.phase_name,
+        interventionClass: entry.intervention_class,
       })),
     };
   }

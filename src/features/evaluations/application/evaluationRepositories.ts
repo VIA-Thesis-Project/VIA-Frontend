@@ -1,5 +1,6 @@
 import { CreateParcelInput, Parcel } from '@/features/evaluations/domain/parcel';
 import {
+  AgroenvVector,
   EvaluationAccepted,
   EvaluationRecommendation,
   FinalRecommendationResult,
@@ -20,6 +21,7 @@ export interface EvaluationRepository {
   startEvaluation(input: StartEvaluationInput): Promise<EvaluationAccepted>;
   getEvaluationStatus(evaluationId: string): Promise<EvaluationStatusSnapshot>;
   getMcdaResult(evaluationId: string): Promise<EvaluationMcdaResult>;
+  getAgroenvVector(evaluationId: string): Promise<AgroenvVector>;
   getRecommendationsForEvaluation(evaluationId: string): Promise<EvaluationRecommendation[]>;
   getFinalRecommendation(evaluationId: string): Promise<FinalRecommendationResult>;
   getRecommendation(recommendationId: string): Promise<EvaluationRecommendation>;

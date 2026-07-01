@@ -1,4 +1,4 @@
-import { BarChart3, FileText, LayoutDashboard, LogOut, Map, Plus, Settings } from 'lucide-react';
+import { BarChart3, LayoutDashboard, LogOut, Map, Plus, Settings } from 'lucide-react';
 import { NavigateFn, Screen } from '@/app/navigation/navigation';
 import { ViaMark } from '@/shared/presentation/components/ViaMark';
 
@@ -12,7 +12,6 @@ const navItems = [
   { icon: Plus, label: 'Nueva evaluacion', screen: 'new-evaluation' as Screen },
   { icon: Map, label: 'Parcelas', screen: 'parcels' as Screen },
   { icon: BarChart3, label: 'Resultados', screen: 'results' as Screen },
-  { icon: FileText, label: 'Reportes', screen: 'report' as Screen },
   { icon: Settings, label: 'Configuracion', screen: 'dashboard' as Screen },
 ];
 

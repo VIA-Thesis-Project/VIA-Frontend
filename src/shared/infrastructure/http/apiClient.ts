@@ -43,9 +43,13 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
   const payload = contentType.includes('application/json') ? await response.json() : await response.text();
 
   if (!response.ok) {
+    if (response.status === 401) {
+      window.dispatchEvent(new CustomEvent('via:session-expired'));
+      throw new ApiError('Tu sesion ha expirado. Inicia sesion nuevamente.', 401, payload);
+    }
     const message = typeof payload === 'object' && payload && 'detail' in payload
       ? String((payload as { detail: unknown }).detail)
-      : 'No se pudo completar la solicitud al backend.';
+      : 'No se pudo completar la solicitud.';
     throw new ApiError(message, response.status, payload);
   }
 

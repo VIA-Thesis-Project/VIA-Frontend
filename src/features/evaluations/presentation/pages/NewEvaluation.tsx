@@ -1,5 +1,5 @@
 import { ChangeEvent, useEffect, useState } from 'react';
-import { ChevronRight, Edit3, HelpCircle, MapPin, Square, Upload } from 'lucide-react';
+import { ChevronRight, Edit3, MapPin, Square, Upload } from 'lucide-react';
 import { NavigateFn } from '@/app/navigation/navigation';
 import { cropCatalog } from '@/features/evaluations/application/cropCatalog';
 import { startEvaluationWorkflow } from '@/features/evaluations/application/startEvaluationWorkflow';
@@ -64,10 +64,6 @@ export default function NewEvaluation({ navigate }: Props) {
   const [loading, setLoading] = useState(false);
   const [parcelsLoading, setParcelsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(selectedParcelFromList
-    ? 'Parcela seleccionada desde la pantalla Parcelas. Confirma cultivos e inicia la evaluacion.'
-    : 'Dibuja la parcela en el mapa. El frontend enviara GeoJSON al backend y el backend usara Google Earth Engine.');
-
   const hasValidGeometry = geometry !== null;
   const selectedParcel = existingParcels.find((parcel) => parcel.id === selectedParcelId) ?? null;
 
@@ -114,13 +110,6 @@ export default function NewEvaluation({ navigate }: Props) {
   const handleMethodChange = (nextMethod: InputMethod) => {
     setMethod(nextMethod);
     setError(null);
-    if (nextMethod === 'select') {
-      setNotice('Selecciona una parcela ya registrada en el backend para iniciar una nueva evaluacion sin crear geometria nueva.');
-    } else if (nextMethod === 'upload') {
-      setNotice('Puedes cargar un archivo GeoJSON con Polygon o MultiPolygon. KML queda pendiente de parser.');
-    } else {
-      setNotice('Haz click en el mapa para agregar vertices. Leaflet entrega lat/lng y la app convierte a GeoJSON lng/lat.');
-    }
   };
 
   const handleGeoJsonUpload = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -140,7 +129,6 @@ export default function NewEvaluation({ navigate }: Props) {
       setGeometry(nextGeometry);
       setMapPoints(nextPoints);
       setMethod('upload');
-      setNotice(`GeoJSON cargado: ${file.name}. Puedes ajustar el poligono con clicks sobre el mapa si lo necesitas.`);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo leer el archivo GeoJSON.');
@@ -218,13 +206,6 @@ export default function NewEvaluation({ navigate }: Props) {
 
         <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '380px 1fr', gap: 0, minHeight: 0, overflow: 'hidden' }}>
           <div style={{ background: 'white', borderRight: '1px solid #f1f5f9', overflowY: 'auto', padding: '16px 20px' }}>
-            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '10px 12px', marginBottom: 14, display: 'flex', gap: 10 }}>
-              <HelpCircle style={{ width: 16, height: 16, color: '#16a34a', flexShrink: 0, marginTop: 1 }} />
-              <p style={{ fontSize: 12.5, color: '#166534', margin: 0, lineHeight: 1.6 }}>
-                {notice}
-              </p>
-            </div>
-
             <div style={{ marginBottom: 14 }}>
               <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0f172a', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
                 <MapPin style={{ width: 15, height: 15, color: '#16a34a' }} />
@@ -335,14 +316,11 @@ export default function NewEvaluation({ navigate }: Props) {
                   );
                 })}
               </div>
-              <div style={{ fontSize: 11.5, color: '#94a3b8', marginTop: 8 }}>
-                Seleccionados: {selectedCrops.map((cropId) => cropOptions.find((crop) => crop.id === cropId)?.label ?? cropId).join(', ') || 'ninguno'}
-              </div>
             </div>
 
             <div style={{ marginBottom: 10, background: hasValidGeometry || selectedParcel ? '#f0fdf4' : '#f8fafc', border: `1px solid ${hasValidGeometry || selectedParcel ? '#bbf7d0' : '#e2e8f0'}`, borderRadius: 10, padding: '8px 12px' }}>
               <div style={{ fontSize: 12.5, color: hasValidGeometry || selectedParcel ? '#15803d' : '#64748b', fontWeight: 700 }}>
-                {selectedParcel ? 'Parcela existente lista para evaluar' : hasValidGeometry ? 'GeoJSON listo para backend' : 'Parcela pendiente de delimitar'}
+                {selectedParcel ? 'Parcela existente lista para evaluar' : hasValidGeometry ? 'Parcela delimitada correctamente' : 'Parcela pendiente de delimitar'}
               </div>
               <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 4 }}>
                 {selectedParcel ? `ID ${selectedParcel.id.slice(0, 8)} · ${selectedParcel.metadata.crs}` : `Vertices: ${mapPoints.length} ${area ? `- Area aprox.: ${area} ha` : ''}`}
@@ -368,10 +346,6 @@ export default function NewEvaluation({ navigate }: Props) {
           <div style={{ padding: 16, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0 }}>
             <div style={{ background: 'white', border: '1px solid #f1f5f9', borderRadius: 10, padding: '8px 14px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 1px 4px rgba(0,0,0,0.04)', flexShrink: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>Mapa de delimitacion</div>
-              <div style={{ fontSize: 12, color: '#64748b' }}>Leaflet + OpenStreetMap</div>
-              <div style={{ marginLeft: 'auto', background: '#ecfeff', color: '#0891b2', padding: '6px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 700 }}>
-                GeoJSON usa [lng, lat]
-              </div>
             </div>
 
             <div style={{ flex: 1, borderRadius: 12, overflow: 'hidden', border: '1.5px solid #e2e8f0', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', minHeight: 0 }}>

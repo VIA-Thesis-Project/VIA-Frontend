@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, ChevronRight, Download, Eye, Sprout, TrendingUp } from 'lucide-react';
+import { AlertTriangle, ChevronRight, Eye, Sprout, TrendingUp } from 'lucide-react';
 import Sidebar from '@/shared/presentation/layouts/Sidebar';
 import { NavigateFn } from '@/app/navigation/navigation';
 import { isNoRankedCropFailure, toUserFriendlyFailureReason } from '@/features/evaluations/application/backendFailureMessages';
 import { getCropLabel } from '@/features/evaluations/application/cropCatalog';
+import { formatBackendStatus, formatCriterionLabel } from '@/features/evaluations/application/displayFormatters';
 import { hasRecommendableCrop, isEvaluationFailed, isEvaluationPending } from '@/features/evaluations/application/evaluationStatus';
 import { CropEvaluationResult, EvaluationMcdaResult } from '@/features/evaluations/domain/evaluation';
 import { EvaluationApiRepository } from '@/features/evaluations/infrastructure/api/evaluationApiRepository';
-import { readCurrentEvaluation } from '@/features/evaluations/infrastructure/session/currentEvaluationStorage';
+import { readCurrentEvaluation, saveSelectedCropId } from '@/features/evaluations/infrastructure/session/currentEvaluationStorage';
 
 interface Props { navigate: NavigateFn; }
 
@@ -48,6 +49,10 @@ function sortResults(results: CropEvaluationResult[]): CropEvaluationResult[] {
     if (aRanked !== bRanked) return aRanked ? -1 : 1;
     return (b.score ?? -1) - (a.score ?? -1);
   });
+}
+
+function countGapCriteria(crop: CropEvaluationResult): number {
+  return new Set(crop.gaps.map((gap) => gap.criterionId)).size;
 }
 
 export default function Results({ navigate }: Props) {
@@ -119,7 +124,7 @@ export default function Results({ navigate }: Props) {
                   { label: 'Parcela', value: currentEvaluation?.parcelName ?? '-' },
                   { label: 'Area', value: `${currentEvaluation?.areaHa ?? '-'} ha` },
                   { label: 'Ubicacion', value: currentEvaluation?.parcelLocation ?? '-' },
-                  { label: 'Estado', value: mcdaResult?.status ?? (loading ? 'Consultando...' : '-') },
+                  { label: 'Estado', value: mcdaResult?.status ? formatBackendStatus(mcdaResult.status) : (loading ? 'Consultando...' : '-') },
                 ].map(({ label, value }) => (
                   <div key={label} style={{ display: 'flex', gap: 6 }}>
                     <span style={{ fontSize: 13, color: '#94a3b8' }}>{label}:</span>
@@ -129,13 +134,6 @@ export default function Results({ navigate }: Props) {
               </div>
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button
-                onClick={() => navigate('report')}
-                style={{ background: 'white', color: '#475569', border: '1.5px solid #e2e8f0', padding: '9px 16px', borderRadius: 9, fontSize: 13.5, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}
-              >
-                <Download style={{ width: 14, height: 14 }} />
-                Exportar PDF
-              </button>
               <button
                 onClick={() => navigate('recommendations')}
                 disabled={!canUseResults}
@@ -180,7 +178,7 @@ export default function Results({ navigate }: Props) {
                     {failed
                       ? (toUserFriendlyFailureReason(mcdaResult?.failureReason) ?? 'El backend marco la evaluacion como fallida.')
                       : pending
-                        ? `Estado actual: ${mcdaResult?.status}. Vuelve a procesamiento o reconsulta cuando el backend complete la saga.`
+                      ? `Estado actual: ${formatBackendStatus(mcdaResult?.status)}. Vuelve a procesamiento o reconsulta cuando el backend complete la saga.`
                         : 'El backend respondio sin cultivos rankeados para esta evaluacion.'}
                   </div>
                   <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
@@ -203,6 +201,7 @@ export default function Results({ navigate }: Props) {
               {sortedResults.map((crop, i) => {
                 const score = toPercent(crop.score);
                 const style = categoryStyle(crop.viabilityCategory);
+                const gapCriteriaCount = countGapCriteria(crop);
                 return (
                   <div key={crop.cropId} style={{ padding: '18px 24px', borderBottom: i < sortedResults.length - 1 ? '1px solid #f8fafc' : 'none', display: 'flex', gap: 16 }}>
                     <div style={{ width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 4, background: i === 0 ? '#fef3c7' : '#f8fafc', border: `1.5px solid ${i === 0 ? '#fbbf24' : '#e2e8f0'}` }}>
@@ -213,7 +212,7 @@ export default function Results({ navigate }: Props) {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                         <span style={{ fontSize: 16, fontWeight: 700, color: '#0f172a' }}>{getCropLabel(crop.cropId)}</span>
                         <div style={{ fontSize: 11.5, fontWeight: 600, padding: '4px 10px', borderRadius: 20, background: style.bg, color: style.color, border: `1px solid ${style.border}` }}>
-                          {crop.viabilityCategory}
+                          {formatBackendStatus(crop.viabilityCategory)}
                         </div>
                       </div>
 
@@ -222,18 +221,23 @@ export default function Results({ navigate }: Props) {
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10 }}>
                         <div>
                           <div style={{ fontSize: 11, fontWeight: 600, color: '#16a34a', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Condicion</div>
-                          <div style={{ fontSize: 12, color: '#475569' }}>{crop.calcCondition}</div>
+                          <div style={{ fontSize: 12, color: '#475569' }}>{formatBackendStatus(crop.calcCondition)}</div>
                         </div>
                         <div>
                           <div style={{ fontSize: 11, fontWeight: 600, color: '#d97706', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Brechas</div>
-                          <div style={{ fontSize: 12, color: '#475569' }}>{crop.gaps.length} brechas · {crop.limitingFactors.length} limitantes</div>
+                          <div style={{ fontSize: 12, color: '#475569' }}>
+                            {gapCriteriaCount} criterios con brecha · {crop.gaps.length} ocurrencias · {crop.limitingFactors.length} limitantes
+                          </div>
                         </div>
                       </div>
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0, justifyContent: 'center' }}>
                       <button
-                        onClick={() => navigate('crop-detail')}
+                        onClick={() => {
+                          saveSelectedCropId(crop.cropId);
+                          navigate('crop-detail');
+                        }}
                         style={{ background: '#f8fafc', border: '1.5px solid #e2e8f0', color: '#475569', padding: '8px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
                       >
                         <Eye style={{ width: 13, height: 13 }} />
@@ -273,7 +277,7 @@ export default function Results({ navigate }: Props) {
               {limitingFactors.map(({ cropId, factor }) => (
                 <div key={`${cropId}-${factor.criterionId}-${factor.phaseId}`} style={{ fontSize: 12, color: '#78350f', marginBottom: 6, display: 'flex', gap: 6 }}>
                   <span style={{ color: '#d97706', flexShrink: 0, fontWeight: 700 }}>·</span>
-                  {getCropLabel(cropId)}: {factor.criterionId} ({factor.policy})
+                  {getCropLabel(cropId)}: {formatCriterionLabel(factor)} ({formatBackendStatus(factor.policy)})
                 </div>
               ))}
             </div>
