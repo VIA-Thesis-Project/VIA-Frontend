@@ -3,6 +3,7 @@ import {
   AgroenvVector,
   EvaluationAccepted,
   EvaluationRecommendation,
+  EvaluationSummary,
   FinalRecommendationResult,
   EvaluationMcdaResult,
   EvaluationStatusSnapshot,
@@ -19,6 +20,7 @@ export interface ParcelRepository {
 
 export interface EvaluationRepository {
   startEvaluation(input: StartEvaluationInput): Promise<EvaluationAccepted>;
+  listEvaluationsForParcel(parcelId: string): Promise<EvaluationSummary[]>;
   getEvaluationStatus(evaluationId: string): Promise<EvaluationStatusSnapshot>;
   getMcdaResult(evaluationId: string): Promise<EvaluationMcdaResult>;
   getAgroenvVector(evaluationId: string): Promise<AgroenvVector>;

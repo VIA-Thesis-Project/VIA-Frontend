@@ -4,7 +4,7 @@ import { NavigateFn } from '@/app/navigation/navigation';
 import { readAuthSession } from '@/features/auth/infrastructure/session/authSessionStorage';
 import { Parcel } from '@/features/evaluations/domain/parcel';
 import { ParcelApiRepository } from '@/features/evaluations/infrastructure/api/parcelApiRepository';
-import { saveSelectedParcelId } from '@/features/evaluations/infrastructure/session/selectedParcelStorage';
+import { saveDetailParcelId } from '@/features/evaluations/infrastructure/session/selectedParcelStorage';
 import Sidebar from '@/shared/presentation/layouts/Sidebar';
 
 interface Props { navigate: NavigateFn; }
@@ -173,9 +173,9 @@ export default function Parcels({ navigate }: Props) {
     setNotice('ID de parcela copiado.');
   };
 
-  const useParcelForEvaluation = (parcel: Parcel) => {
-    saveSelectedParcelId(parcel.id);
-    navigate('new-evaluation');
+  const openParcelDetail = (parcel: Parcel) => {
+    saveDetailParcelId(parcel.id);
+    navigate('parcel-detail');
   };
 
   return (
@@ -312,7 +312,7 @@ export default function Parcels({ navigate }: Props) {
                   </td>
                   <td style={{ padding: '14px 18px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                      <button onClick={() => useParcelForEvaluation(parcel)} title="Usar en evaluacion" style={{ border: '1px solid #dbeafe', background: '#eff6ff', color: '#2563eb', borderRadius: 8, padding: 7, cursor: 'pointer' }}>
+                      <button onClick={() => openParcelDetail(parcel)} title="Ver detalle y evaluaciones" style={{ border: '1px solid #dbeafe', background: '#eff6ff', color: '#2563eb', borderRadius: 8, padding: 7, cursor: 'pointer' }}>
                         <Eye style={{ width: 14, height: 14 }} />
                       </button>
                       <button onClick={() => openEdit(parcel)} title="Editar metadatos" style={{ border: '1px solid #e2e8f0', background: 'white', color: '#475569', borderRadius: 8, padding: 7, cursor: 'pointer' }}>

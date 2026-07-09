@@ -2,6 +2,7 @@ export type Screen =
   | 'login'
   | 'dashboard'
   | 'parcels'
+  | 'parcel-detail'
   | 'new-evaluation'
   | 'processing'
   | 'results'

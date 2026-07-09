@@ -1,8 +1,10 @@
+import { readAuthSession } from '@/features/auth/infrastructure/session/authSessionStorage';
 import { EvaluationRepository } from '@/features/evaluations/application/evaluationRepositories';
 import {
   AgroenvVector,
   EvaluationAccepted,
   EvaluationRecommendation,
+  EvaluationSummary,
   FinalRecommendationResult,
   EvaluationMcdaResult,
   EvaluationStatusSnapshot,
@@ -10,9 +12,26 @@ import {
 } from '@/features/evaluations/domain/evaluation';
 import { ApiError, apiRequest } from '@/shared/infrastructure/http/apiClient';
 
+// Evaluation endpoints require Bearer auth (contract change T0.1); the backend
+// takes requested_by from the token instead of the request body.
+function authToken(): string | undefined {
+  return readAuthSession()?.accessToken;
+}
+
 type StartEvaluationResponse = {
   evaluation_id: string;
   status: string;
+};
+
+type EvaluationSummaryResponse = {
+  evaluation_id: string;
+  parcel_id: string;
+  status: string;
+  created_at: string | null;
+  crop_candidates: string[];
+  top_crop_id: string | null;
+  top_score: number | null;
+  top_viability_category: string | null;
 };
 
 type EvaluationStatusResponse = {
@@ -129,9 +148,9 @@ export class EvaluationApiRepository implements EvaluationRepository {
   async startEvaluation(input: StartEvaluationInput): Promise<EvaluationAccepted> {
     const response = await apiRequest<StartEvaluationResponse>('/evaluaciones', {
       method: 'POST',
+      token: authToken(),
       body: {
         parcel_id: input.parcelId,
-        requested_by: input.requestedBy,
         crop_candidates: input.cropCandidates,
         temporal_window: input.temporalWindow,
       },
@@ -143,8 +162,26 @@ export class EvaluationApiRepository implements EvaluationRepository {
     };
   }
 
+  async listEvaluationsForParcel(parcelId: string): Promise<EvaluationSummary[]> {
+    const response = await apiRequest<EvaluationSummaryResponse[]>(
+      `/evaluaciones?parcel_id=${encodeURIComponent(parcelId)}`,
+      { token: authToken() },
+    );
+
+    return response.map((summary) => ({
+      evaluationId: summary.evaluation_id,
+      parcelId: summary.parcel_id,
+      status: summary.status,
+      createdAt: summary.created_at,
+      cropCandidates: summary.crop_candidates,
+      topCropId: summary.top_crop_id,
+      topScore: summary.top_score,
+      topViabilityCategory: summary.top_viability_category,
+    }));
+  }
+
   async getEvaluationStatus(evaluationId: string): Promise<EvaluationStatusSnapshot> {
-    const response = await apiRequest<EvaluationStatusResponse>(`/evaluaciones/${evaluationId}/estado`);
+    const response = await apiRequest<EvaluationStatusResponse>(`/evaluaciones/${evaluationId}/estado`, { token: authToken() });
     return {
       evaluationId: response.evaluation_id,
       status: response.status,
@@ -155,7 +192,7 @@ export class EvaluationApiRepository implements EvaluationRepository {
   }
 
   async getMcdaResult(evaluationId: string): Promise<EvaluationMcdaResult> {
-    const response = await apiRequest<McdaResultResponse>(`/evaluaciones/${evaluationId}/resultado-mcda`);
+    const response = await apiRequest<McdaResultResponse>(`/evaluaciones/${evaluationId}/resultado-mcda`, { token: authToken() });
     return {
       evaluationId: response.evaluation_id,
       status: response.status,
@@ -203,7 +240,7 @@ export class EvaluationApiRepository implements EvaluationRepository {
   }
 
   async getAgroenvVector(evaluationId: string): Promise<AgroenvVector> {
-    const response = await apiRequest<AgroenvVectorResponse>(`/evaluaciones/${evaluationId}/vector-agroambiental`);
+    const response = await apiRequest<AgroenvVectorResponse>(`/evaluaciones/${evaluationId}/vector-agroambiental`, { token: authToken() });
     return {
       evaluationId: response.evaluation_id,
       parcelId: response.parcel_id,
@@ -232,6 +269,7 @@ export class EvaluationApiRepository implements EvaluationRepository {
     try {
       const response = await apiRequest<RecommendationResponse | PendingRecommendationResponse>(
         `/evaluaciones/${evaluationId}/recomendacion-final`,
+        { token: authToken() },
       );
 
       if ('recommendation_id' in response) {
@@ -257,12 +295,12 @@ export class EvaluationApiRepository implements EvaluationRepository {
   }
 
   async getRecommendationsForEvaluation(evaluationId: string): Promise<EvaluationRecommendation[]> {
-    const response = await apiRequest<RecommendationResponse[]>(`/evaluaciones/${evaluationId}/recomendaciones`);
+    const response = await apiRequest<RecommendationResponse[]>(`/evaluaciones/${evaluationId}/recomendaciones`, { token: authToken() });
     return response.map(toRecommendation);
   }
 
   async getRecommendation(recommendationId: string): Promise<EvaluationRecommendation> {
-    const response = await apiRequest<RecommendationResponse>(`/recomendaciones/${recommendationId}`);
+    const response = await apiRequest<RecommendationResponse>(`/recomendaciones/${recommendationId}`, { token: authToken() });
     return toRecommendation(response);
   }
 }

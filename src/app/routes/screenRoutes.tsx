@@ -3,6 +3,7 @@ import CropDetail from '@/features/evaluations/presentation/pages/CropDetail';
 import Dashboard from '@/features/dashboard/presentation/pages/Dashboard';
 import Login from '@/features/auth/presentation/pages/Login';
 import NewEvaluation from '@/features/evaluations/presentation/pages/NewEvaluation';
+import ParcelDetail from '@/features/parcels/presentation/pages/ParcelDetail';
 import Parcels from '@/features/parcels/presentation/pages/Parcels';
 import Processing from '@/features/evaluations/presentation/pages/Processing';
 import Recommendations from '@/features/evaluations/presentation/pages/Recommendations';
@@ -15,6 +16,7 @@ export const screenRoutes: Record<Screen, (navigate: NavigateFn) => JSX.Element>
   login: (navigate) => <Login navigate={navigate} />,
   dashboard: (navigate) => <Dashboard navigate={navigate} />,
   parcels: (navigate) => <Parcels navigate={navigate} />,
+  'parcel-detail': (navigate) => <ParcelDetail navigate={navigate} />,
   'new-evaluation': (navigate) => <NewEvaluation navigate={navigate} />,
   processing: (navigate) => <Processing navigate={navigate} />,
   results: (navigate) => <Results navigate={navigate} />,

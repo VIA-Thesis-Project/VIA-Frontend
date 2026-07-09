@@ -160,3 +160,14 @@ export type CurrentEvaluationContext = {
   evaluationId: string;
   cropCandidates: CropCandidate[];
 };
+
+export type EvaluationSummary = {
+  evaluationId: string;
+  parcelId: string;
+  status: string;
+  createdAt: string | null;
+  cropCandidates: string[];
+  topCropId: string | null;
+  topScore: number | null;
+  topViabilityCategory: string | null;
+};
