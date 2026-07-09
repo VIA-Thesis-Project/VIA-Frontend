@@ -1,0 +1,89 @@
+/* ── Tokens de diseno VIA ─────────────────────────────────────────────────
+   Paleta real de la aplicacion (verde agro + neutros slate), formalizada.
+   Las paginas aun usan estilos inline; estos tokens son la referencia unica
+   para nuevos estilos y para la migracion progresiva. */
+:root {
+  --via-accent: #16a34a;
+  --via-accent-strong: #15803d;
+  --via-accent-soft: #f0fdf4;
+  --via-accent-line: #bbf7d0;
+
+  --via-ink: #0f172a;
+  --via-text: #475569;
+  --via-muted: #94a3b8;
+
+  --via-bg: #f8fafc;
+  --via-surface: #ffffff;
+  --via-line: #e2e8f0;
+  --via-line-soft: #f1f5f9;
+
+  --via-info: #2563eb;
+  --via-warn: #d97706;
+  --via-danger: #dc2626;
+
+  --via-radius-control: 8px;
+  --via-radius-card: 12px;
+  --via-shadow-card: 0 1px 4px rgba(15, 23, 42, 0.05);
+  --via-shadow-pop: 0 20px 45px rgba(15, 23, 42, 0.22);
+}
+
+/* Los controles de formulario heredan la tipografia de la app. */
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+/* ── Micro-estados: hover, focus y transiciones ─────────────────────────── */
+
+button {
+  transition:
+    filter 140ms ease,
+    background-color 140ms ease,
+    color 140ms ease,
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+button:hover:not(:disabled) {
+  filter: brightness(0.96);
+}
+
+button:active:not(:disabled) {
+  filter: brightness(0.92);
+}
+
+input,
+select,
+textarea {
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+:where(button, input, select, textarea, a, [role='button']):focus-visible {
+  outline: 2px solid var(--via-accent);
+  outline-offset: 2px;
+}
+
+/* Filas de tabla responden al puntero. */
+tbody tr {
+  transition: background-color 120ms ease;
+}
+
+tbody tr:hover {
+  background-color: #fcfdfc;
+}
+
+::selection {
+  background: var(--via-accent-line);
+  color: #14532d;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

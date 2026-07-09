@@ -53,7 +53,7 @@ export default function Login({ navigate }: Props) {
 
       <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 440 }}>
         {/* Card */}
-        <div style={{ background: 'white', borderRadius: 20, boxShadow: '0 20px 60px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+        <div style={{ background: 'white', borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
           {/* Header strip */}
           <div style={{ background: 'linear-gradient(135deg, #15803d, #0891b2)', padding: '28px 32px', textAlign: 'center' }}>
             <div style={{ width: 56, height: 56, background: 'rgba(255,255,255,0.18)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
@@ -74,7 +74,7 @@ export default function Login({ navigate }: Props) {
                 onKeyDown={e => { if (e.key === 'Enter') void handleSubmit(); }}
                 placeholder="usuario@agro.pe"
                 style={{
-                  width: '100%', padding: '11px 14px', border: '1.5px solid #e2e8f0', borderRadius: 10,
+                  width: '100%', padding: '11px 14px', border: '1.5px solid #e2e8f0', borderRadius: 8,
                   fontSize: 14, color: '#0f172a', background: '#f8fafc', outline: 'none', boxSizing: 'border-box',
                   transition: 'border-color 0.2s',
                 }}
@@ -93,7 +93,7 @@ export default function Login({ navigate }: Props) {
                   onKeyDown={e => { if (e.key === 'Enter') void handleSubmit(); }}
                   placeholder="••••••••"
                   style={{
-                    width: '100%', padding: '11px 44px 11px 14px', border: '1.5px solid #e2e8f0', borderRadius: 10,
+                    width: '100%', padding: '11px 44px 11px 14px', border: '1.5px solid #e2e8f0', borderRadius: 8,
                     fontSize: 14, color: '#0f172a', background: '#f8fafc', outline: 'none', boxSizing: 'border-box',
                   }}
                   onFocus={e => (e.target.style.borderColor = '#16a34a')}
@@ -112,7 +112,7 @@ export default function Login({ navigate }: Props) {
             </div>
 
             {error && (
-              <div style={{ marginBottom: 14, padding: '10px 12px', borderRadius: 9, background: '#fee2e2', border: '1px solid #fecaca', color: '#991b1b', fontSize: 12.5, lineHeight: 1.45 }}>
+              <div style={{ marginBottom: 14, padding: '10px 12px', borderRadius: 8, background: '#fee2e2', border: '1px solid #fecaca', color: '#991b1b', fontSize: 12, lineHeight: 1.45 }}>
                 {error}
               </div>
             )}
@@ -122,7 +122,7 @@ export default function Login({ navigate }: Props) {
               disabled={loading}
               style={{
                 width: '100%', background: loading ? '#86efac' : '#16a34a', color: 'white', border: 'none',
-                padding: '13px', borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer',
+                padding: '13px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'background 0.2s',
               }}
             >
@@ -151,16 +151,16 @@ export default function Login({ navigate }: Props) {
               }}
               style={{
                 width: '100%', background: '#f8fafc', color: '#475569', border: '1.5px solid #e2e8f0',
-                padding: '12px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                padding: '12px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer',
               }}
             >
               {mode === 'login' ? 'Crear cuenta de usuario agricola' : 'Ya tengo cuenta'}
             </button>
 
-            <div style={{ marginTop: 24, padding: 14, background: '#f0fdf4', borderRadius: 10, border: '1px solid #bbf7d0' }}>
+            <div style={{ marginTop: 24, padding: 14, background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0' }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                 <Users style={{ width: 15, height: 15, color: '#16a34a', marginTop: 1, flexShrink: 0 }} />
-                <p style={{ fontSize: 12.5, color: '#166534', lineHeight: 1.55, margin: 0 }}>
+                <p style={{ fontSize: 12, color: '#166534', lineHeight: 1.55, margin: 0 }}>
                   Acceso para <strong>productores, técnicos agrónomos</strong> y equipo de validación. Rol determinado automáticamente al ingresar.
                 </p>
               </div>

@@ -118,7 +118,7 @@ export default function Results({ navigate }: Props) {
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
             <div>
-              <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', margin: 0, marginBottom: 6 }}>Resultados de viabilidad de cultivos</h1>
+              <h1 style={{ fontSize: 20, fontWeight: 700, color: '#0f172a', margin: 0, marginBottom: 6 }}>Resultados de viabilidad de cultivos</h1>
               <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
                 {[
                   { label: 'Parcela', value: currentEvaluation?.parcelName ?? '-' },
@@ -137,7 +137,7 @@ export default function Results({ navigate }: Props) {
               <button
                 onClick={() => navigate('recommendations')}
                 disabled={!canUseResults}
-                style={{ background: canUseResults ? (canRequestRecommendations ? '#16a34a' : '#d97706') : '#bbf7d0', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 9, fontSize: 13.5, fontWeight: 600, cursor: canUseResults ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', gap: 7 }}
+                style={{ background: canUseResults ? (canRequestRecommendations ? '#16a34a' : '#d97706') : '#bbf7d0', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: canUseResults ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', gap: 7 }}
               >
                 <Sprout style={{ width: 14, height: 14 }} />
                 {canRequestRecommendations ? 'Ver recomendaciones' : 'Ver criterio backend'}
@@ -147,13 +147,13 @@ export default function Results({ navigate }: Props) {
         </div>
 
         {noRecommendableCrops && (
-          <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', borderRadius: 12, padding: 16, marginBottom: 16, fontSize: 13.5, lineHeight: 1.6 }}>
+          <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', borderRadius: 12, padding: 16, marginBottom: 16, fontSize: 13, lineHeight: 1.6 }}>
             El backend no generara recomendaciones para esta evaluacion porque ningun cultivo candidato alcanzo categoria <strong>VIABLE</strong> o <strong>CONDICIONAL</strong>. Puedes revisar las brechas MCDA o probar otra parcela/cultivos.
           </div>
         )}
 
         {error && (
-          <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', borderRadius: 12, padding: 16, marginBottom: 16, fontSize: 13.5 }}>
+          <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', borderRadius: 12, padding: 16, marginBottom: 16, fontSize: 13 }}>
             {error}
           </div>
         )}
@@ -163,7 +163,7 @@ export default function Results({ navigate }: Props) {
             <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', overflow: 'hidden', marginBottom: 16 }}>
               <div style={{ padding: '18px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: 10 }}>
                 <TrendingUp style={{ width: 16, height: 16, color: '#16a34a' }} />
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a' }}>Ranking de cultivos viables</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>Ranking de cultivos viables</div>
                 <div style={{ marginLeft: 'auto', fontSize: 12, color: '#94a3b8' }}>Datos reales del endpoint MCDA</div>
               </div>
 
@@ -184,13 +184,13 @@ export default function Results({ navigate }: Props) {
                   <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                     <button
                       onClick={() => navigate(noRankedCropFailure ? 'new-evaluation' : 'processing')}
-                      style={{ background: '#16a34a', color: 'white', border: 'none', padding: '9px 14px', borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                      style={{ background: '#16a34a', color: 'white', border: 'none', padding: '9px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
                     >
                       {noRankedCropFailure ? 'Nueva evaluacion' : 'Volver a procesamiento'}
                     </button>
                     <button
                       onClick={() => setRefreshCount((count) => count + 1)}
-                      style={{ background: 'white', color: '#475569', border: '1.5px solid #e2e8f0', padding: '9px 14px', borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                      style={{ background: 'white', color: '#475569', border: '1.5px solid #e2e8f0', padding: '9px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
                     >
                       Reconsultar MCDA
                     </button>
@@ -211,7 +211,7 @@ export default function Results({ navigate }: Props) {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                         <span style={{ fontSize: 16, fontWeight: 700, color: '#0f172a' }}>{getCropLabel(crop.cropId)}</span>
-                        <div style={{ fontSize: 11.5, fontWeight: 600, padding: '4px 10px', borderRadius: 20, background: style.bg, color: style.color, border: `1px solid ${style.border}` }}>
+                        <div style={{ fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 999, background: style.bg, color: style.color, border: `1px solid ${style.border}` }}>
                           {formatBackendStatus(crop.viabilityCategory)}
                         </div>
                       </div>
@@ -238,7 +238,7 @@ export default function Results({ navigate }: Props) {
                           saveSelectedCropId(crop.cropId);
                           navigate('crop-detail');
                         }}
-                        style={{ background: '#f8fafc', border: '1.5px solid #e2e8f0', color: '#475569', padding: '8px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+                        style={{ background: '#f8fafc', border: '1.5px solid #e2e8f0', color: '#475569', padding: '8px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
                       >
                         <Eye style={{ width: 13, height: 13 }} />
                         Ver detalle
@@ -268,10 +268,10 @@ export default function Results({ navigate }: Props) {
               })}
             </div>
 
-            <div style={{ background: '#fffbeb', borderRadius: 14, border: '1px solid #fde68a', padding: '16px 18px' }}>
+            <div style={{ background: '#fffbeb', borderRadius: 16, border: '1px solid #fde68a', padding: '16px 18px' }}>
               <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
                 <AlertTriangle style={{ width: 16, height: 16, color: '#d97706', flexShrink: 0, marginTop: 1 }} />
-                <div style={{ fontSize: 13.5, fontWeight: 700, color: '#92400e' }}>Factores limitantes principales</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#92400e' }}>Factores limitantes principales</div>
               </div>
               {limitingFactors.length === 0 && <div style={{ fontSize: 12, color: '#78350f' }}>Sin factores limitantes reportados.</div>}
               {limitingFactors.map(({ cropId, factor }) => (

@@ -149,9 +149,9 @@ export function ParcelDrawMap({ points, onPointsChange, onGeometryChange, onArea
         ))}
       </MapContainer>
 
-      <div style={{ position: 'absolute', top: 12, left: 58, zIndex: 500, background: 'white', borderRadius: 10, padding: '10px 12px', boxShadow: '0 2px 10px rgba(15,23,42,0.14)', border: '1px solid #e2e8f0', width: 300, maxWidth: 'calc(100% - 150px)' }}>
+      <div style={{ position: 'absolute', top: 12, left: 58, zIndex: 500, background: 'white', borderRadius: 8, padding: '10px 12px', boxShadow: '0 2px 10px rgba(15,23,42,0.14)', border: '1px solid #e2e8f0', width: 300, maxWidth: 'calc(100% - 150px)' }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>Delimitacion de parcela</div>
-        <div style={{ fontSize: 11.5, color: '#64748b', lineHeight: 1.45 }}>
+        <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.45 }}>
           Haz click sobre el mapa para marcar los puntos del perimetro. Con 3 o mas puntos la parcela queda lista para evaluar.
         </div>
       </div>
@@ -160,7 +160,7 @@ export function ParcelDrawMap({ points, onPointsChange, onGeometryChange, onArea
         <button
           onClick={clearPolygon}
           type="button"
-          style={{ background: 'white', color: '#dc2626', border: '1px solid #fecaca', borderRadius: 9, padding: '8px 11px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 2px 10px rgba(15,23,42,0.12)' }}
+          style={{ background: 'white', color: '#dc2626', border: '1px solid #fecaca', borderRadius: 8, padding: '8px 11px', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 2px 10px rgba(15,23,42,0.12)' }}
         >
           <Trash2 style={{ width: 14, height: 14 }} />
           Limpiar
@@ -168,10 +168,10 @@ export function ParcelDrawMap({ points, onPointsChange, onGeometryChange, onArea
       </div>
 
       <div style={{ position: 'absolute', left: 12, bottom: 12, zIndex: 500, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#15803d', padding: '7px 12px', borderRadius: 9, fontSize: 12.5, fontWeight: 700, boxShadow: '0 2px 10px rgba(15,23,42,0.12)' }}>
+        <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#15803d', padding: '7px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700, boxShadow: '0 2px 10px rgba(15,23,42,0.12)' }}>
           Vertices: {points.length}
         </div>
-        <div style={{ background: points.length >= 3 ? '#f0fdf4' : '#f8fafc', border: `1px solid ${points.length >= 3 ? '#bbf7d0' : '#e2e8f0'}`, color: points.length >= 3 ? '#15803d' : '#64748b', padding: '7px 12px', borderRadius: 9, fontSize: 12.5, fontWeight: 700, boxShadow: '0 2px 10px rgba(15,23,42,0.12)' }}>
+        <div style={{ background: points.length >= 3 ? '#f0fdf4' : '#f8fafc', border: `1px solid ${points.length >= 3 ? '#bbf7d0' : '#e2e8f0'}`, color: points.length >= 3 ? '#15803d' : '#64748b', padding: '7px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700, boxShadow: '0 2px 10px rgba(15,23,42,0.12)' }}>
           Area aprox.: {areaHa > 0 ? areaHa.toFixed(2) : '--'} ha
         </div>
       </div>

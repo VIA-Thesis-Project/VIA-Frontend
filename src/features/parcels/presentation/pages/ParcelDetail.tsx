@@ -197,23 +197,23 @@ export default function ParcelDetail({ navigate }: Props) {
               <span style={{ color: '#e2e8f0' }}>/</span>
               <span style={{ color: '#16a34a', fontSize: 12, fontWeight: 700 }}>{parcel?.metadata.name ?? 'Detalle'}</span>
             </div>
-            <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', margin: 0, marginBottom: 4 }}>
+            <h1 style={{ fontSize: 20, fontWeight: 800, color: '#0f172a', margin: 0, marginBottom: 4 }}>
               {parcel?.metadata.name ?? 'Detalle de parcela'}
             </h1>
-            <p style={{ fontSize: 13.5, color: '#64748b', margin: 0 }}>{parcel?.metadata.description ?? 'Cargando informacion de la parcela...'}</p>
+            <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>{parcel?.metadata.description ?? 'Cargando informacion de la parcela...'}</p>
           </div>
           {parcel && !editingGeometry && (
             <div style={{ display: 'flex', gap: 10 }}>
               <button
                 onClick={startGeometryEdit}
-                style={{ background: 'white', color: '#475569', border: '1.5px solid #e2e8f0', padding: '9px 14px', borderRadius: 9, fontSize: 13.5, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}
+                style={{ background: 'white', color: '#475569', border: '1.5px solid #e2e8f0', padding: '9px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}
               >
                 <Edit3 style={{ width: 15, height: 15 }} />
                 Editar geometria
               </button>
               <button
                 onClick={startEvaluation}
-                style={{ background: '#16a34a', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 9, fontSize: 13.5, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}
+                style={{ background: '#16a34a', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}
               >
                 <Play style={{ width: 15, height: 15 }} />
                 Nueva evaluacion
@@ -242,10 +242,10 @@ export default function ParcelDetail({ navigate }: Props) {
                   </div>
                   {editingGeometry && (
                     <div style={{ display: 'flex', gap: 8 }}>
-                      <button onClick={cancelGeometryEdit} style={{ background: 'white', color: '#475569', border: '1.5px solid #e2e8f0', padding: '7px 12px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>
+                      <button onClick={cancelGeometryEdit} style={{ background: 'white', color: '#475569', border: '1.5px solid #e2e8f0', padding: '7px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
                         Cancelar
                       </button>
-                      <button onClick={requestSaveGeometry} style={{ background: '#16a34a', color: 'white', border: 'none', padding: '7px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>
+                      <button onClick={requestSaveGeometry} style={{ background: '#16a34a', color: 'white', border: 'none', padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
                         Guardar geometria
                       </button>
                     </div>
@@ -298,7 +298,7 @@ export default function ParcelDetail({ navigate }: Props) {
               <div style={{ padding: '16px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: 8 }}>
                 <History style={{ width: 16, height: 16, color: '#16a34a' }} />
                 <div>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: '#0f172a' }}>Historial de evaluaciones</div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: '#0f172a' }}>Historial de evaluaciones</div>
                   <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>Todas las evaluaciones que solicitaste para esta parcela, de la mas reciente a la mas antigua.</div>
                 </div>
               </div>
@@ -307,7 +307,7 @@ export default function ParcelDetail({ navigate }: Props) {
                 <thead>
                   <tr style={{ background: '#fafafa' }}>
                     {['Fecha', 'Estado', 'Cultivos evaluados', 'Mejor cultivo', 'Acciones'].map((header) => (
-                      <th key={header} style={{ padding: '11px 18px', textAlign: 'left', fontSize: 11.5, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{header}</th>
+                      <th key={header} style={{ padding: '11px 18px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{header}</th>
                     ))}
                   </tr>
                 </thead>
@@ -319,7 +319,7 @@ export default function ParcelDetail({ navigate }: Props) {
                     <tr>
                       <td colSpan={5} style={{ padding: 28, textAlign: 'center' }}>
                         <div style={{ fontSize: 14, color: '#0f172a', fontWeight: 700, marginBottom: 4 }}>Esta parcela aun no tiene evaluaciones</div>
-                        <div style={{ fontSize: 12.5, color: '#64748b' }}>Inicia una nueva evaluacion para conocer su viabilidad agricola.</div>
+                        <div style={{ fontSize: 12, color: '#64748b' }}>Inicia una nueva evaluacion para conocer su viabilidad agricola.</div>
                       </td>
                     </tr>
                   )}
@@ -329,9 +329,9 @@ export default function ParcelDetail({ navigate }: Props) {
                       <tr key={summary.evaluationId} style={{ borderTop: '1px solid #f8fafc' }}>
                         <td style={{ padding: '13px 18px', fontSize: 13, color: '#475569', whiteSpace: 'nowrap' }}>{formatDate(summary.createdAt)}</td>
                         <td style={{ padding: '13px 18px' }}>
-                          <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: chip.bg, color: chip.color }}>{chip.label}</span>
+                          <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: chip.bg, color: chip.color }}>{chip.label}</span>
                         </td>
-                        <td style={{ padding: '13px 18px', fontSize: 12.5, color: '#475569', maxWidth: 260 }}>
+                        <td style={{ padding: '13px 18px', fontSize: 12, color: '#475569', maxWidth: 260 }}>
                           {summary.cropCandidates.map(getCropLabel).join(', ') || '—'}
                         </td>
                         <td style={{ padding: '13px 18px', fontSize: 13 }}>
@@ -348,7 +348,7 @@ export default function ParcelDetail({ navigate }: Props) {
                           {(READY_STATUSES.has(summary.status) || IN_PROGRESS_STATUSES.has(summary.status)) && (
                             <button
                               onClick={() => openEvaluation(summary)}
-                              style={{ border: '1px solid #dbeafe', background: '#eff6ff', color: '#2563eb', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 12.5, fontWeight: 700 }}
+                              style={{ border: '1px solid #dbeafe', background: '#eff6ff', color: '#2563eb', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}
                             >
                               {READY_STATUSES.has(summary.status) ? 'Ver resultados' : 'Ver progreso'}
                             </button>
@@ -376,7 +376,7 @@ export default function ParcelDetail({ navigate }: Props) {
                 <X style={{ width: 15, height: 15 }} />
               </button>
             </div>
-            <div style={{ padding: 20, fontSize: 13.5, color: '#475569', lineHeight: 1.6 }}>
+            <div style={{ padding: 20, fontSize: 13, color: '#475569', lineHeight: 1.6 }}>
               {history.length > 0 ? (
                 <>
                   Esta parcela tiene <strong>{history.length} {history.length === 1 ? 'evaluacion' : 'evaluaciones'}</strong> realizada{history.length === 1 ? '' : 's'} con la geometria actual.
@@ -388,10 +388,10 @@ export default function ParcelDetail({ navigate }: Props) {
               )}
             </div>
             <div style={{ padding: '14px 20px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-              <button onClick={() => setConfirmingSave(false)} style={{ background: 'white', color: '#475569', border: '1.5px solid #e2e8f0', padding: '9px 14px', borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+              <button onClick={() => setConfirmingSave(false)} style={{ background: 'white', color: '#475569', border: '1.5px solid #e2e8f0', padding: '9px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
                 Cancelar
               </button>
-              <button onClick={() => void saveGeometry()} disabled={saving} style={{ background: '#d97706', color: 'white', border: 'none', padding: '9px 16px', borderRadius: 9, fontSize: 13, fontWeight: 800, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}>
+              <button onClick={() => void saveGeometry()} disabled={saving} style={{ background: '#d97706', color: 'white', border: 'none', padding: '9px 16px', borderRadius: 8, fontSize: 13, fontWeight: 800, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}>
                 {saving ? 'Guardando...' : 'Guardar nueva geometria'}
               </button>
             </div>

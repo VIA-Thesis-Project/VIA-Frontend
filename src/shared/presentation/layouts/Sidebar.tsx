@@ -56,7 +56,7 @@ export default function Sidebar({ active, navigate }: Props) {
         <div className="flex items-center gap-2.5">
           <ViaMark size={36} />
           <div>
-            <div className="text-slate-900" style={{ fontSize: 15, fontWeight: 800 }}>VIA</div>
+            <div className="text-slate-900" style={{ fontSize: 14, fontWeight: 800 }}>VIA</div>
             <div className="text-slate-400" style={{ fontSize: 11 }}>Viabilidad Agricola - Lima, Peru</div>
           </div>
         </div>
@@ -78,7 +78,7 @@ export default function Sidebar({ active, navigate }: Props) {
                   padding: '9px 12px',
                   background: isActive ? '#f0fdf4' : 'transparent',
                   color: isActive ? '#15803d' : '#64748b',
-                  fontSize: 13.5,
+                  fontSize: 13,
                   fontWeight: isActive ? 600 : 400,
                   border: 'none',
                   cursor: 'pointer',
@@ -97,7 +97,7 @@ export default function Sidebar({ active, navigate }: Props) {
                 {label === 'Nueva evaluacion' && (
                   <span
                     className="ml-auto rounded-full text-white"
-                    style={{ fontSize: 9, background: '#16a34a', padding: '1px 6px', fontWeight: 600 }}
+                    style={{ fontSize: 10, background: '#16a34a', padding: '1px 6px', fontWeight: 600 }}
                   >
                     +
                   </span>
@@ -124,7 +124,7 @@ export default function Sidebar({ active, navigate }: Props) {
         <button
           onClick={handleLogout}
           className="w-full flex items-center gap-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-          style={{ padding: '7px 10px', fontSize: 12.5, background: 'transparent', border: 'none', cursor: 'pointer' }}
+          style={{ padding: '7px 10px', fontSize: 12, background: 'transparent', border: 'none', cursor: 'pointer' }}
         >
           <LogOut style={{ width: 14, height: 14 }} />
           Cerrar sesion

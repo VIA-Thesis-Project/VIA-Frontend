@@ -121,7 +121,7 @@ export default function Processing({ navigate }: Props) {
             <span style={{ color: '#e2e8f0' }}>/</span>
             <div style={{ fontSize: 12, color: '#16a34a', fontWeight: 600 }}>Procesamiento</div>
           </div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', margin: 0 }}>Procesamiento de variables agroambientales</h1>
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: '#0f172a', margin: 0 }}>Procesamiento de variables agroambientales</h1>
           <p style={{ fontSize: 14, color: '#64748b', marginTop: 4 }}>
             Parcela: <strong style={{ color: '#0f172a' }}>{currentEvaluation?.parcelName ?? 'Sin parcela activa'}</strong>
             {' '}· {currentEvaluation?.parcelLocation ?? '-'} · {currentEvaluation?.areaHa ?? '-'} ha
@@ -136,7 +136,7 @@ export default function Processing({ navigate }: Props) {
         <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: 24 }}>
           <div>
             <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', padding: 24, marginBottom: 16 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', marginBottom: 20 }}>Progreso del analisis</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 20 }}>Progreso del analisis</div>
 
               <div style={{ marginBottom: 24 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
@@ -169,7 +169,7 @@ export default function Processing({ navigate }: Props) {
                         {i < processingSteps.length - 1 && <div style={{ width: 2, height: 32, background: completed ? '#bbf7d0' : '#f1f5f9', margin: '3px 0' }} />}
                       </div>
                       <div style={{ paddingBottom: i < processingSteps.length - 1 ? 16 : 0, paddingTop: 5 }}>
-                        <div style={{ fontSize: 13.5, fontWeight: completed || active || failedHere ? 600 : 400, color: labelColor }}>{step.label}</div>
+                        <div style={{ fontSize: 13, fontWeight: completed || active || failedHere ? 600 : 400, color: labelColor }}>{step.label}</div>
                         <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>{step.sub}</div>
                       </div>
                     </div>
@@ -181,7 +181,7 @@ export default function Processing({ navigate }: Props) {
 
           <div>
             <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', padding: 24, marginBottom: 16 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', marginBottom: 6 }}>Detalle del proceso</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 6 }}>Detalle del proceso</div>
               <div style={{ fontSize: 13, color: '#64748b', lineHeight: 1.6, marginBottom: 18 }}>
                 Informacion sobre el estado actual del analisis de tu parcela.
               </div>
@@ -193,27 +193,27 @@ export default function Processing({ navigate }: Props) {
                   { label: 'Ultima transicion', value: status?.lastTransition ? new Date(status.lastTransition).toLocaleString() : '-' },
                 ].map(({ label, value }) => (
                   <div key={label} style={{ background: '#fafafa', borderRadius: 12, padding: 14, border: '1px solid #f1f5f9' }}>
-                    <div style={{ fontSize: 11.5, color: '#94a3b8', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</div>
+                    <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</div>
                     <div style={{ fontSize: 13, color: '#0f172a', fontWeight: 700, overflowWrap: 'anywhere' }}>{value}</div>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div style={{ background: failed ? '#fee2e2' : 'linear-gradient(135deg, #f0fdf4, #ecfeff)', borderRadius: 14, border: failed ? '1px solid #fecaca' : '1px solid #bbf7d0', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ background: failed ? '#fee2e2' : 'linear-gradient(135deg, #f0fdf4, #ecfeff)', borderRadius: 16, border: failed ? '1px solid #fecaca' : '1px solid #bbf7d0', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: failed ? '#991b1b' : '#0f172a', marginBottom: 6 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: failed ? '#991b1b' : '#0f172a', marginBottom: 6 }}>
                   {failed ? 'Evaluacion fallida' : recommendationDone ? 'Analisis y recomendacion completados' : noRecommendableCrops ? 'MCDA completado sin cultivos recomendables' : done ? 'MCDA completado, recomendacion en proceso' : 'Procesando analisis MCDA...'}
                 </div>
-                <div style={{ fontSize: 13.5, color: '#475569' }}>
+                <div style={{ fontSize: 13, color: '#475569' }}>
                   {recommendationDone ? 'Resultado y recomendacion disponibles para consulta' : noRecommendableCrops ? 'Solo se generan recomendaciones para cultivos con viabilidad VIABLE o CONDICIONAL' : done ? 'Puedes ver el ranking mientras se prepara la recomendacion' : status ? `Estado actual: ${formatBackendStatus(status.status)}` : 'Iniciando analisis...'}
                 </div>
-                {error && <div style={{ fontSize: 12.5, color: failed ? '#991b1b' : '#92400e', marginTop: 8 }}>{error}</div>}
+                {error && <div style={{ fontSize: 12, color: failed ? '#991b1b' : '#92400e', marginTop: 8 }}>{error}</div>}
               </div>
               {failed && noRankedCropFailure && (
                 <button
                   onClick={() => navigate('new-evaluation')}
-                  style={{ background: '#991b1b', color: 'white', border: 'none', padding: '12px 18px', borderRadius: 10, fontSize: 13.5, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}
+                  style={{ background: '#991b1b', color: 'white', border: 'none', padding: '12px 18px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}
                 >
                   Nueva evaluacion
                 </button>
@@ -221,7 +221,7 @@ export default function Processing({ navigate }: Props) {
               {done && (
                 <button
                   onClick={() => navigate('results')}
-                  style={{ background: '#16a34a', color: 'white', border: 'none', padding: '12px 24px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}
+                  style={{ background: '#16a34a', color: 'white', border: 'none', padding: '12px 24px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}
                 >
                   Ver resultados <ChevronRight style={{ width: 16, height: 16 }} />
                 </button>

@@ -119,7 +119,7 @@ function renderMarkdownContent(text: string) {
       elements.push(
         <div key={i} style={{ display: 'flex', gap: 10, marginTop: 12, marginBottom: 2 }}>
           <span style={{ color: '#16a34a', fontWeight: 800, fontSize: 14, flexShrink: 0, marginTop: 1 }}>→</span>
-          <span style={{ fontSize: 13.5, color: '#0f172a', lineHeight: 1.65, fontWeight: 600 }}>
+          <span style={{ fontSize: 13, color: '#0f172a', lineHeight: 1.65, fontWeight: 600 }}>
             {renderInline(content)}
           </span>
         </div>
@@ -130,7 +130,7 @@ function renderMarkdownContent(text: string) {
       elements.push(
         <div key={i} style={{ display: 'flex', gap: 8, marginTop: 4, paddingLeft: 4 }}>
           <span style={{ color: '#94a3b8', flexShrink: 0 }}>•</span>
-          <span style={{ fontSize: 13.5, color: '#475569', lineHeight: 1.65 }}>
+          <span style={{ fontSize: 13, color: '#475569', lineHeight: 1.65 }}>
             {renderInline(line.replace(/^- /, ''))}
           </span>
         </div>
@@ -140,7 +140,7 @@ function renderMarkdownContent(text: string) {
     if (line === '') return;
 
     elements.push(
-      <p key={i} style={{ fontSize: 13.5, color: '#475569', lineHeight: 1.75, margin: '4px 0' }}>
+      <p key={i} style={{ fontSize: 13, color: '#475569', lineHeight: 1.75, margin: '4px 0' }}>
         {renderInline(line)}
       </p>
     );
@@ -329,19 +329,19 @@ export default function Recommendations({ navigate }: Props) {
             <button onClick={() => navigate('crop-detail')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, color: '#94a3b8', fontSize: 12, marginBottom: 10 }}>
               <ChevronLeft style={{ width: 13, height: 13 }} /> Volver a detalle de cultivo
             </button>
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', margin: 0, marginBottom: 6 }}>Recomendaciones agronomicas</h1>
+            <h1 style={{ fontSize: 20, fontWeight: 700, color: '#0f172a', margin: 0, marginBottom: 6 }}>Recomendaciones agronomicas</h1>
             <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
               <div style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>Cultivo: {cropLabel}</div>
               <div style={{ height: 14, width: 1, background: '#e2e8f0' }} />
               <div style={{ fontSize: 13, color: '#64748b' }}>Parcela: <strong>{currentEvaluation?.parcelName ?? '-'}</strong></div>
               <div style={{ height: 14, width: 1, background: '#e2e8f0' }} />
-              <div style={{ background: '#dcfce7', color: '#16a34a', fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 20 }}>Score: {score}%</div>
+              <div style={{ background: '#dcfce7', color: '#16a34a', fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 999 }}>Score: {score}%</div>
             </div>
           </div>
         </div>
 
         {error && (
-          <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', borderRadius: 12, padding: 16, marginBottom: 16, fontSize: 13.5 }}>
+          <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', borderRadius: 12, padding: 16, marginBottom: 16, fontSize: 13 }}>
             {error}
           </div>
         )}
@@ -355,7 +355,7 @@ export default function Recommendations({ navigate }: Props) {
         {!loading && (
           <>
             {mcdaPending && (
-              <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', borderRadius: 12, padding: 16, marginBottom: 16, fontSize: 13.5, lineHeight: 1.6 }}>
+              <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', borderRadius: 12, padding: 16, marginBottom: 16, fontSize: 13, lineHeight: 1.6 }}>
                 El analisis de viabilidad aun no esta disponible. Estado actual: <strong>{formatBackendStatus(mcdaResult?.status)}</strong>. Vuelve a la pantalla de procesamiento y espera que el analisis se complete.
               </div>
             )}
@@ -363,28 +363,28 @@ export default function Recommendations({ navigate }: Props) {
             {/* Estado de recomendacion */}
             <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', padding: '24px 28px', marginBottom: 20 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: 36, height: 36, borderRadius: 8, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Sprout style={{ width: 18, height: 18, color: '#16a34a' }} />
                 </div>
                 <div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a' }}>Estado de la recomendacion</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>Estado de la recomendacion</div>
                   <div style={{ fontSize: 12, color: '#94a3b8' }}>Generada con inteligencia artificial a partir de fuentes agronomicas</div>
                 </div>
               </div>
               <div style={{ background: '#fafafa', borderRadius: 12, padding: '18px 20px', border: '1px solid #f1f5f9' }}>
                 {backendRecommendation ? (
                   <>
-                    <p style={{ fontSize: 14.5, color: '#334155', lineHeight: 1.75, margin: 0, marginBottom: 10 }}>
+                    <p style={{ fontSize: 14, color: '#334155', lineHeight: 1.75, margin: 0, marginBottom: 10 }}>
                       <strong>{normalizeBackendText(backendRecommendation.title)}</strong>
                     </p>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      <div style={{ background: '#f0fdf4', color: '#15803d', fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 20 }}>
+                      <div style={{ background: '#f0fdf4', color: '#15803d', fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 999 }}>
                         {formatBackendStatus(backendRecommendation.status)}
                       </div>
-                      <div style={{ background: '#ecfeff', color: '#0891b2', fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 20 }}>
+                      <div style={{ background: '#ecfeff', color: '#0891b2', fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 999 }}>
                         Fuente: {humanizeProvider(backendRecommendation.provider)}
                       </div>
-                      <div style={{ background: '#faf5ff', color: '#7c3aed', fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 20 }}>
+                      <div style={{ background: '#faf5ff', color: '#7c3aed', fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 999 }}>
                         {backendRecommendation.evidence.length} fuentes consultadas
                       </div>
                     </div>
@@ -395,7 +395,7 @@ export default function Recommendations({ navigate }: Props) {
                       <div style={{ fontSize: 13, color: '#d97706', fontWeight: 800, marginBottom: 6 }}>
                         {noRecommendableCrops ? 'Cultivos no elegibles para recomendacion' : pollLimitReached ? 'Tiempo de espera agotado' : 'Preparando recomendacion...'}
                       </div>
-                      <p style={{ fontSize: 14.5, color: '#334155', lineHeight: 1.75, margin: 0 }}>
+                      <p style={{ fontSize: 14, color: '#334155', lineHeight: 1.75, margin: 0 }}>
                         {noRecommendableCrops
                           ? 'Se completo el analisis de viabilidad, pero todos los cultivos quedaron como NO_VIABLE o NO_CONCLUYENTE. Solo se generan recomendaciones para cultivos VIABLE o CONDICIONAL.'
                           : pollLimitReached
@@ -414,7 +414,7 @@ export default function Recommendations({ navigate }: Props) {
                     {noRecommendableCrops ? (
                       <button
                         onClick={() => navigate('results')}
-                        style={{ background: 'white', color: '#475569', border: '1.5px solid #e2e8f0', padding: '9px 14px', borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}
+                        style={{ background: 'white', color: '#475569', border: '1.5px solid #e2e8f0', padding: '9px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}
                       >
                         Ver ranking
                       </button>
@@ -422,7 +422,7 @@ export default function Recommendations({ navigate }: Props) {
                       <button
                         onClick={refreshRecommendation}
                         disabled={refreshing}
-                        style={{ background: 'white', color: '#475569', border: '1.5px solid #e2e8f0', padding: '9px 14px', borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: refreshing ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0, opacity: refreshing ? 0.7 : 1 }}
+                        style={{ background: 'white', color: '#475569', border: '1.5px solid #e2e8f0', padding: '9px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: refreshing ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0, opacity: refreshing ? 0.7 : 1 }}
                       >
                         <RefreshCcw style={{ width: 14, height: 14 }} />
                         {refreshing ? 'Consultando...' : 'Actualizar'}
@@ -435,14 +435,14 @@ export default function Recommendations({ navigate }: Props) {
 
             {noRecommendableCrops && (
               <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', padding: '18px 22px', marginBottom: 20 }}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', marginBottom: 12 }}>Cultivos evaluados</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 12 }}>Cultivos evaluados</div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
                   {sortResults(mcdaResult?.results ?? []).map((crop) => (
                     <div key={crop.cropId} style={{ background: '#fafafa', border: '1px solid #f1f5f9', borderRadius: 12, padding: '12px 14px' }}>
-                      <div style={{ fontSize: 13.5, fontWeight: 800, color: '#0f172a', marginBottom: 6 }}>{getCropLabel(crop.cropId)}</div>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: '#0f172a', marginBottom: 6 }}>{getCropLabel(crop.cropId)}</div>
                       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                        <span style={{ background: '#fee2e2', color: '#dc2626', fontSize: 11.5, fontWeight: 800, padding: '4px 9px', borderRadius: 20 }}>{formatBackendStatus(crop.viabilityCategory)}</span>
-                        <span style={{ background: '#f8fafc', color: '#475569', fontSize: 11.5, fontWeight: 700, padding: '4px 9px', borderRadius: 20 }}>Score {toPercent(crop.score)}%</span>
+                        <span style={{ background: '#fee2e2', color: '#dc2626', fontSize: 11, fontWeight: 800, padding: '4px 9px', borderRadius: 999 }}>{formatBackendStatus(crop.viabilityCategory)}</span>
+                        <span style={{ background: '#f8fafc', color: '#475569', fontSize: 11, fontWeight: 700, padding: '4px 9px', borderRadius: 999 }}>Score {toPercent(crop.score)}%</span>
                       </div>
                     </div>
                   ))}
@@ -454,11 +454,11 @@ export default function Recommendations({ navigate }: Props) {
             {backendSections.length > 0 && (
               <div style={{ background: 'white', borderRadius: 16, border: '1px solid #bbf7d0', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', overflow: 'hidden', marginBottom: 20 }}>
                 <div style={{ background: '#f0fdf4', borderBottom: '1px solid #bbf7d0', padding: '16px 22px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 10, background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #bbf7d0' }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 8, background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #bbf7d0' }}>
                     <CheckCircle2 style={{ width: 17, height: 17, color: '#16a34a' }} />
                   </div>
                   <div>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: '#0f172a' }}>{cropLabel}</div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: '#0f172a' }}>{cropLabel}</div>
                     {backendRecommendation?.createdAt && (
                       <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
                         {new Date(backendRecommendation.createdAt).toLocaleDateString('es-PE', { day: 'numeric', month: 'long', year: 'numeric' })}
@@ -484,7 +484,7 @@ export default function Recommendations({ navigate }: Props) {
             {/* Recomendaciones por brecha */}
             {gapRecommendations.length > 0 && (
               <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', padding: '18px 22px', marginBottom: 20 }}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', marginBottom: 12 }}>Recomendaciones priorizadas por brecha</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 12 }}>Recomendaciones priorizadas por brecha</div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12 }}>
                   {gapRecommendations.slice(0, 5).map((item, index) => {
                     const recommendationText = String(item.recommendation ?? item.mapping_validation_note ?? 'Recomendacion pendiente de evidencia suficiente.');
@@ -492,9 +492,9 @@ export default function Recommendations({ navigate }: Props) {
                     const confidence = item.confidence ? String(item.confidence) : 'sin confianza';
                     return (
                       <div key={`${criterion}-${index}`} style={{ background: '#fafafa', border: '1px solid #f1f5f9', borderRadius: 12, padding: '14px 16px' }}>
-                        <div style={{ fontSize: 13.5, fontWeight: 800, color: '#0f172a', marginBottom: 6 }}>{normalizeBackendText(criterion)}</div>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: '#0f172a', marginBottom: 6 }}>{normalizeBackendText(criterion)}</div>
                         <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.65, margin: 0 }}>{normalizeBackendText(recommendationText)}</p>
-                        <div style={{ display: 'inline-flex', marginTop: 10, background: '#ecfeff', color: '#0891b2', fontSize: 11, fontWeight: 800, padding: '4px 9px', borderRadius: 20 }}>
+                        <div style={{ display: 'inline-flex', marginTop: 10, background: '#ecfeff', color: '#0891b2', fontSize: 11, fontWeight: 800, padding: '4px 9px', borderRadius: 999 }}>
                           Confianza: {confidence}
                         </div>
                       </div>
@@ -509,7 +509,7 @@ export default function Recommendations({ navigate }: Props) {
               {derivedActions.map(({ title, items }) => (
                 <div key={title} style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
                   <div style={{ background: '#f0fdf4', borderBottom: '1.5px solid #bbf7d0', padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 34, height: 34, borderRadius: 9, background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #bbf7d0' }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 8, background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #bbf7d0' }}>
                       <CheckCircle2 style={{ width: 16, height: 16, color: '#16a34a' }} />
                     </div>
                     <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>{title}</div>
@@ -518,7 +518,7 @@ export default function Recommendations({ navigate }: Props) {
                     {items.map((item) => (
                       <div key={item} style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
                         <CheckCircle2 style={{ width: 14, height: 14, color: '#16a34a', flexShrink: 0, marginTop: 2 }} />
-                        <span style={{ fontSize: 13.5, color: '#475569', lineHeight: 1.6 }}>{item}</span>
+                        <span style={{ fontSize: 13, color: '#475569', lineHeight: 1.6 }}>{item}</span>
                       </div>
                     ))}
                   </div>

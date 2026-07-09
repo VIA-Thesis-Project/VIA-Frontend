@@ -233,7 +233,7 @@ export default function CropDetail({ navigate }: Props) {
         </div>
 
         {error && (
-          <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', borderRadius: 12, padding: 16, marginBottom: 16, fontSize: 13.5 }}>
+          <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', borderRadius: 12, padding: 16, marginBottom: 16, fontSize: 13 }}>
             {error}
           </div>
         )}
@@ -253,15 +253,15 @@ export default function CropDetail({ navigate }: Props) {
         {crop && (
           <>
             {/* Hero */}
-            <div style={{ background: 'linear-gradient(135deg, #f0fdf4, #ecfeff)', borderRadius: 18, border: '1px solid #bbf7d0', padding: '24px 28px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 24 }}>
+            <div style={{ background: 'linear-gradient(135deg, #f0fdf4, #ecfeff)', borderRadius: 16, border: '1px solid #bbf7d0', padding: '24px 28px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 24 }}>
               <div style={{ width: 90, height: 90, borderRadius: '50%', background: 'white', border: `4px solid ${style.color}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(22,163,74,0.2)', flexShrink: 0 }}>
                 <span style={{ fontSize: 28, fontWeight: 900, color: style.color, lineHeight: 1 }}>{score}%</span>
                 <span style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>score</span>
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                  <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', margin: 0 }}>{getCropLabel(crop.cropId)}</h1>
-                  <div style={{ background: style.bg, color: style.color, fontSize: 12, fontWeight: 700, padding: '5px 14px', borderRadius: 20, border: `1px solid ${style.border}` }}>{formatBackendStatus(crop.viabilityCategory)}</div>
+                  <h1 style={{ fontSize: 20, fontWeight: 800, color: '#0f172a', margin: 0 }}>{getCropLabel(crop.cropId)}</h1>
+                  <div style={{ background: style.bg, color: style.color, fontSize: 12, fontWeight: 700, padding: '5px 14px', borderRadius: 999, border: `1px solid ${style.border}` }}>{formatBackendStatus(crop.viabilityCategory)}</div>
                 </div>
                 <p style={{ fontSize: 14, color: '#475569', margin: 0, lineHeight: 1.6, maxWidth: 700 }}>
                   Condicion de calculo: <strong style={{ color: '#0f172a' }}>{formatBackendStatus(crop.calcCondition)}</strong>. Se detectaron {crop.gaps.length} brechas en {groupedGaps.length} {groupedGaps.length === 1 ? 'criterio' : 'criterios'} y {crop.limitingFactors.length} factores limitantes.
@@ -269,7 +269,7 @@ export default function CropDetail({ navigate }: Props) {
               </div>
               <button
                 onClick={() => navigate('recommendations')}
-                style={{ background: cropCanReceiveRecommendation ? '#16a34a' : '#d97706', color: 'white', border: 'none', padding: '12px 22px', borderRadius: 11, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}
+                style={{ background: cropCanReceiveRecommendation ? '#16a34a' : '#d97706', color: 'white', border: 'none', padding: '12px 22px', borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}
               >
                 {cropCanReceiveRecommendation ? 'Ver recomendacion' : 'Ver resultado'} <ChevronRight style={{ width: 15, height: 15 }} />
               </button>
@@ -278,7 +278,7 @@ export default function CropDetail({ navigate }: Props) {
             {/* Cards + chart */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 20, marginBottom: 20 }}>
               <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', padding: 24 }}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', marginBottom: 2 }}>Factores evaluados por MCDA</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 2 }}>Factores evaluados por MCDA</div>
                 <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 20 }}>Agrupados por criterio — cada fase puede tener una membresia distinta</div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
@@ -295,9 +295,9 @@ export default function CropDetail({ navigate }: Props) {
                         borderTop: groupIdx > 0 ? '1px solid #f1f5f9' : 'none',
                         marginTop: groupIdx > 0 ? 8 : 0,
                       }}>
-                        <span style={{ fontSize: 12.5, fontWeight: 700, color: '#374151' }}>{cards[0].label}</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: '#374151' }}>{cards[0].label}</span>
                         {cards.length > 1 && (
-                          <span style={{ fontSize: 11, color: '#94a3b8', background: '#f1f5f9', padding: '1px 8px', borderRadius: 20 }}>
+                          <span style={{ fontSize: 11, color: '#94a3b8', background: '#f1f5f9', padding: '1px 8px', borderRadius: 999 }}>
                             {cards.length} fases
                           </span>
                         )}
@@ -310,16 +310,16 @@ export default function CropDetail({ navigate }: Props) {
                           <div key={`${criterionId}-${card.phaseId}`} style={{ background: '#fafafa', borderRadius: 12, padding: 14, border: '1px solid #f1f5f9' }}>
                             {/* Phase pill + status badge */}
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, gap: 4 }}>
-                              <div style={{ background: pill.bg, color: pill.color, border: `1px solid ${pill.border}`, fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 20, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '65%' }}>
+                              <div style={{ background: pill.bg, color: pill.color, border: `1px solid ${pill.border}`, fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 999, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '65%' }}>
                                 {card.phaseLabel}
                               </div>
-                              <div style={{ fontSize: 10, fontWeight: 600, padding: '3px 7px', borderRadius: 10, background: card.bg, color: card.color, border: `1px solid ${card.border}`, flexShrink: 0 }}>
+                              <div style={{ fontSize: 10, fontWeight: 600, padding: '3px 7px', borderRadius: 8, background: card.bg, color: card.color, border: `1px solid ${card.border}`, flexShrink: 0 }}>
                                 {card.status}
                               </div>
                             </div>
                             {/* Membership score */}
                             <div style={{ marginBottom: 8 }}>
-                              <span style={{ fontSize: 26, fontWeight: 900, color: card.color }}>{card.value.toFixed(2)}</span>
+                              <span style={{ fontSize: 24, fontWeight: 900, color: card.color }}>{card.value.toFixed(2)}</span>
                               <span style={{ fontSize: 11, color: '#94a3b8', marginLeft: 4 }}>membresia</span>
                             </div>
                             <div style={{ height: 5, background: '#f1f5f9', borderRadius: 3, marginBottom: 10 }}>
@@ -350,7 +350,7 @@ export default function CropDetail({ navigate }: Props) {
                   <ResponsiveContainer width="100%" height={Math.max(120, chartData.length * 42)}>
                     <BarChart data={chartData} layout="vertical" margin={{ left: 8, right: 16, top: 4, bottom: 4 }}>
                       <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
-                      <YAxis type="category" dataKey="name" tick={{ fontSize: 10.5, fill: '#64748b' }} axisLine={false} tickLine={false} width={80} />
+                      <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} width={80} />
                       <Tooltip content={<PhaseTooltip />} />
                       <Bar dataKey="value" radius={[0, 5, 5, 0]}>
                         {chartData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
@@ -359,7 +359,7 @@ export default function CropDetail({ navigate }: Props) {
                   </ResponsiveContainer>
                 </div>
 
-                <div style={{ background: '#f0fdf4', borderRadius: 14, border: '1px solid #bbf7d0', padding: '14px 16px', display: 'flex', gap: 10 }}>
+                <div style={{ background: '#f0fdf4', borderRadius: 16, border: '1px solid #bbf7d0', padding: '14px 16px', display: 'flex', gap: 10 }}>
                   <Info style={{ width: 15, height: 15, color: '#16a34a', flexShrink: 0, marginTop: 1 }} />
                   <div style={{ fontSize: 12, color: '#166534', lineHeight: 1.6 }}>
                     Cada barra muestra la fase mas limitante del criterio. Los colores de fase son consistentes dentro de cada criterio.
@@ -371,7 +371,7 @@ export default function CropDetail({ navigate }: Props) {
             {/* Brechas table — grouped by criterion */}
             <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
               <div style={{ padding: '18px 24px', borderBottom: '1px solid #f1f5f9' }}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a' }}>Brechas agronomicas</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>Brechas agronomicas</div>
                 <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>
                   {crop.gaps.length} brechas en {groupedGaps.length} {groupedGaps.length === 1 ? 'criterio' : 'criterios'} — agrupadas por criterio
                 </div>
@@ -381,7 +381,7 @@ export default function CropDetail({ navigate }: Props) {
                   <thead>
                     <tr style={{ background: '#fafafa' }}>
                       {['Fase', 'Periodo', 'Observado', 'Optimo', 'Brecha'].map((h) => (
-                        <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11.5, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>{h}</th>
+                        <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -397,10 +397,10 @@ export default function CropDetail({ navigate }: Props) {
                         <tr style={{ background: '#f8fafc', borderTop: '2px solid #e2e8f0' }}>
                           <td colSpan={5} style={{ padding: '8px 16px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              <span style={{ fontSize: 12.5, fontWeight: 700, color: '#0f172a' }}>
+                              <span style={{ fontSize: 12, fontWeight: 700, color: '#0f172a' }}>
                                 {formatCriterionLabel(gaps[0])}
                               </span>
-                              <span style={{ fontSize: 11, color: '#94a3b8', background: '#e2e8f0', padding: '1px 8px', borderRadius: 20 }}>
+                              <span style={{ fontSize: 11, color: '#94a3b8', background: '#e2e8f0', padding: '1px 8px', borderRadius: 999 }}>
                                 {gaps.length} {gaps.length === 1 ? 'fase' : 'fases'}
                               </span>
                             </div>
@@ -418,7 +418,7 @@ export default function CropDetail({ navigate }: Props) {
                               <td style={{ padding: '10px 16px', fontSize: 13, fontWeight: 600, color: '#0f172a' }}>{formatNumberWithUnit(row.observedValue, row.unit)}</td>
                               <td style={{ padding: '10px 16px', fontSize: 13, color: '#64748b' }}>{formatNumberWithUnit(row.optimalLimit, row.unit)}</td>
                               <td style={{ padding: '10px 16px' }}>
-                                <div style={{ background: sevStyle.bg, color: sevStyle.color, border: `1px solid ${sevStyle.border}`, fontSize: 11.5, fontWeight: 700, padding: '4px 10px', borderRadius: 20, display: 'inline-block' }}>
+                                <div style={{ background: sevStyle.bg, color: sevStyle.color, border: `1px solid ${sevStyle.border}`, fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, display: 'inline-block' }}>
                                   {formatNumber(row.gapValue)} {row.unit ?? ''}
                                 </div>
                               </td>

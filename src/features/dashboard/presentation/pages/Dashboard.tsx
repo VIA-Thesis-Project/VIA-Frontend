@@ -133,13 +133,13 @@ export default function Dashboard({ navigate }: Props) {
       <main style={{ marginLeft: 240, flex: 1, padding: '28px 32px', minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
           <div>
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', margin: 0, marginBottom: 4 }}>Dashboard</h1>
-            <p style={{ fontSize: 13.5, color: '#64748b', margin: 0 }}>Resumen de parcelas, evaluaciones y recomendaciones recientes.</p>
+            <h1 style={{ fontSize: 20, fontWeight: 700, color: '#0f172a', margin: 0, marginBottom: 4 }}>Dashboard</h1>
+            <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>Resumen de parcelas, evaluaciones y recomendaciones recientes.</p>
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <button
               onClick={() => navigate('new-evaluation')}
-              style={{ background: '#16a34a', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 9, fontSize: 13.5, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}
+              style={{ background: '#16a34a', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}
             >
               <Plus style={{ width: 15, height: 15 }} />
               Nueva evaluacion
@@ -148,19 +148,19 @@ export default function Dashboard({ navigate }: Props) {
         </div>
 
         {error && (
-          <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', borderRadius: 12, padding: 16, marginBottom: 16, fontSize: 13.5 }}>
+          <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', borderRadius: 12, padding: 16, marginBottom: 16, fontSize: 13 }}>
             {error}
           </div>
         )}
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 28 }}>
           {stats.map(({ icon: Icon, label, value, trend, color, bg, iconBg }) => (
-            <div key={label} style={{ background: 'white', borderRadius: 14, padding: 20, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+            <div key={label} style={{ background: 'white', borderRadius: 16, padding: 20, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                <div style={{ width: 40, height: 40, borderRadius: 10, background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: 40, height: 40, borderRadius: 8, background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Icon style={{ width: 20, height: 20, color }} />
                 </div>
-                <div style={{ fontSize: 11, color, fontWeight: 600, background: bg, padding: '3px 8px', borderRadius: 20 }}>{trend}</div>
+                <div style={{ fontSize: 11, color, fontWeight: 600, background: bg, padding: '3px 8px', borderRadius: 999 }}>{trend}</div>
               </div>
               <div style={{ fontSize: 28, fontWeight: 800, color: '#0f172a', marginBottom: 4 }}>{value}</div>
               <div style={{ fontSize: 13, color: '#64748b' }}>{label}</div>
@@ -172,7 +172,7 @@ export default function Dashboard({ navigate }: Props) {
           <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
             <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9' }}>
               <div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a' }}>Parcelas registradas</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>Parcelas registradas</div>
                 <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>
                   {loading ? 'Cargando...' : `${recentParcels.length} parcelas registradas`}
                 </div>
@@ -183,7 +183,7 @@ export default function Dashboard({ navigate }: Props) {
               <thead>
                 <tr style={{ background: '#fafafa' }}>
                   {['Parcela', 'CRS', 'Area', 'Origen', ''].map(h => (
-                    <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11.5, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                    <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -201,20 +201,20 @@ export default function Dashboard({ navigate }: Props) {
                 {recentParcels.map((parcel) => (
                   <tr key={parcel.id} style={{ borderTop: '1px solid #f8fafc' }}>
                     <td style={{ padding: '13px 16px' }}>
-                      <div style={{ fontSize: 13.5, fontWeight: 600, color: '#0f172a', marginBottom: 2 }}>{parcel.metadata.name}</div>
-                      <div style={{ fontSize: 11.5, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a', marginBottom: 2 }}>{parcel.metadata.name}</div>
+                      <div style={{ fontSize: 11, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 4 }}>
                         <MapPin style={{ width: 10, height: 10 }} /> ID {parcel.id.slice(0, 8)}
                       </div>
                     </td>
                     <td style={{ padding: '13px 16px', fontSize: 13, color: '#64748b' }}>{parcel.metadata.crs}</td>
                     <td style={{ padding: '13px 16px', fontSize: 13, color: '#475569', fontWeight: 600 }}>{formatParcelArea(parcel)}</td>
                     <td style={{ padding: '13px 16px' }}>
-                      <div style={{ background: '#f0fdf4', color: '#15803d', fontSize: 11.5, fontWeight: 600, padding: '4px 10px', borderRadius: 20, display: 'inline-block' }}>Registrada</div>
+                      <div style={{ background: '#f0fdf4', color: '#15803d', fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 999, display: 'inline-block' }}>Registrada</div>
                     </td>
                     <td style={{ padding: '13px 16px' }}>
                       <button
                         onClick={() => navigate('new-evaluation')}
-                        style={{ background: 'none', border: '1px solid #e2e8f0', borderRadius: 7, padding: '5px 10px', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', gap: 5, fontSize: 12 }}
+                        style={{ background: 'none', border: '1px solid #e2e8f0', borderRadius: 8, padding: '5px 10px', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', gap: 5, fontSize: 12 }}
                       >
                         <Eye style={{ width: 12, height: 12 }} /> Usar
                       </button>
@@ -235,7 +235,7 @@ export default function Dashboard({ navigate }: Props) {
                 {localSummary.map((item) => (
                   <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
                     <span style={{ fontSize: 13, color: '#475569', fontWeight: 500 }}>{item.label}</span>
-                    <div style={{ background: item.bg, color: item.color, fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 20, maxWidth: 170, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <div style={{ background: item.bg, color: item.color, fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 999, maxWidth: 170, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {item.value}
                     </div>
                   </div>
@@ -265,7 +265,7 @@ export default function Dashboard({ navigate }: Props) {
 
         <div style={{ display: 'flex', gap: 12 }}>
           <button onClick={() => navigate('new-evaluation')} style={{ flex: 1, background: 'white', border: '1.5px dashed #bbf7d0', borderRadius: 12, padding: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, color: '#16a34a' }}>
-            <div style={{ width: 36, height: 36, background: '#f0fdf4', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 36, height: 36, background: '#f0fdf4', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Plus style={{ width: 18, height: 18, color: '#16a34a' }} />
             </div>
             <div style={{ textAlign: 'left' }}>
@@ -274,7 +274,7 @@ export default function Dashboard({ navigate }: Props) {
             </div>
           </button>
           <button onClick={() => navigate('results')} style={{ flex: 1, background: 'white', border: '1.5px dashed #e2e8f0', borderRadius: 12, padding: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 36, height: 36, background: '#ecfeff', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 36, height: 36, background: '#ecfeff', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <TrendingUp style={{ width: 18, height: 18, color: '#0891b2' }} />
             </div>
             <div style={{ textAlign: 'left' }}>

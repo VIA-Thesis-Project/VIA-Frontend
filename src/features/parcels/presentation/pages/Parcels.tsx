@@ -190,14 +190,14 @@ export default function Parcels({ navigate }: Props) {
               <span style={{ color: '#e2e8f0' }}>/</span>
               <span style={{ color: '#16a34a', fontSize: 12, fontWeight: 700 }}>Parcelas</span>
             </div>
-            <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', margin: 0, marginBottom: 4 }}>Parcelas registradas</h1>
-            <p style={{ fontSize: 13.5, color: '#64748b', margin: 0 }}>Gestion de parcelas conectada al backend desplegado de VIA.</p>
+            <h1 style={{ fontSize: 20, fontWeight: 800, color: '#0f172a', margin: 0, marginBottom: 4 }}>Parcelas registradas</h1>
+            <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>Gestion de parcelas conectada al backend desplegado de VIA.</p>
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <button
               onClick={loadParcels}
               disabled={loading}
-              style={{ background: 'white', color: '#475569', border: '1.5px solid #e2e8f0', padding: '9px 14px', borderRadius: 9, fontSize: 13.5, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}
+              style={{ background: 'white', color: '#475569', border: '1.5px solid #e2e8f0', padding: '9px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}
             >
               <RefreshCcw style={{ width: 15, height: 15 }} />
               Sincronizar
@@ -205,7 +205,7 @@ export default function Parcels({ navigate }: Props) {
             <button
               onClick={() => navigate('new-evaluation')}
               title="Delimita una parcela nueva e inicia su evaluacion"
-              style={{ background: '#16a34a', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 9, fontSize: 13.5, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}
+              style={{ background: '#16a34a', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}
             >
               <Plus style={{ width: 15, height: 15 }} />
               Nueva evaluacion
@@ -227,9 +227,9 @@ export default function Parcels({ navigate }: Props) {
             { label: 'Sin area', value: parcelsWithoutArea, color: '#d97706', sub: 'requieren revision' },
             { label: 'Resultados filtrados', value: filteredParcels.length, color: '#7c3aed', sub: 'vista actual' },
           ].map((stat) => (
-            <div key={stat.label} style={{ background: 'white', borderRadius: 14, padding: 18, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+            <div key={stat.label} style={{ background: 'white', borderRadius: 16, padding: 18, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
               <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700, marginBottom: 8 }}>{stat.label}</div>
-              <div style={{ fontSize: 26, color: '#0f172a', fontWeight: 800 }}>{stat.value}</div>
+              <div style={{ fontSize: 24, color: '#0f172a', fontWeight: 800 }}>{stat.value}</div>
               <div style={{ fontSize: 12, color: stat.color, fontWeight: 700, marginTop: 4 }}>{stat.sub}</div>
             </div>
           ))}
@@ -238,7 +238,7 @@ export default function Parcels({ navigate }: Props) {
         <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
           <div style={{ padding: '18px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14 }}>
             <div>
-              <div style={{ fontSize: 15, fontWeight: 800, color: '#0f172a' }}>Lista de parcelas</div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#0f172a' }}>Lista de parcelas</div>
               <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>Edita metadatos, copia IDs o elimina registros del backend.</div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -248,13 +248,13 @@ export default function Parcels({ navigate }: Props) {
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder="Buscar parcela..."
-                  style={{ width: 230, padding: '9px 12px 9px 34px', border: '1.5px solid #e2e8f0', borderRadius: 9, fontSize: 13, outline: 'none', color: '#0f172a' }}
+                  style={{ width: 230, padding: '9px 12px 9px 34px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 13, outline: 'none', color: '#0f172a' }}
                 />
               </div>
               <select
                 value={areaFilter}
                 onChange={(event) => setAreaFilter(event.target.value as AreaFilter)}
-                style={{ padding: '9px 12px', border: '1.5px solid #e2e8f0', borderRadius: 9, fontSize: 13, color: '#475569', background: 'white', outline: 'none' }}
+                style={{ padding: '9px 12px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 13, color: '#475569', background: 'white', outline: 'none' }}
               >
                 <option value="all">Todas</option>
                 <option value="with-area">Con area</option>
@@ -267,7 +267,7 @@ export default function Parcels({ navigate }: Props) {
             <thead>
               <tr style={{ background: '#fafafa' }}>
                 {['Parcela', 'Area', 'Geometria', 'CRS', 'ID backend', 'Acciones'].map((header) => (
-                  <th key={header} style={{ padding: '11px 18px', textAlign: 'left', fontSize: 11.5, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{header}</th>
+                  <th key={header} style={{ padding: '11px 18px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{header}</th>
                 ))}
               </tr>
             </thead>
@@ -281,7 +281,7 @@ export default function Parcels({ navigate }: Props) {
                 <tr>
                   <td colSpan={6} style={{ padding: 28, textAlign: 'center' }}>
                     <div style={{ fontSize: 14, color: '#0f172a', fontWeight: 700, marginBottom: 4 }}>No hay parcelas para mostrar</div>
-                    <div style={{ fontSize: 12.5, color: '#64748b' }}>Prueba limpiar filtros o registra una nueva parcela.</div>
+                    <div style={{ fontSize: 12, color: '#64748b' }}>Prueba limpiar filtros o registra una nueva parcela.</div>
                   </td>
                 </tr>
               )}
@@ -289,12 +289,12 @@ export default function Parcels({ navigate }: Props) {
                 <tr key={parcel.id} style={{ borderTop: '1px solid #f8fafc' }}>
                   <td style={{ padding: '14px 18px', maxWidth: 340 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                      <div style={{ width: 34, height: 34, borderRadius: 10, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <div style={{ width: 34, height: 34, borderRadius: 8, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <MapPin style={{ width: 17, height: 17, color: '#16a34a' }} />
                       </div>
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: 13.5, fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{parcel.metadata.name}</div>
-                        <div style={{ fontSize: 11.5, color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{parcel.metadata.description}</div>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{parcel.metadata.name}</div>
+                        <div style={{ fontSize: 11, color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{parcel.metadata.description}</div>
                       </div>
                     </div>
                   </td>
@@ -343,22 +343,22 @@ export default function Parcels({ navigate }: Props) {
               </button>
             </div>
             <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 13 }}>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 12.5, color: '#475569', fontWeight: 700 }}>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 12, color: '#475569', fontWeight: 700 }}>
                 Nombre
-                <input value={editForm.name} onChange={(event) => setEditForm((current) => ({ ...current, name: event.target.value }))} style={{ padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: 9, fontSize: 13.5, color: '#0f172a', outline: 'none' }} />
+                <input value={editForm.name} onChange={(event) => setEditForm((current) => ({ ...current, name: event.target.value }))} style={{ padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 13, color: '#0f172a', outline: 'none' }} />
               </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 12.5, color: '#475569', fontWeight: 700 }}>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 12, color: '#475569', fontWeight: 700 }}>
                 Descripcion
-                <textarea value={editForm.description} onChange={(event) => setEditForm((current) => ({ ...current, description: event.target.value }))} rows={4} style={{ padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: 9, fontSize: 13.5, color: '#0f172a', outline: 'none', resize: 'vertical' }} />
+                <textarea value={editForm.description} onChange={(event) => setEditForm((current) => ({ ...current, description: event.target.value }))} rows={4} style={{ padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 13, color: '#0f172a', outline: 'none', resize: 'vertical' }} />
               </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 12.5, color: '#475569', fontWeight: 700 }}>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 12, color: '#475569', fontWeight: 700 }}>
                 CRS
-                <input value={editForm.crs} onChange={(event) => setEditForm((current) => ({ ...current, crs: event.target.value }))} style={{ padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: 9, fontSize: 13.5, color: '#0f172a', outline: 'none' }} />
+                <input value={editForm.crs} onChange={(event) => setEditForm((current) => ({ ...current, crs: event.target.value }))} style={{ padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 13, color: '#0f172a', outline: 'none' }} />
               </label>
             </div>
             <div style={{ padding: '14px 20px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-              <button onClick={closeEdit} style={{ background: 'white', color: '#475569', border: '1.5px solid #e2e8f0', padding: '9px 14px', borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Cancelar</button>
-              <button onClick={saveEdit} disabled={saving} style={{ background: '#16a34a', color: 'white', border: 'none', padding: '9px 16px', borderRadius: 9, fontSize: 13, fontWeight: 800, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}>
+              <button onClick={closeEdit} style={{ background: 'white', color: '#475569', border: '1.5px solid #e2e8f0', padding: '9px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Cancelar</button>
+              <button onClick={saveEdit} disabled={saving} style={{ background: '#16a34a', color: 'white', border: 'none', padding: '9px 16px', borderRadius: 8, fontSize: 13, fontWeight: 800, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}>
                 {saving ? 'Guardando...' : 'Guardar cambios'}
               </button>
             </div>

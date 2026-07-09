@@ -1,0 +1,17 @@
+/* Tipografia de VIA: Hanken Grotesk (variable, self-hosted via @fontsource). */
+@import '@fontsource-variable/hanken-grotesk';
+
+:root {
+  --via-font: 'Hanken Grotesk Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+html {
+  font-family: var(--via-font);
+}
+
+body {
+  /* Digitos de ancho fijo: scores, areas y coordenadas alinean en tablas. */
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}

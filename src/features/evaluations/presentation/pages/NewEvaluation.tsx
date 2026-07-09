@@ -196,7 +196,7 @@ export default function NewEvaluation({ navigate }: Props) {
               <span style={{ color: '#e2e8f0' }}>/</span>
               <div style={{ fontSize: 12, color: '#16a34a', fontWeight: 600 }}>Nueva evaluacion</div>
             </div>
-            <h1 style={{ fontSize: 17, fontWeight: 700, color: '#0f172a', margin: 0 }}>Delimitacion de parcela</h1>
+            <h1 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: 0 }}>Delimitacion de parcela</h1>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             {['Delimitar parcela', 'Procesar variables', 'Ver resultados'].map((step, index) => (
@@ -212,7 +212,7 @@ export default function NewEvaluation({ navigate }: Props) {
         <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '380px 1fr', gap: 0, minHeight: 0, overflow: 'hidden' }}>
           <div style={{ background: 'white', borderRight: '1px solid #f1f5f9', overflowY: 'auto', padding: '16px 20px' }}>
             <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0f172a', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
                 <MapPin style={{ width: 15, height: 15, color: '#16a34a' }} />
                 Datos de la parcela
               </div>
@@ -223,13 +223,13 @@ export default function NewEvaluation({ navigate }: Props) {
                 { label: 'Area estimada (ha)', value: area, setter: setArea, placeholder: 'Se calcula al delimitar' },
               ].map(({ label, value, setter, placeholder }) => (
                 <div key={label} style={{ marginBottom: 10 }}>
-                  <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#475569', marginBottom: 4 }}>{label}</label>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 4 }}>{label}</label>
                   <input
                     type="text"
                     value={value}
                     onChange={(event) => setter(event.target.value)}
                     placeholder={placeholder}
-                    style={{ width: '100%', padding: '8px 12px', border: '1.5px solid #e2e8f0', borderRadius: 9, fontSize: 13.5, color: '#0f172a', background: '#fafafa', outline: 'none', boxSizing: 'border-box' }}
+                    style={{ width: '100%', padding: '8px 12px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 13, color: '#0f172a', background: '#fafafa', outline: 'none', boxSizing: 'border-box' }}
                     onFocus={(event) => (event.target.style.borderColor = '#16a34a')}
                     onBlur={(event) => (event.target.style.borderColor = '#e2e8f0')}
                   />
@@ -238,7 +238,7 @@ export default function NewEvaluation({ navigate }: Props) {
             </div>
 
             <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 12.5, fontWeight: 600, color: '#475569', marginBottom: 8 }}>Metodo de ingreso de parcela</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 8 }}>Metodo de ingreso de parcela</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                 {[
                   { id: 'draw' as InputMethod, label: 'Dibujar poligono en mapa', icon: Edit3 },
@@ -250,7 +250,7 @@ export default function NewEvaluation({ navigate }: Props) {
                     type="button"
                     onClick={() => handleMethodChange(id)}
                     style={{
-                      display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 9, border: `1.5px solid ${method === id ? '#16a34a' : '#e2e8f0'}`,
+                      display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 8, border: `1.5px solid ${method === id ? '#16a34a' : '#e2e8f0'}`,
                       background: method === id ? '#f0fdf4' : 'white', cursor: 'pointer', textAlign: 'left',
                     }}
                   >
@@ -264,32 +264,32 @@ export default function NewEvaluation({ navigate }: Props) {
               </div>
 
               {method === 'upload' && (
-                <label style={{ display: 'block', marginTop: 8, background: '#f8fafc', border: '1.5px dashed #cbd5e1', borderRadius: 10, padding: '10px', cursor: 'pointer', textAlign: 'center', color: '#475569', fontSize: 13, fontWeight: 600 }}>
+                <label style={{ display: 'block', marginTop: 8, background: '#f8fafc', border: '1.5px dashed #cbd5e1', borderRadius: 8, padding: '10px', cursor: 'pointer', textAlign: 'center', color: '#475569', fontSize: 13, fontWeight: 600 }}>
                   Cargar GeoJSON
                   <input type="file" accept=".json,.geojson,application/geo+json,application/json" onChange={handleGeoJsonUpload} style={{ display: 'none' }} />
                 </label>
               )}
 
               {method === 'select' && (
-                <div style={{ marginTop: 8, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: 10 }}>
-                  {parcelsLoading && <div style={{ fontSize: 12.5, color: '#64748b' }}>Consultando parcelas registradas...</div>}
+                <div style={{ marginTop: 8, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: 10 }}>
+                  {parcelsLoading && <div style={{ fontSize: 12, color: '#64748b' }}>Consultando parcelas registradas...</div>}
                   {!parcelsLoading && existingParcels.length === 0 && (
-                    <div style={{ fontSize: 12.5, color: '#64748b', lineHeight: 1.5 }}>No hay parcelas registradas para este usuario. Usa dibujo o carga GeoJSON.</div>
+                    <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.5 }}>No hay parcelas registradas para este usuario. Usa dibujo o carga GeoJSON.</div>
                   )}
                   {!parcelsLoading && existingParcels.length > 0 && (
                     <>
-                      <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Parcela existente</label>
+                      <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Parcela existente</label>
                       <select
                         value={selectedParcelId}
                         onChange={(event) => setSelectedParcelId(event.target.value)}
-                        style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: 9, fontSize: 13, color: '#0f172a', background: 'white', outline: 'none' }}
+                        style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 13, color: '#0f172a', background: 'white', outline: 'none' }}
                       >
                         {existingParcels.map((parcel) => (
                           <option key={parcel.id} value={parcel.id}>{parcel.metadata.name}</option>
                         ))}
                       </select>
                       {selectedParcel && (
-                        <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 8, lineHeight: 1.45 }}>
+                        <div style={{ fontSize: 11, color: '#64748b', marginTop: 8, lineHeight: 1.45 }}>
                           {selectedParcel.metadata.description} · {selectedParcel.metadata.crs} · ID {selectedParcel.id.slice(0, 8)}
                         </div>
                       )}
@@ -300,7 +300,7 @@ export default function NewEvaluation({ navigate }: Props) {
             </div>
 
             <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 12.5, fontWeight: 600, color: '#475569', marginBottom: 8 }}>Cultivos a evaluar</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 8 }}>Cultivos a evaluar</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {cropOptions.map((crop) => {
                   const selected = selectedCrops.includes(crop.id);
@@ -310,7 +310,7 @@ export default function NewEvaluation({ navigate }: Props) {
                       type="button"
                       onClick={() => toggleCrop(crop.id)}
                       style={{
-                        padding: '5px 12px', borderRadius: 20, fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                        padding: '5px 12px', borderRadius: 999, fontSize: 13, fontWeight: 500, cursor: 'pointer',
                         border: `1.5px solid ${selected ? '#16a34a' : '#e2e8f0'}`,
                         background: selected ? '#f0fdf4' : 'white',
                         color: selected ? '#15803d' : '#64748b',
@@ -323,17 +323,17 @@ export default function NewEvaluation({ navigate }: Props) {
               </div>
             </div>
 
-            <div style={{ marginBottom: 10, background: hasValidGeometry || selectedParcel ? '#f0fdf4' : '#f8fafc', border: `1px solid ${hasValidGeometry || selectedParcel ? '#bbf7d0' : '#e2e8f0'}`, borderRadius: 10, padding: '8px 12px' }}>
-              <div style={{ fontSize: 12.5, color: hasValidGeometry || selectedParcel ? '#15803d' : '#64748b', fontWeight: 700 }}>
+            <div style={{ marginBottom: 10, background: hasValidGeometry || selectedParcel ? '#f0fdf4' : '#f8fafc', border: `1px solid ${hasValidGeometry || selectedParcel ? '#bbf7d0' : '#e2e8f0'}`, borderRadius: 8, padding: '8px 12px' }}>
+              <div style={{ fontSize: 12, color: hasValidGeometry || selectedParcel ? '#15803d' : '#64748b', fontWeight: 700 }}>
                 {selectedParcel ? 'Parcela existente lista para evaluar' : hasValidGeometry ? 'Parcela delimitada correctamente' : 'Parcela pendiente de delimitar'}
               </div>
-              <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 4 }}>
+              <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
                 {selectedParcel ? `ID ${selectedParcel.id.slice(0, 8)} · ${selectedParcel.metadata.crs}` : `Vertices: ${mapPoints.length} ${area ? `- Area aprox.: ${area} ha` : ''}`}
               </div>
             </div>
 
             {error && (
-              <div style={{ marginBottom: 12, padding: '10px 12px', borderRadius: 9, background: '#fee2e2', border: '1px solid #fecaca', color: '#991b1b', fontSize: 12.5, lineHeight: 1.45 }}>
+              <div style={{ marginBottom: 12, padding: '10px 12px', borderRadius: 8, background: '#fee2e2', border: '1px solid #fecaca', color: '#991b1b', fontSize: 12, lineHeight: 1.45 }}>
                 {error}
               </div>
             )}
@@ -341,7 +341,7 @@ export default function NewEvaluation({ navigate }: Props) {
             <button
               onClick={() => void handleStartEvaluation()}
               disabled={loading}
-              style={{ width: '100%', background: loading ? '#86efac' : '#16a34a', color: 'white', border: 'none', padding: '10px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+              style={{ width: '100%', background: loading ? '#86efac' : '#16a34a', color: 'white', border: 'none', padding: '10px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
             >
               {loading ? 'Registrando e iniciando evaluacion...' : 'Procesar variables agroambientales'}
               <ChevronRight style={{ width: 16, height: 16 }} />
@@ -349,7 +349,7 @@ export default function NewEvaluation({ navigate }: Props) {
           </div>
 
           <div style={{ padding: 16, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0 }}>
-            <div style={{ background: 'white', border: '1px solid #f1f5f9', borderRadius: 10, padding: '8px 14px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 1px 4px rgba(0,0,0,0.04)', flexShrink: 0 }}>
+            <div style={{ background: 'white', border: '1px solid #f1f5f9', borderRadius: 8, padding: '8px 14px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 1px 4px rgba(0,0,0,0.04)', flexShrink: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>Mapa de delimitacion</div>
             </div>
 
