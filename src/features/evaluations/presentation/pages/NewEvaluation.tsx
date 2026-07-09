@@ -52,15 +52,15 @@ function extractGeoJsonGeometry(payload: unknown): GeoJsonGeometry {
 
 export default function NewEvaluation({ navigate }: Props) {
   const selectedParcelFromList = readSelectedParcelId();
-  const [name, setName] = useState('Parcela Fundo Loreto - Lote A');
-  const [district, setDistrict] = useState('Lima, Peru');
+  const [name, setName] = useState('');
+  const [district, setDistrict] = useState('');
   const [area, setArea] = useState('');
   const [method, setMethod] = useState<InputMethod>(selectedParcelFromList ? 'select' : 'draw');
   const [mapPoints, setMapPoints] = useState<Array<{ lat: number; lng: number }>>([]);
   const [geometry, setGeometry] = useState<GeoJsonGeometry | null>(null);
   const [existingParcels, setExistingParcels] = useState<Parcel[]>([]);
   const [selectedParcelId, setSelectedParcelId] = useState('');
-  const [selectedCrops, setSelectedCrops] = useState<string[]>(['maiz_amarillo_duro', 'mandarina_murcott', 'palta_hass']);
+  const [selectedCrops, setSelectedCrops] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [parcelsLoading, setParcelsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -145,6 +145,11 @@ export default function NewEvaluation({ navigate }: Props) {
 
     if (method !== 'select' && !hasValidGeometry) {
       setError('Delimita una parcela en el mapa o carga un GeoJSON antes de iniciar la evaluacion.');
+      return;
+    }
+
+    if (method !== 'select' && !name.trim()) {
+      setError('Ingresa el nombre de la parcela antes de iniciar la evaluacion.');
       return;
     }
 

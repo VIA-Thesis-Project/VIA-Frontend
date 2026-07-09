@@ -204,10 +204,11 @@ export default function Parcels({ navigate }: Props) {
             </button>
             <button
               onClick={() => navigate('new-evaluation')}
+              title="Delimita una parcela nueva e inicia su evaluacion"
               style={{ background: '#16a34a', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 9, fontSize: 13.5, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}
             >
               <Plus style={{ width: 15, height: 15 }} />
-              Nueva parcela
+              Nueva evaluacion
             </button>
           </div>
         </div>
