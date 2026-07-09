@@ -47,7 +47,7 @@ npm run build
 El proxy de Vite esta configurado asi:
 
 ```text
-/api -> https://via-api-j4r1.onrender.com
+/api -> https://via-api-lpot.onrender.com
 ```
 
 En desarrollo local, Vite reenvia `/api` al backend desplegado en Render para evitar CORS.
@@ -153,7 +153,7 @@ Install Command: npm install
 `vercel.json` define:
 
 ```text
-/api/* -> https://via-api-j4r1.onrender.com/*
+/api/* -> https://via-api-lpot.onrender.com/*
 /*     -> /index.html
 ```
 
