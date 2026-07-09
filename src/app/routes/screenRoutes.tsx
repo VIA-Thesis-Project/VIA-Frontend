@@ -8,6 +8,7 @@ import Parcels from '@/features/parcels/presentation/pages/Parcels';
 import Processing from '@/features/evaluations/presentation/pages/Processing';
 import Recommendations from '@/features/evaluations/presentation/pages/Recommendations';
 import Results from '@/features/evaluations/presentation/pages/Results';
+import Settings from '@/features/settings/presentation/pages/Settings';
 import { NavigateFn, Screen } from '@/app/navigation/navigation';
 
 export const initialScreen: Screen = 'login';
@@ -22,4 +23,5 @@ export const screenRoutes: Record<Screen, (navigate: NavigateFn) => JSX.Element>
   results: (navigate) => <Results navigate={navigate} />,
   'crop-detail': (navigate) => <CropDetail navigate={navigate} />,
   recommendations: (navigate) => <Recommendations navigate={navigate} />,
+  settings: (navigate) => <Settings navigate={navigate} />,
 };

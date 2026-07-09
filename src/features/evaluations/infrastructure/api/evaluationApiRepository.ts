@@ -153,6 +153,8 @@ export class EvaluationApiRepository implements EvaluationRepository {
         parcel_id: input.parcelId,
         crop_candidates: input.cropCandidates,
         temporal_window: input.temporalWindow,
+        viable_threshold: input.viableThreshold,
+        condicional_threshold: input.condicionalThreshold,
       },
     });
 

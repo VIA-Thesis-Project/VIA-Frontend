@@ -7,6 +7,7 @@ export type Screen =
   | 'processing'
   | 'results'
   | 'crop-detail'
-  | 'recommendations';
+  | 'recommendations'
+  | 'settings';
 
 export type NavigateFn = (screen: Screen) => void;

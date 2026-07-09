@@ -1,5 +1,6 @@
 import { readAuthSession } from '@/features/auth/infrastructure/session/authSessionStorage';
 import { cropCatalog } from '@/features/evaluations/application/cropCatalog';
+import { readThresholds, usingDefaults } from '@/features/settings/infrastructure/thresholdStorage';
 import { EvaluationRepository, ParcelRepository } from '@/features/evaluations/application/evaluationRepositories';
 import { CurrentEvaluationContext } from '@/features/evaluations/domain/evaluation';
 import { GeoJsonGeometry, Parcel } from '@/features/evaluations/domain/parcel';
@@ -43,6 +44,13 @@ export async function startEvaluationWorkflow(
     session.accessToken,
   );
 
+  // Umbrales de viabilidad definidos por el usuario en Configuracion; solo se
+  // envian cuando difieren de los valores por defecto del sistema.
+  const thresholds = readThresholds();
+  const customThresholds = usingDefaults(thresholds)
+    ? {}
+    : { viableThreshold: thresholds.viable, condicionalThreshold: thresholds.condicional };
+
   const accepted = await evaluationRepository.startEvaluation({
     parcelId: parcel.id,
     requestedBy: session.user.id,
@@ -51,6 +59,7 @@ export async function startEvaluationWorkflow(
       start: '2025-01-01',
       end: '2025-12-31',
     },
+    ...customThresholds,
   });
 
   return {

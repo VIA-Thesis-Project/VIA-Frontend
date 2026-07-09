@@ -19,6 +19,9 @@ export type StartEvaluationInput = {
     start: string;
     end: string;
   };
+  /** Umbrales de viabilidad definidos por el usuario, en fraccion (0, 1). */
+  viableThreshold?: number;
+  condicionalThreshold?: number;
 };
 
 export type EvaluationAccepted = {

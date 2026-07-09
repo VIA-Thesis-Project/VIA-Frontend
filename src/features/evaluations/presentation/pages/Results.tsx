@@ -136,11 +136,12 @@ export default function Results({ navigate }: Props) {
             <div style={{ display: 'flex', gap: 10 }}>
               <button
                 onClick={() => navigate('recommendations')}
-                disabled={!canUseResults}
-                style={{ background: canUseResults ? (canRequestRecommendations ? '#16a34a' : '#d97706') : '#bbf7d0', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: canUseResults ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', gap: 7 }}
+                disabled={!canRequestRecommendations}
+                title={canRequestRecommendations ? undefined : 'No hay recomendaciones: ningun cultivo alcanzo categoria VIABLE o CONDICIONAL.'}
+                style={{ background: canRequestRecommendations ? '#16a34a' : '#f1f5f9', color: canRequestRecommendations ? 'white' : '#94a3b8', border: canRequestRecommendations ? 'none' : '1.5px solid #e2e8f0', padding: '9px 18px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: canRequestRecommendations ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', gap: 7 }}
               >
                 <Sprout style={{ width: 14, height: 14 }} />
-                {canRequestRecommendations ? 'Ver recomendaciones' : 'Ver criterio backend'}
+                {canRequestRecommendations ? 'Ver recomendaciones' : 'Sin recomendaciones'}
               </button>
             </div>
           </div>
@@ -148,7 +149,7 @@ export default function Results({ navigate }: Props) {
 
         {noRecommendableCrops && (
           <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', borderRadius: 12, padding: 16, marginBottom: 16, fontSize: 13, lineHeight: 1.6 }}>
-            El backend no generara recomendaciones para esta evaluacion porque ningun cultivo candidato alcanzo categoria <strong>VIABLE</strong> o <strong>CONDICIONAL</strong>. Puedes revisar las brechas MCDA o probar otra parcela/cultivos.
+            No se generaron recomendaciones para esta evaluacion: ningun cultivo alcanzo la categoria <strong>VIABLE</strong> ni <strong>CONDICIONAL</strong>. Revisa las brechas por criterio en el detalle de cada cultivo, ajusta los umbrales en Configuracion, o evalua otra parcela u otros cultivos.
           </div>
         )}
 
@@ -257,12 +258,12 @@ export default function Results({ navigate }: Props) {
                 const score = toPercent(crop.score);
                 const style = categoryStyle(crop.viabilityCategory);
                 return (
-                  <div key={crop.cropId} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                    <span style={{ fontSize: 13, color: '#475569', minWidth: 86, fontWeight: 500 }}>{getCropLabel(crop.cropId)}</span>
-                    <div style={{ flex: 1, height: 6, background: '#f1f5f9', borderRadius: 3 }}>
+                  <div key={crop.cropId} style={{ display: 'grid', gridTemplateColumns: '112px 1fr 44px', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                    <span title={getCropLabel(crop.cropId)} style={{ fontSize: 13, color: '#475569', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{getCropLabel(crop.cropId)}</span>
+                    <div style={{ height: 6, background: '#f1f5f9', borderRadius: 3 }}>
                       <div style={{ width: `${score}%`, height: '100%', background: style.color, borderRadius: 3, opacity: 0.85 }} />
                     </div>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: style.color, minWidth: 42, textAlign: 'right' }}>{score}%</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: style.color, textAlign: 'right' }}>{score}%</span>
                   </div>
                 );
               })}
@@ -284,10 +285,11 @@ export default function Results({ navigate }: Props) {
 
             <button
               onClick={() => navigate('recommendations')}
-              disabled={!canUseResults}
-              style={{ background: canUseResults ? (canRequestRecommendations ? 'linear-gradient(135deg, #15803d, #0891b2)' : 'linear-gradient(135deg, #d97706, #b45309)') : '#bbf7d0', color: 'white', border: 'none', padding: '14px', borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: canUseResults ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+              disabled={!canRequestRecommendations}
+              title={canRequestRecommendations ? undefined : 'No hay recomendaciones: ningun cultivo alcanzo categoria VIABLE o CONDICIONAL.'}
+              style={{ background: canRequestRecommendations ? 'linear-gradient(135deg, #15803d, #0891b2)' : '#f1f5f9', color: canRequestRecommendations ? 'white' : '#94a3b8', border: canRequestRecommendations ? 'none' : '1.5px solid #e2e8f0', padding: '14px', borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: canRequestRecommendations ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
             >
-              {canRequestRecommendations ? 'Ver recomendaciones' : 'Ver motivo sin recomendacion'}
+              {canRequestRecommendations ? 'Ver recomendaciones' : 'Sin recomendaciones disponibles'}
               <ChevronRight style={{ width: 16, height: 16 }} />
             </button>
           </div>

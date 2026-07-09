@@ -14,7 +14,7 @@ const navItems = [
   { icon: Plus, label: 'Nueva evaluacion', screen: 'new-evaluation' as Screen },
   { icon: Map, label: 'Parcelas', screen: 'parcels' as Screen },
   { icon: BarChart3, label: 'Resultados', screen: 'results' as Screen },
-  { icon: Settings, label: 'Configuracion', screen: 'dashboard' as Screen },
+  { icon: Settings, label: 'Configuracion', screen: 'settings' as Screen },
 ];
 
 const roleLabels: Record<string, string> = {
@@ -68,7 +68,7 @@ export default function Sidebar({ active, navigate }: Props) {
         </div>
         <div className="space-y-0.5">
           {navItems.map(({ icon: Icon, label, screen }) => {
-            const isActive = active === screen && label !== 'Configuracion';
+            const isActive = active === screen;
             return (
               <button
                 key={label}
