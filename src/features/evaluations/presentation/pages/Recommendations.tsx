@@ -60,6 +60,22 @@ function humanizeProvider(provider: string): string {
   return map[provider] ?? provider;
 }
 
+// La escala interna del backend (alta/media/baja) se presenta como nivel de
+// respaldo documental: mide cuan directa es la evidencia, no cuan buena es la
+// recomendacion. Color semantico para que el nivel se lea de un vistazo.
+function supportLevel(confidence: string | null): { label: string; bg: string; color: string } {
+  switch ((confidence ?? '').toLowerCase()) {
+    case 'alta':
+      return { label: 'directo', bg: '#f0fdf4', color: '#15803d' };
+    case 'media':
+      return { label: 'parcial', bg: '#fffbeb', color: '#b45309' };
+    case 'baja':
+      return { label: 'indirecto', bg: '#f1f5f9', color: '#64748b' };
+    default:
+      return { label: 'sin evidencia', bg: '#f1f5f9', color: '#94a3b8' };
+  }
+}
+
 function renderInline(text: string) {
   const parts = text.split(/(\*\*[^*]+\*\*|https?:\/\/[^\s,)]+)/g);
   return (
@@ -489,13 +505,13 @@ export default function Recommendations({ navigate }: Props) {
                   {gapRecommendations.slice(0, 5).map((item, index) => {
                     const recommendationText = String(item.recommendation ?? item.mapping_validation_note ?? 'Recomendacion pendiente de evidencia suficiente.');
                     const criterion = String(item.criterion_label ?? item.criterion_name ?? item.gap_key ?? `Brecha ${index + 1}`);
-                    const confidence = item.confidence ? String(item.confidence) : 'sin confianza';
+                    const support = supportLevel(item.confidence ? String(item.confidence) : null);
                     return (
                       <div key={`${criterion}-${index}`} style={{ background: '#fafafa', border: '1px solid #f1f5f9', borderRadius: 12, padding: '14px 16px' }}>
                         <div style={{ fontSize: 13, fontWeight: 800, color: '#0f172a', marginBottom: 6 }}>{normalizeBackendText(criterion)}</div>
                         <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.65, margin: 0 }}>{normalizeBackendText(recommendationText)}</p>
-                        <div style={{ display: 'inline-flex', marginTop: 10, background: '#ecfeff', color: '#0891b2', fontSize: 11, fontWeight: 800, padding: '4px 9px', borderRadius: 999 }}>
-                          Confianza: {confidence}
+                        <div title="Cuan directa es la evidencia en las fuentes consultadas para esta recomendacion." style={{ display: 'inline-flex', marginTop: 10, background: support.bg, color: support.color, fontSize: 11, fontWeight: 800, padding: '4px 9px', borderRadius: 999 }}>
+                          Respaldo documental: {support.label}
                         </div>
                       </div>
                     );
