@@ -1,10 +1,14 @@
 export type EvaluationStatus =
-  | 'INICIADA'
-  | 'EXTRACCION_COMPLETADA'
-  | 'EVALUACION_COMPLETADA'
-  | 'RECOMENDACION_COMPLETADA'
-  | 'FALLIDA'
+  | 'queued'
+  | 'preparing'
+  | 'running'
+  | 'summarizing'
+  | 'succeeded'
+  | 'failed'
+  | 'cancelled'
   | string;
+
+export type WaterRegime = 'rainfed' | 'irrigated';
 
 export type CropCandidate = {
   id: string;
@@ -12,16 +16,33 @@ export type CropCandidate = {
 };
 
 export type StartEvaluationInput = {
+  projectId: string;
   parcelId: string;
-  requestedBy: string;
-  cropCandidates: string[];
-  temporalWindow: {
-    start: string;
-    end: string;
+  parcelVersion: number;
+  requestedCrops: string[];
+  waterRegimes: WaterRegime[];
+  environmentalInputs: EnvironmentalInputReference[];
+};
+
+export type EnvironmentalInputReference = {
+  inputKey: string;
+  datasetId: string;
+  datasetVersionId: string;
+};
+
+export type EvaluationCapabilities = {
+  crops: Array<{
+    cropId: string;
+    displayName: string | null;
+    waterRegimes: WaterRegime[];
+  }>;
+  environmentalInputs: {
+    minimumCount: number;
+    scientificallyBoundDatasetVersions: Array<{
+      datasetId: string;
+      datasetVersionId: string;
+    }>;
   };
-  /** Umbrales de viabilidad definidos por el usuario, en fraccion (0, 1). */
-  viableThreshold?: number;
-  condicionalThreshold?: number;
 };
 
 export type EvaluationAccepted = {
@@ -156,6 +177,9 @@ export type FinalRecommendationResult =
     };
 
 export type CurrentEvaluationContext = {
+  projectId?: string;
+  parcelVersion?: number;
+  waterRegime?: WaterRegime;
   parcelId: string;
   parcelName: string;
   parcelLocation: string;

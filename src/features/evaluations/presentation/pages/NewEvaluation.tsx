@@ -18,8 +18,6 @@ type InputMethod = 'draw' | 'upload' | 'select';
 
 const parcelRepository = new ParcelApiRepository();
 const evaluationRepository = new EvaluationApiRepository();
-const cropOptions = cropCatalog;
-
 function extractGeoJsonGeometry(payload: unknown): GeoJsonGeometry {
   if (!payload || typeof payload !== 'object') {
     throw new Error('El archivo no contiene JSON valido.');
@@ -61,11 +59,31 @@ export default function NewEvaluation({ navigate }: Props) {
   const [existingParcels, setExistingParcels] = useState<Parcel[]>([]);
   const [selectedParcelId, setSelectedParcelId] = useState('');
   const [selectedCrops, setSelectedCrops] = useState<string[]>([]);
+  const [cropOptions, setCropOptions] = useState(cropCatalog);
   const [loading, setLoading] = useState(false);
   const [parcelsLoading, setParcelsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const hasValidGeometry = geometry !== null;
   const selectedParcel = existingParcels.find((parcel) => parcel.id === selectedParcelId) ?? null;
+
+  useEffect(() => {
+    const session = readAuthSession();
+    if (!session) return undefined;
+    let cancelled = false;
+    void evaluationRepository.getCapabilities()
+      .then((capabilities) => {
+        if (cancelled) return;
+        setCropOptions(capabilities.crops.map((crop) => ({
+          id: crop.cropId,
+          label: crop.displayName ?? crop.cropId,
+        })));
+      })
+      .catch(() => {
+        // Se conserva el catalogo local como respaldo visual; el backend
+        // validara los cultivos al iniciar la evaluacion.
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     if (method !== 'select') return undefined;

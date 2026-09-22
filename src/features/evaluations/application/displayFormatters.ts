@@ -8,6 +8,14 @@ type CriterionLike = {
 };
 
 const STATUS_LABELS: Record<string, string> = {
+  queued: 'En cola',
+  preparing: 'Preparando',
+  running: 'Procesando',
+  summarizing: 'Resumiendo',
+  succeeded: 'Completada',
+  failed: 'Fallida',
+  cancelled: 'Cancelada',
+  no_coverage: 'Sin cobertura',
   INICIADA: 'Iniciada',
   EXTRACCION_COMPLETADA: 'Extraccion completada',
   EVALUACION_COMPLETADA: 'Evaluacion completada',

@@ -1,16 +1,18 @@
-import { CreateParcelInput, Parcel } from '@/features/evaluations/domain/parcel';
+import { CreateParcelInput, Parcel, Project } from '@/features/evaluations/domain/parcel';
 import {
   AgroenvVector,
   EvaluationAccepted,
   EvaluationRecommendation,
   EvaluationSummary,
   FinalRecommendationResult,
+  EvaluationCapabilities,
   EvaluationMcdaResult,
   EvaluationStatusSnapshot,
   StartEvaluationInput,
 } from '@/features/evaluations/domain/evaluation';
 
 export interface ParcelRepository {
+  listProjects(accessToken: string): Promise<Project[]>;
   createParcel(input: CreateParcelInput, accessToken: string): Promise<Parcel>;
   getParcel(parcelId: string, accessToken: string): Promise<Parcel>;
   listParcels(accessToken: string): Promise<Parcel[]>;
@@ -19,6 +21,7 @@ export interface ParcelRepository {
 }
 
 export interface EvaluationRepository {
+  getCapabilities(): Promise<EvaluationCapabilities>;
   startEvaluation(input: StartEvaluationInput): Promise<EvaluationAccepted>;
   listEvaluationsForParcel(parcelId: string): Promise<EvaluationSummary[]>;
   getEvaluationStatus(evaluationId: string): Promise<EvaluationStatusSnapshot>;

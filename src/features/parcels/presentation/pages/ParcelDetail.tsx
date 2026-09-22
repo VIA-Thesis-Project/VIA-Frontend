@@ -18,15 +18,17 @@ interface Props { navigate: NavigateFn; }
 const parcelRepository = new ParcelApiRepository();
 const evaluationRepository = new EvaluationApiRepository();
 
-const READY_STATUSES = new Set(['EVALUACION_COMPLETADA', 'RECOMENDACION_COMPLETADA']);
-const IN_PROGRESS_STATUSES = new Set(['INICIADA', 'EXTRACCION_COMPLETADA']);
+const READY_STATUSES = new Set(['succeeded']);
+const IN_PROGRESS_STATUSES = new Set(['queued', 'preparing', 'running', 'summarizing']);
 
 const statusLabels: Record<string, { label: string; bg: string; color: string }> = {
-  INICIADA: { label: 'En proceso', bg: '#eff6ff', color: '#2563eb' },
-  EXTRACCION_COMPLETADA: { label: 'En proceso', bg: '#eff6ff', color: '#2563eb' },
-  EVALUACION_COMPLETADA: { label: 'Completada', bg: '#f0fdf4', color: '#15803d' },
-  RECOMENDACION_COMPLETADA: { label: 'Completada', bg: '#f0fdf4', color: '#15803d' },
-  FALLIDA: { label: 'Fallida', bg: '#fef2f2', color: '#dc2626' },
+  queued: { label: 'En cola', bg: '#eff6ff', color: '#2563eb' },
+  preparing: { label: 'Preparando', bg: '#eff6ff', color: '#2563eb' },
+  running: { label: 'Procesando', bg: '#eff6ff', color: '#2563eb' },
+  summarizing: { label: 'Resumiendo', bg: '#eff6ff', color: '#2563eb' },
+  succeeded: { label: 'Completada', bg: '#f0fdf4', color: '#15803d' },
+  failed: { label: 'Fallida', bg: '#fef2f2', color: '#dc2626' },
+  cancelled: { label: 'Cancelada', bg: '#fef2f2', color: '#dc2626' },
 };
 
 function statusChip(status: string) {
@@ -172,6 +174,9 @@ export default function ParcelDetail({ navigate }: Props) {
   const openEvaluation = (summary: EvaluationSummary) => {
     if (!parcel) return;
     saveCurrentEvaluation({
+      projectId: parcel.projectId,
+      parcelVersion: parcel.currentVersion,
+      waterRegime: 'rainfed',
       parcelId: parcel.id,
       parcelName: parcel.metadata.name,
       parcelLocation: parcel.metadata.description,

@@ -19,10 +19,11 @@ const processingSteps = [
   { id: 4, label: 'Recomendacion', sub: 'Se genera la recomendacion agronomica para los cultivos viables' },
 ];
 const stepByStatus: Record<string, number> = {
-  INICIADA: 1,
-  EXTRACCION_COMPLETADA: 2,
-  EVALUACION_COMPLETADA: processingSteps.length - 1,
-  RECOMENDACION_COMPLETADA: processingSteps.length - 1,
+  queued: 1,
+  preparing: 2,
+  running: 3,
+  summarizing: 3,
+  succeeded: processingSteps.length - 1,
 };
 
 function inferFailureStep(snapshot: EvaluationStatusSnapshot | null): number {

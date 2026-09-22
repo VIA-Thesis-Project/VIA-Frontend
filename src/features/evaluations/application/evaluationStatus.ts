@@ -1,12 +1,11 @@
 import { CropEvaluationResult, EvaluationStatus } from '@/features/evaluations/domain/evaluation';
 
 const MCDA_READY_STATUSES = new Set<EvaluationStatus>([
-  'EVALUACION_COMPLETADA',
-  'RECOMENDACION_COMPLETADA',
+  'succeeded',
 ]);
 
 const RECOMMENDATION_READY_STATUSES = new Set<EvaluationStatus>([
-  'RECOMENDACION_COMPLETADA',
+  'succeeded',
 ]);
 
 /**
@@ -27,7 +26,7 @@ export function isRecommendationReadyStatus(status: EvaluationStatus | null | un
  * Indicates whether the backend saga finished with an unrecoverable failure.
  */
 export function isEvaluationFailed(status: EvaluationStatus | null | undefined): boolean {
-  return status === 'FALLIDA';
+  return status === 'failed' || status === 'cancelled';
 }
 
 /**
@@ -41,7 +40,7 @@ export function isEvaluationPending(status: EvaluationStatus | null | undefined)
  * Matches the backend process-manager gate for recommendation commands.
  */
 export function isRecommendableViabilityCategory(category: string | null | undefined): boolean {
-  return category === 'VIABLE' || category === 'CONDICIONAL';
+  return category === 'succeeded';
 }
 
 /**

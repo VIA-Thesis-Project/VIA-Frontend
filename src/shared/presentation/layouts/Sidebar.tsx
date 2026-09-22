@@ -3,6 +3,7 @@ import { NavigateFn, Screen } from '@/app/navigation/navigation';
 import { clearAuthSession, readAuthSession } from '@/features/auth/infrastructure/session/authSessionStorage';
 import { UserRole } from '@/features/auth/domain/authSession';
 import { ViaMark } from '@/shared/presentation/components/ViaMark';
+import { apiRequest } from '@/shared/infrastructure/http/apiClient';
 
 interface Props {
   active: Screen;
@@ -43,8 +44,13 @@ export default function Sidebar({ active, navigate }: Props) {
   const initials = session ? emailInitials(session.user.email) : '—';
 
   const handleLogout = () => {
-    clearAuthSession();
-    navigate('login');
+    void apiRequest<void>('/v1/auth/logout', {
+      method: 'POST',
+      token: session?.accessToken,
+    }).catch(() => undefined).finally(() => {
+      clearAuthSession();
+      navigate('login');
+    });
   };
 
   return (

@@ -162,7 +162,7 @@ export default function Parcels({ navigate }: Props) {
       setParcels((current) => current.filter((item) => item.id !== parcel.id));
       setNotice('Parcela eliminada correctamente.');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo eliminar la parcela. Verifica si el backend expone DELETE /parcelas/:id.');
+      setError(err instanceof Error ? err.message : 'El backend actual no permite eliminar parcelas.');
     } finally {
       setDeletingId(null);
     }
@@ -222,7 +222,7 @@ export default function Parcels({ navigate }: Props) {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 18 }}>
           {[
-            { label: 'Total parcelas', value: parcels.length, color: '#16a34a', sub: 'desde /parcelas' },
+            { label: 'Total parcelas', value: parcels.length, color: '#16a34a', sub: 'desde proyectos' },
             { label: 'Area registrada', value: `${totalArea.toFixed(2)} ha`, color: '#0891b2', sub: `${parcelsWithArea} con area` },
             { label: 'Sin area', value: parcelsWithoutArea, color: '#d97706', sub: 'requieren revision' },
             { label: 'Resultados filtrados', value: filteredParcels.length, color: '#7c3aed', sub: 'vista actual' },

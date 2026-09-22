@@ -1,6 +1,4 @@
 import { readAuthSession } from '@/features/auth/infrastructure/session/authSessionStorage';
-import { cropCatalog } from '@/features/evaluations/application/cropCatalog';
-import { readThresholds, usingDefaults } from '@/features/settings/infrastructure/thresholdStorage';
 import { EvaluationRepository, ParcelRepository } from '@/features/evaluations/application/evaluationRepositories';
 import { CurrentEvaluationContext } from '@/features/evaluations/domain/evaluation';
 import { GeoJsonGeometry, Parcel } from '@/features/evaluations/domain/parcel';
@@ -44,30 +42,37 @@ export async function startEvaluationWorkflow(
     session.accessToken,
   );
 
-  // Umbrales de viabilidad definidos por el usuario en Configuracion; solo se
-  // envian cuando difieren de los valores por defecto del sistema.
-  const thresholds = readThresholds();
-  const customThresholds = usingDefaults(thresholds)
-    ? {}
-    : { viableThreshold: thresholds.viable, condicionalThreshold: thresholds.condicional };
+  const capabilities = await evaluationRepository.getCapabilities();
+  const bindings = capabilities.environmentalInputs.scientificallyBoundDatasetVersions;
+  const requiredInputs = Math.max(capabilities.environmentalInputs.minimumCount, 1);
+  if (bindings.length < requiredInputs) {
+    throw new Error('El backend no tiene suficientes versiones de datasets con binding cientifico para iniciar la evaluacion.');
+  }
+
+  const environmentalInputs = bindings.slice(0, requiredInputs).map((binding, index) => ({
+    inputKey: `environmental-input-${index + 1}`,
+    datasetId: binding.datasetId,
+    datasetVersionId: binding.datasetVersionId,
+  }));
 
   const accepted = await evaluationRepository.startEvaluation({
+    projectId: parcel.projectId,
     parcelId: parcel.id,
-    requestedBy: session.user.id,
-    cropCandidates: input.selectedCropIds,
-    temporalWindow: {
-      start: '2025-01-01',
-      end: '2025-12-31',
-    },
-    ...customThresholds,
+    parcelVersion: parcel.currentVersion,
+    requestedCrops: input.selectedCropIds,
+    waterRegimes: ['rainfed'],
+    environmentalInputs,
   });
 
   return {
+    projectId: parcel.projectId,
+    parcelVersion: parcel.currentVersion,
+    waterRegime: 'rainfed',
     parcelId: parcel.id,
     parcelName: parcel.metadata.name,
     parcelLocation: input.existingParcel ? parcel.metadata.description : input.district,
     areaHa: input.existingParcel ? 'Area no registrada' : input.areaHa,
     evaluationId: accepted.evaluationId,
-    cropCandidates: input.selectedCropIds.map((cropId) => cropCatalog.find((crop) => crop.id === cropId) ?? { id: cropId, label: cropId }),
+    cropCandidates: input.selectedCropIds.map((cropId) => ({ id: cropId, label: cropId })),
   };
 }

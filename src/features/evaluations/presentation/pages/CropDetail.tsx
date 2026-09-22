@@ -33,6 +33,12 @@ function toPercent(score: number | null): number {
 
 function categoryStyle(category: string) {
   const normalized = category.toUpperCase();
+  if (normalized === 'SUCCEEDED') {
+    return { color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' };
+  }
+  if (normalized === 'NO_COVERAGE') {
+    return { color: '#d97706', bg: '#fffbeb', border: '#fde68a' };
+  }
   if (normalized.includes('VIABLE') && !normalized.includes('NO')) {
     return { color: '#16a34a', bg: '#dcfce7', border: '#bbf7d0' };
   }
