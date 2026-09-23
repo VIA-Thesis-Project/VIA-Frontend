@@ -13,16 +13,11 @@ interface Props { navigate: NavigateFn; }
 
 const parcelRepository = new ParcelApiRepository();
 
-function formatParcelArea(parcel: Parcel): string {
-  const match = parcel.metadata.description.match(/Area estimada:\s*([0-9.,]+)/i);
-  return match ? `${match[1].replace(',', '.')} ha` : 'Area no registrada';
-}
-
-function getParcelAreaHa(parcel: Parcel): number | null {
-  const match = parcel.metadata.description.match(/Area estimada:\s*([0-9.,]+)/i);
-  if (!match) return null;
-  const area = Number(match[1].replace(',', '.'));
-  return Number.isFinite(area) ? area : null;
+function countGeometryPoints(parcel: Parcel): number {
+  const [firstRing] = parcel.geometry.coordinates;
+  if (!Array.isArray(firstRing)) return 0;
+  const ring = parcel.geometry.type === 'MultiPolygon' ? firstRing[0] : firstRing;
+  return Array.isArray(ring) ? ring.length : 0;
 }
 
 function buildTrendData(parcels: Parcel[]) {
@@ -86,30 +81,21 @@ export default function Dashboard({ navigate }: Props) {
 
   const trendData = useMemo(() => buildTrendData(parcels), [parcels]);
   const recentParcels = parcels.slice(0, 5);
-  const areaValues = useMemo(() => parcels.map(getParcelAreaHa).filter((area): area is number => area !== null), [parcels]);
-  const totalAreaHa = areaValues.reduce((sum, area) => sum + area, 0);
-  const parcelsWithArea = areaValues.length;
-  const parcelsWithoutArea = Math.max(parcels.length - parcelsWithArea, 0);
+  const geometryCount = parcels.filter((parcel) => Boolean(parcel.geometry?.type)).length;
   const localEvaluationCount = currentEvaluation ? 1 : 0;
   const localRecommendationCount = currentEvaluation ? 1 : 0;
   const localSummary = [
     {
-      label: 'Area total registrada',
-      value: totalAreaHa > 0 ? `${totalAreaHa.toFixed(2)} ha` : 'Sin areas registradas',
+      label: 'Parcelas registradas',
+      value: String(parcels.length),
       color: '#16a34a',
       bg: '#f0fdf4',
     },
     {
-      label: 'Parcelas con area',
-      value: String(parcelsWithArea),
+      label: 'Geometrias registradas',
+      value: String(geometryCount),
       color: '#0891b2',
       bg: '#ecfeff',
-    },
-    {
-      label: 'Parcelas sin area',
-      value: String(parcelsWithoutArea),
-      color: '#d97706',
-      bg: '#fffbeb',
     },
     {
       label: 'Evaluacion activa',
@@ -182,7 +168,7 @@ export default function Dashboard({ navigate }: Props) {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: '#fafafa' }}>
-                  {['Parcela', 'CRS', 'Area', 'Origen', ''].map(h => (
+                  {['Parcela', 'Geometria', 'Estado', 'ID proyecto', ''].map(h => (
                     <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
                   ))}
                 </tr>
@@ -206,11 +192,14 @@ export default function Dashboard({ navigate }: Props) {
                         <MapPin style={{ width: 10, height: 10 }} /> ID {parcel.id.slice(0, 8)}
                       </div>
                     </td>
-                    <td style={{ padding: '13px 16px', fontSize: 13, color: '#64748b' }}>{parcel.metadata.crs}</td>
-                    <td style={{ padding: '13px 16px', fontSize: 13, color: '#475569', fontWeight: 600 }}>{formatParcelArea(parcel)}</td>
+                    <td style={{ padding: '13px 16px' }}>
+                      <div style={{ fontSize: 13, color: '#475569', fontWeight: 600 }}>{parcel.geometry.type}</div>
+                      <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>{countGeometryPoints(parcel)} puntos</div>
+                    </td>
                     <td style={{ padding: '13px 16px' }}>
                       <div style={{ background: '#f0fdf4', color: '#15803d', fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 999, display: 'inline-block' }}>Registrada</div>
                     </td>
+                    <td style={{ padding: '13px 16px', fontSize: 12, color: '#475569', fontWeight: 600 }} title={parcel.projectId}>{parcel.projectId.slice(0, 8)}</td>
                     <td style={{ padding: '13px 16px' }}>
                       <button
                         onClick={() => navigate('new-evaluation')}

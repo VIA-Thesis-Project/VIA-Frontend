@@ -3,7 +3,7 @@ import { CheckCircle2, ChevronLeft, RefreshCcw, Sprout } from 'lucide-react';
 import { NavigateFn } from '@/app/navigation/navigation';
 import { toUserFriendlyFailureReason } from '@/features/evaluations/application/backendFailureMessages';
 import { getCropLabel } from '@/features/evaluations/application/cropCatalog';
-import { formatBackendStatus, formatCriterionLabel, formatNumberWithUnit, formatPhaseLabel } from '@/features/evaluations/application/displayFormatters';
+import { formatBackendStatus } from '@/features/evaluations/application/displayFormatters';
 import { hasRecommendableCrop, isEvaluationPending } from '@/features/evaluations/application/evaluationStatus';
 import {
   CropEvaluationResult,
@@ -161,39 +161,6 @@ function renderMarkdownContent(text: string) {
   return <>{elements}</>;
 }
 
-function buildDerivedActions(crop: CropEvaluationResult | null) {
-  if (!crop) return [];
-
-  const factors = crop.limitingFactors.slice(0, 4);
-  if (factors.length === 0) {
-    return [
-      {
-        title: 'Revision en campo',
-        items: [
-          `Validar en campo la viabilidad reportada para ${getCropLabel(crop.cropId)}.`,
-          'Contrastar el resultado con disponibilidad hidrica, acceso y manejo local.',
-        ],
-      },
-    ];
-  }
-
-  return [
-    {
-      title: 'Factores a atender',
-      items: factors.map((factor) => (
-        `Revisar ${formatCriterionLabel(factor)} en fase ${formatPhaseLabel(factor)}: valor observado ${formatNumberWithUnit(factor.observedValue, factor.unit)} frente a limite ${formatNumberWithUnit(factor.optimalLimit, factor.unit)}.`
-      )),
-    },
-    {
-      title: 'Validacion en campo',
-      items: [
-        'Priorizar verificacion de los factores con menor membresia.',
-        'Registrar evidencia local antes de convertir esta orientacion en plan de manejo.',
-      ],
-    },
-  ];
-}
-
 export default function Recommendations({ navigate }: Props) {
   const [currentEvaluation] = useState(() => readCurrentEvaluation());
   const [mcdaResult, setMcdaResult] = useState<EvaluationMcdaResult | null>(null);
@@ -296,8 +263,6 @@ export default function Recommendations({ navigate }: Props) {
   }, [activeRecommendationCropId, sortedCrops, topCrop]);
 
   const activeCrop = sortedCrops.find((crop) => crop.cropId === activeRecommendationCropId) ?? topCrop;
-  const derivedActions = useMemo(() => buildDerivedActions(activeCrop), [activeCrop]);
-  const score = toPercent(activeCrop?.score ?? null);
   const cropLabel = activeCrop ? getCropLabel(activeCrop.cropId) : '-';
   const finalRecommendation = recommendation?.status === 'available' ? recommendation.recommendation : null;
   const selectedRecommendation = allRecommendations.find((item) => item.cropId === activeCrop?.cropId) ?? null;
@@ -339,13 +304,7 @@ export default function Recommendations({ navigate }: Props) {
               <ChevronLeft style={{ width: 13, height: 13 }} /> Volver a detalle de cultivo
             </button>
             <h1 style={{ fontSize: 20, fontWeight: 700, color: '#0f172a', margin: 0, marginBottom: 6 }}>Recomendaciones agronomicas</h1>
-            <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>Cultivo: {cropLabel}</div>
-              <div style={{ height: 14, width: 1, background: '#e2e8f0' }} />
-              <div style={{ fontSize: 13, color: '#64748b' }}>Parcela: <strong>{currentEvaluation?.parcelName ?? '-'}</strong></div>
-              <div style={{ height: 14, width: 1, background: '#e2e8f0' }} />
-              <div style={{ background: '#dcfce7', color: '#16a34a', fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 999 }}>Score: {score}%</div>
-            </div>
+            <div style={{ fontSize: 13, color: '#64748b' }}>Parcela: <strong>{currentEvaluation?.parcelName ?? '-'}</strong></div>
           </div>
         </div>
 
@@ -366,6 +325,50 @@ export default function Recommendations({ navigate }: Props) {
             {mcdaPending && (
               <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', borderRadius: 12, padding: 16, marginBottom: 16, fontSize: 13, lineHeight: 1.6 }}>
                 El analisis de viabilidad aun no esta disponible. Estado actual: <strong>{formatBackendStatus(mcdaResult?.status)}</strong>. Vuelve a la pantalla de procesamiento y espera que el analisis se complete.
+              </div>
+            )}
+
+            {sortedCrops.length > 0 && (
+              <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', padding: '18px 22px', marginBottom: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 14 }}>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: '#0f172a' }}>Recomendaciones por cultivo</div>
+                    <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>
+                      Selecciona un cultivo para consultar su recomendacion especifica.
+                    </div>
+                  </div>
+                  <div style={{ background: missingRecommendationCount > 0 ? '#fffbeb' : '#f0fdf4', color: missingRecommendationCount > 0 ? '#b45309' : '#15803d', fontSize: 11, fontWeight: 800, padding: '5px 9px', borderRadius: 999, whiteSpace: 'nowrap' }}>
+                    {availableRecommendationCount}/{sortedCrops.filter((crop) => crop.calcCondition === 'succeeded').length} disponibles
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
+                  {sortedCrops.map((crop) => {
+                    const cropRecommendation = allRecommendations.find((item) => item.cropId === crop.cropId) ?? null;
+                    const isActive = activeCrop?.cropId === crop.cropId;
+                    const isEligible = crop.calcCondition === 'succeeded';
+                    return (
+                      <button
+                        key={crop.cropId}
+                        type="button"
+                        onClick={() => setActiveRecommendationCropId(crop.cropId)}
+                        style={{ textAlign: 'left', background: isActive ? '#f0fdf4' : '#fafafa', border: isActive ? '1.5px solid #86efac' : '1px solid #f1f5f9', borderRadius: 12, padding: '13px 14px', cursor: 'pointer', transition: 'border-color 120ms ease, background 120ms ease' }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                          <span style={{ fontSize: 13, fontWeight: 800, color: '#0f172a' }}>{getCropLabel(crop.cropId)}</span>
+                          <span style={{ fontSize: 11, fontWeight: 800, color: '#475569' }}>Score {toPercent(crop.score)}%</span>
+                        </div>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                          <span style={{ background: isEligible ? '#dcfce7' : '#fef2f2', color: isEligible ? '#15803d' : '#b91c1c', fontSize: 10, fontWeight: 800, padding: '4px 7px', borderRadius: 999 }}>
+                            {formatBackendStatus(crop.viabilityCategory)}
+                          </span>
+                          <span style={{ background: cropRecommendation ? '#ecfeff' : '#fff7ed', color: cropRecommendation ? '#0e7490' : '#c2410c', fontSize: 10, fontWeight: 800, padding: '4px 7px', borderRadius: 999 }}>
+                            {cropRecommendation ? 'Recomendacion lista' : isEligible ? 'Pendiente' : 'No elegible'}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
@@ -392,9 +395,6 @@ export default function Recommendations({ navigate }: Props) {
                       </div>
                       <div style={{ background: '#ecfeff', color: '#0891b2', fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 999 }}>
                         Fuente: {humanizeProvider(backendRecommendation.provider)}
-                      </div>
-                      <div style={{ background: '#faf5ff', color: '#7c3aed', fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 999 }}>
-                        {backendRecommendation.evidence.length} fuentes consultadas
                       </div>
                     </div>
                   </>
@@ -441,50 +441,6 @@ export default function Recommendations({ navigate }: Props) {
                 )}
               </div>
             </div>
-
-            {sortedCrops.length > 0 && (
-              <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', padding: '18px 22px', marginBottom: 20 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 14 }}>
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: '#0f172a' }}>Recomendaciones por cultivo</div>
-                    <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>
-                      Se solicita una recomendacion independiente para cada cultivo evaluado bajo el mismo regimen hidrico.
-                    </div>
-                  </div>
-                  <div style={{ background: missingRecommendationCount > 0 ? '#fffbeb' : '#f0fdf4', color: missingRecommendationCount > 0 ? '#b45309' : '#15803d', fontSize: 11, fontWeight: 800, padding: '5px 9px', borderRadius: 999, whiteSpace: 'nowrap' }}>
-                    {availableRecommendationCount}/{sortedCrops.filter((crop) => crop.calcCondition === 'succeeded').length} disponibles
-                  </div>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
-                  {sortedCrops.map((crop) => {
-                    const cropRecommendation = allRecommendations.find((item) => item.cropId === crop.cropId) ?? null;
-                    const isActive = activeCrop?.cropId === crop.cropId;
-                    const isEligible = crop.calcCondition === 'succeeded';
-                    return (
-                      <button
-                        key={crop.cropId}
-                        type="button"
-                        onClick={() => setActiveRecommendationCropId(crop.cropId)}
-                        style={{ textAlign: 'left', background: isActive ? '#f0fdf4' : '#fafafa', border: isActive ? '1.5px solid #86efac' : '1px solid #f1f5f9', borderRadius: 12, padding: '13px 14px', cursor: 'pointer', transition: 'border-color 120ms ease, background 120ms ease' }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                          <span style={{ fontSize: 13, fontWeight: 800, color: '#0f172a' }}>{getCropLabel(crop.cropId)}</span>
-                          <span style={{ fontSize: 11, fontWeight: 800, color: '#475569' }}>Score {toPercent(crop.score)}%</span>
-                        </div>
-                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                          <span style={{ background: isEligible ? '#dcfce7' : '#fef2f2', color: isEligible ? '#15803d' : '#b91c1c', fontSize: 10, fontWeight: 800, padding: '4px 7px', borderRadius: 999 }}>
-                            {formatBackendStatus(crop.viabilityCategory)}
-                          </span>
-                          <span style={{ background: cropRecommendation ? '#ecfeff' : '#fff7ed', color: cropRecommendation ? '#0e7490' : '#c2410c', fontSize: 10, fontWeight: 800, padding: '4px 7px', borderRadius: 999 }}>
-                            {cropRecommendation ? 'Recomendacion lista' : isEligible ? 'Pendiente' : 'No elegible'}
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
 
             {noRecommendableCrops && (
               <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', padding: '18px 22px', marginBottom: 20 }}>
@@ -557,27 +513,6 @@ export default function Recommendations({ navigate }: Props) {
               </div>
             )}
 
-            {/* Factores a atender */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              {derivedActions.map(({ title, items }) => (
-                <div key={title} style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
-                  <div style={{ background: '#f0fdf4', borderBottom: '1.5px solid #bbf7d0', padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 34, height: 34, borderRadius: 8, background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #bbf7d0' }}>
-                      <CheckCircle2 style={{ width: 16, height: 16, color: '#16a34a' }} />
-                    </div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>{title}</div>
-                  </div>
-                  <div style={{ padding: '16px 20px' }}>
-                    {items.map((item) => (
-                      <div key={item} style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
-                        <CheckCircle2 style={{ width: 14, height: 14, color: '#16a34a', flexShrink: 0, marginTop: 2 }} />
-                        <span style={{ fontSize: 13, color: '#475569', lineHeight: 1.6 }}>{item}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
           </>
         )}
       </main>

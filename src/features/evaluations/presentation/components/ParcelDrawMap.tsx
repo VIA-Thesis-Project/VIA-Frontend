@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { Trash2 } from 'lucide-react';
 import { GeoJsonGeometry } from '@/features/evaluations/domain/parcel';
@@ -13,7 +13,6 @@ type Props = {
   points: LatLngPoint[];
   onPointsChange?: (points: LatLngPoint[]) => void;
   onGeometryChange?: (geometry: GeoJsonGeometry | null) => void;
-  onAreaChange?: (areaHa: string) => void;
   editable?: boolean;
 };
 
@@ -130,21 +129,19 @@ export function ParcelDrawMap({
   points,
   onPointsChange,
   onGeometryChange,
-  onAreaChange,
   editable = true,
 }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const pointsRef = useRef(points);
-  const callbacksRef = useRef({ onPointsChange, onGeometryChange, onAreaChange });
+  const callbacksRef = useRef({ onPointsChange, onGeometryChange });
   const [terrainEnabled, setTerrainEnabled] = useState(true);
-  const areaHa = useMemo(() => calculateAreaHa(points), [points]);
 
   useEffect(() => {
     pointsRef.current = points;
-    callbacksRef.current = { onPointsChange, onGeometryChange, onAreaChange };
+    callbacksRef.current = { onPointsChange, onGeometryChange };
     if (mapRef.current?.isStyleLoaded()) updateSourceData(mapRef.current, points);
-  }, [points, onPointsChange, onGeometryChange, onAreaChange]);
+  }, [points, onPointsChange, onGeometryChange]);
 
   useEffect(() => {
     if (!MAPBOX_ACCESS_TOKEN || !containerRef.current) return undefined;
@@ -161,7 +158,6 @@ export function ParcelDrawMap({
     });
 
     mapRef.current = map;
-    map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'top-right');
     map.addControl(new mapboxgl.ScaleControl({ maxWidth: 120, unit: 'metric' }), 'bottom-left');
 
     map.once('load', () => {
@@ -230,7 +226,6 @@ export function ParcelDrawMap({
             pointsRef.current = nextPoints;
             callbacksRef.current.onPointsChange?.(nextPoints);
             callbacksRef.current.onGeometryChange?.(pointsToGeoJson(nextPoints));
-            callbacksRef.current.onAreaChange?.(calculateAreaHa(nextPoints) > 0 ? calculateAreaHa(nextPoints).toFixed(2) : '');
           }
           return;
         }
@@ -242,7 +237,6 @@ export function ParcelDrawMap({
         pointsRef.current = nextPoints;
         callbacksRef.current.onPointsChange?.(nextPoints);
         callbacksRef.current.onGeometryChange?.(pointsToGeoJson(nextPoints));
-        callbacksRef.current.onAreaChange?.(calculateAreaHa(nextPoints) > 0 ? calculateAreaHa(nextPoints).toFixed(2) : '');
       });
 
       map.on('mouseenter', 'parcel-vertices', () => { map.getCanvas().style.cursor = 'pointer'; });
@@ -259,7 +253,6 @@ export function ParcelDrawMap({
     pointsRef.current = [];
     onPointsChange?.([]);
     onGeometryChange?.(null);
-    onAreaChange?.('');
   };
 
   const toggleTerrain = () => {
@@ -305,9 +298,6 @@ export function ParcelDrawMap({
         <div style={{ position: 'absolute', left: 12, bottom: 12, zIndex: 2, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#15803d', padding: '7px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700, boxShadow: '0 2px 10px rgba(15,23,42,0.12)' }}>
             Vertices: {points.length}
-          </div>
-          <div style={{ background: points.length >= 3 ? '#f0fdf4' : '#f8fafc', border: `1px solid ${points.length >= 3 ? '#bbf7d0' : '#e2e8f0'}`, color: points.length >= 3 ? '#15803d' : '#64748b', padding: '7px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700, boxShadow: '0 2px 10px rgba(15,23,42,0.12)' }}>
-            Area aprox.: {areaHa > 0 ? areaHa.toFixed(2) : '--'} ha
           </div>
         </div>
       )}

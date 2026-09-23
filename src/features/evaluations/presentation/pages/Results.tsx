@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, ChevronRight, Eye, Info, Sprout, TrendingUp } from 'lucide-react';
+import { AlertTriangle, ChevronRight, Eye, Sprout, TrendingUp } from 'lucide-react';
 import Sidebar from '@/shared/presentation/layouts/Sidebar';
 import { NavigateFn } from '@/app/navigation/navigation';
 import { isNoRankedCropFailure, toUserFriendlyFailureReason } from '@/features/evaluations/application/backendFailureMessages';
@@ -106,7 +106,6 @@ export default function Results({ navigate }: Props) {
   const canUseResults = sortedResults.length > 0;
   const canRequestRecommendations = hasRecommendableCrop(sortedResults);
   const noRecommendableCrops = canUseResults && !canRequestRecommendations && !pending && !failed;
-  const allScoresZero = canUseResults && sortedResults.every((crop) => crop.score === 0);
   const commonSupport = mcdaResult?.commonSupport;
   const limitingFactors = sortedResults.flatMap((result) => result.limitingFactors.slice(0, 2).map((factor) => ({
     cropId: result.cropId,
@@ -164,13 +163,6 @@ export default function Results({ navigate }: Props) {
         {error && (
           <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', borderRadius: 12, padding: 16, marginBottom: 16, fontSize: 13 }}>
             {error}
-          </div>
-        )}
-
-        {allScoresZero && (
-          <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', color: '#9a3412', borderRadius: 12, padding: 14, marginBottom: 16, fontSize: 13, lineHeight: 1.55, display: 'flex', gap: 10 }}>
-            <Info style={{ width: 16, height: 16, flexShrink: 0, marginTop: 1 }} />
-            <span>El backend devolvio resultados completos, pero la aptitud media es <strong>0%</strong> para todos los cultivos bajo las condiciones evaluadas. No es ausencia de datos: representa una aptitud calculada igual a cero.</span>
           </div>
         )}
 

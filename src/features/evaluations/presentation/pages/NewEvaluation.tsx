@@ -59,7 +59,6 @@ export default function NewEvaluation({ navigate }: Props) {
   const selectedParcelFromList = readSelectedParcelId();
   const [name, setName] = useState('');
   const [district, setDistrict] = useState('');
-  const [area, setArea] = useState('');
   const [method, setMethod] = useState<InputMethod>(selectedParcelFromList ? 'select' : 'draw');
   const [mapPoints, setMapPoints] = useState<Array<{ lat: number; lng: number }>>([]);
   const [geometry, setGeometry] = useState<GeoJsonGeometry | null>(null);
@@ -238,7 +237,7 @@ export default function NewEvaluation({ navigate }: Props) {
         {
           name,
           district,
-          areaHa: area || 'Area no calculada',
+          areaHa: 'Area no registrada',
           selectedCropIds: selectedCrops,
           waterRegime,
           geometry,
@@ -291,7 +290,6 @@ export default function NewEvaluation({ navigate }: Props) {
               {[
                 { label: 'Nombre de parcela', value: name, setter: setName, placeholder: 'Ej: Parcela Canete 01' },
                 { label: 'Ubicacion / Distrito', value: district, setter: setDistrict, placeholder: 'Ej: Huaral, Lima' },
-                { label: 'Area estimada (ha)', value: area, setter: setArea, placeholder: 'Se calcula al delimitar' },
               ].map(({ label, value, setter, placeholder }) => (
                 <div key={label} style={{ marginBottom: 10 }}>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 4 }}>{label}</label>
@@ -446,7 +444,7 @@ export default function NewEvaluation({ navigate }: Props) {
                 })}
                 {selectedCrops.length === 0 && <span style={{ fontSize: 11, color: '#94a3b8', padding: '6px 2px' }}>Selecciona uno o mas cultivos para evaluar.</span>}
               </div>
-              <div style={{ fontSize: 10, color: cropOptionsError ? '#b91c1c' : '#94a3b8', marginTop: 6 }}>{cropOptionsError ? 'Verifica la conexion y vuelve a cargar la pagina.' : 'Lista proporcionada por el backend.'}</div>
+              {cropOptionsError && <div style={{ fontSize: 10, color: '#b91c1c', marginTop: 6 }}>Verifica la conexion y vuelve a cargar la pagina.</div>}
               {!cropOptionsError && (
                 <div style={{ marginTop: 10, border: '1px solid #e2e8f0', borderRadius: 8, padding: '9px 10px', background: '#f8fafc' }}>
                   <label htmlFor="water-regime" style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 5 }}>Régimen hídrico de evaluación</label>
@@ -471,7 +469,7 @@ export default function NewEvaluation({ navigate }: Props) {
                 {selectedParcel ? 'Parcela existente lista para evaluar' : hasValidGeometry ? 'Parcela delimitada correctamente' : 'Parcela pendiente de delimitar'}
               </div>
               <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
-                {selectedParcel ? `ID ${selectedParcel.id.slice(0, 8)} · ${selectedParcel.metadata.crs}` : `Vertices: ${mapPoints.length} ${area ? `- Area aprox.: ${area} ha` : ''}`}
+                {selectedParcel ? `ID ${selectedParcel.id.slice(0, 8)} · ${selectedParcel.metadata.crs}` : `Vertices: ${mapPoints.length}`}
               </div>
             </div>
 
@@ -501,7 +499,6 @@ export default function NewEvaluation({ navigate }: Props) {
                 points={mapPoints}
                 onPointsChange={setMapPoints}
                 onGeometryChange={setGeometry}
-                onAreaChange={setArea}
               />
             </div>
           </div>

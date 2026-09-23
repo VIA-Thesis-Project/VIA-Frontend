@@ -100,14 +100,6 @@ export default function Sidebar({ active, navigate }: Props) {
                   }}
                 />
                 {label}
-                {label === 'Nueva evaluacion' && (
-                  <span
-                    className="ml-auto rounded-full text-white"
-                    style={{ fontSize: 10, background: '#16a34a', padding: '1px 6px', fontWeight: 600 }}
-                  >
-                    +
-                  </span>
-                )}
               </button>
             );
           })}

@@ -9,27 +9,12 @@ import Sidebar from '@/shared/presentation/layouts/Sidebar';
 
 interface Props { navigate: NavigateFn; }
 
-type AreaFilter = 'all' | 'with-area' | 'without-area';
-
 type EditForm = {
   name: string;
   description: string;
-  crs: string;
 };
 
 const parcelRepository = new ParcelApiRepository();
-
-function extractAreaHa(parcel: Parcel): number | null {
-  const match = parcel.metadata.description.match(/Area estimada:\s*([0-9.,]+)/i);
-  if (!match) return null;
-  const value = Number(match[1].replace(',', '.'));
-  return Number.isFinite(value) ? value : null;
-}
-
-function formatArea(parcel: Parcel): string {
-  const area = extractAreaHa(parcel);
-  return area === null ? 'Sin area registrada' : `${area.toFixed(2)} ha`;
-}
 
 function countGeometryPoints(parcel: Parcel): number {
   const [firstRing] = parcel.geometry.coordinates;
@@ -46,9 +31,8 @@ export default function Parcels({ navigate }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [query, setQuery] = useState('');
-  const [areaFilter, setAreaFilter] = useState<AreaFilter>('all');
   const [editingParcel, setEditingParcel] = useState<Parcel | null>(null);
-  const [editForm, setEditForm] = useState<EditForm>({ name: '', description: '', crs: 'EPSG:4326' });
+  const [editForm, setEditForm] = useState<EditForm>({ name: '', description: '' });
 
   const session = readAuthSession();
 
@@ -75,37 +59,26 @@ export default function Parcels({ navigate }: Props) {
     void loadParcels();
   }, []);
 
-  const areaValues = useMemo(() => parcels.map(extractAreaHa).filter((area): area is number => area !== null), [parcels]);
-  const totalArea = areaValues.reduce((sum, area) => sum + area, 0);
-  const parcelsWithArea = areaValues.length;
-  const parcelsWithoutArea = Math.max(parcels.length - parcelsWithArea, 0);
-
   const filteredParcels = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
     return parcels.filter((parcel) => {
-      const area = extractAreaHa(parcel);
-      const matchesArea = areaFilter === 'all'
-        || (areaFilter === 'with-area' && area !== null)
-        || (areaFilter === 'without-area' && area === null);
-
       const searchable = [
         parcel.metadata.name,
         parcel.metadata.description,
-        parcel.metadata.crs,
         parcel.id,
+        parcel.projectId,
       ].join(' ').toLowerCase();
 
-      return matchesArea && (!normalizedQuery || searchable.includes(normalizedQuery));
+      return !normalizedQuery || searchable.includes(normalizedQuery);
     });
-  }, [areaFilter, parcels, query]);
+  }, [parcels, query]);
 
   const openEdit = (parcel: Parcel) => {
     setEditingParcel(parcel);
     setEditForm({
       name: parcel.metadata.name,
       description: parcel.metadata.description,
-      crs: parcel.metadata.crs,
     });
     setError(null);
     setNotice(null);
@@ -133,7 +106,7 @@ export default function Parcels({ navigate }: Props) {
           metadata: {
             name: editForm.name.trim(),
             description: editForm.description.trim() || 'Sin descripcion registrada',
-            crs: editForm.crs.trim() || 'EPSG:4326',
+            crs: editingParcel.metadata.crs,
           },
         },
         session.accessToken,
@@ -168,9 +141,9 @@ export default function Parcels({ navigate }: Props) {
     }
   };
 
-  const copyParcelId = async (parcelId: string) => {
-    await navigator.clipboard?.writeText(parcelId);
-    setNotice('ID de parcela copiado.');
+  const copyId = async (id: string, label: string) => {
+    await navigator.clipboard?.writeText(id);
+    setNotice(`${label} copiado.`);
   };
 
   const openParcelDetail = (parcel: Parcel) => {
@@ -191,7 +164,7 @@ export default function Parcels({ navigate }: Props) {
               <span style={{ color: '#16a34a', fontSize: 12, fontWeight: 700 }}>Parcelas</span>
             </div>
             <h1 style={{ fontSize: 20, fontWeight: 800, color: '#0f172a', margin: 0, marginBottom: 4 }}>Parcelas registradas</h1>
-            <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>Gestion de parcelas conectada al backend desplegado de VIA.</p>
+            <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>Gestion de parcelas registradas en VIA</p>
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <button
@@ -220,11 +193,9 @@ export default function Parcels({ navigate }: Props) {
           </div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 18 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(220px, 1fr))', gap: 16, marginBottom: 18 }}>
           {[
             { label: 'Total parcelas', value: parcels.length, color: '#16a34a', sub: 'desde proyectos' },
-            { label: 'Area registrada', value: `${totalArea.toFixed(2)} ha`, color: '#0891b2', sub: `${parcelsWithArea} con area` },
-            { label: 'Sin area', value: parcelsWithoutArea, color: '#d97706', sub: 'requieren revision' },
             { label: 'Resultados filtrados', value: filteredParcels.length, color: '#7c3aed', sub: 'vista actual' },
           ].map((stat) => (
             <div key={stat.label} style={{ background: 'white', borderRadius: 16, padding: 18, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
@@ -239,7 +210,7 @@ export default function Parcels({ navigate }: Props) {
           <div style={{ padding: '18px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14 }}>
             <div>
               <div style={{ fontSize: 14, fontWeight: 800, color: '#0f172a' }}>Lista de parcelas</div>
-              <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>Edita metadatos, copia IDs o elimina registros del backend.</div>
+              <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>Consulta la geometria y los identificadores registrados.</div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ position: 'relative' }}>
@@ -251,22 +222,13 @@ export default function Parcels({ navigate }: Props) {
                   style={{ width: 230, padding: '9px 12px 9px 34px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 13, outline: 'none', color: '#0f172a' }}
                 />
               </div>
-              <select
-                value={areaFilter}
-                onChange={(event) => setAreaFilter(event.target.value as AreaFilter)}
-                style={{ padding: '9px 12px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 13, color: '#475569', background: 'white', outline: 'none' }}
-              >
-                <option value="all">Todas</option>
-                <option value="with-area">Con area</option>
-                <option value="without-area">Sin area</option>
-              </select>
             </div>
           </div>
 
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#fafafa' }}>
-                {['Parcela', 'Area', 'Geometria', 'CRS', 'ID backend', 'Acciones'].map((header) => (
+                {['Parcela', 'Geometria', 'ID parcela', 'ID proyecto', 'Acciones'].map((header) => (
                   <th key={header} style={{ padding: '11px 18px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{header}</th>
                 ))}
               </tr>
@@ -274,12 +236,12 @@ export default function Parcels({ navigate }: Props) {
             <tbody>
               {loading && (
                 <tr>
-                  <td colSpan={6} style={{ padding: 20, color: '#64748b', fontSize: 13 }}>Consultando parcelas...</td>
+                  <td colSpan={5} style={{ padding: 20, color: '#64748b', fontSize: 13 }}>Consultando parcelas...</td>
                 </tr>
               )}
               {!loading && filteredParcels.length === 0 && (
                 <tr>
-                  <td colSpan={6} style={{ padding: 28, textAlign: 'center' }}>
+                  <td colSpan={5} style={{ padding: 28, textAlign: 'center' }}>
                     <div style={{ fontSize: 14, color: '#0f172a', fontWeight: 700, marginBottom: 4 }}>No hay parcelas para mostrar</div>
                     <div style={{ fontSize: 12, color: '#64748b' }}>Prueba limpiar filtros o registra una nueva parcela.</div>
                   </td>
@@ -293,21 +255,24 @@ export default function Parcels({ navigate }: Props) {
                         <MapPin style={{ width: 17, height: 17, color: '#16a34a' }} />
                       </div>
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{parcel.metadata.name}</div>
-                        <div style={{ fontSize: 11, color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{parcel.metadata.description}</div>
+                        <div title={parcel.metadata.name} style={{ fontSize: 14, fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{parcel.metadata.name}</div>
                       </div>
                     </div>
                   </td>
-                  <td style={{ padding: '14px 18px', fontSize: 13, color: extractAreaHa(parcel) === null ? '#d97706' : '#15803d', fontWeight: 700 }}>{formatArea(parcel)}</td>
                   <td style={{ padding: '14px 18px', fontSize: 13, color: '#475569' }}>
                     {parcel.geometry.type}
                     <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>{countGeometryPoints(parcel)} puntos</div>
                   </td>
-                  <td style={{ padding: '14px 18px', fontSize: 13, color: '#475569', fontWeight: 600 }}>{parcel.metadata.crs}</td>
                   <td style={{ padding: '14px 18px' }}>
-                    <button onClick={() => copyParcelId(parcel.id)} style={{ border: '1px solid #e2e8f0', background: 'white', borderRadius: 8, padding: '6px 9px', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+                    <button onClick={() => copyId(parcel.id, 'ID de parcela')} title={parcel.id} style={{ border: '1px solid #e2e8f0', background: 'white', borderRadius: 8, padding: '6px 9px', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
                       <Copy style={{ width: 12, height: 12 }} />
                       {parcel.id.slice(0, 8)}
+                    </button>
+                  </td>
+                  <td style={{ padding: '14px 18px' }}>
+                    <button onClick={() => copyId(parcel.projectId, 'ID de proyecto')} title={parcel.projectId} style={{ border: '1px solid #e2e8f0', background: 'white', borderRadius: 8, padding: '6px 9px', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+                      <Copy style={{ width: 12, height: 12 }} />
+                      {parcel.projectId.slice(0, 8)}
                     </button>
                   </td>
                   <td style={{ padding: '14px 18px' }}>
@@ -350,10 +315,6 @@ export default function Parcels({ navigate }: Props) {
               <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 12, color: '#475569', fontWeight: 700 }}>
                 Descripcion
                 <textarea value={editForm.description} onChange={(event) => setEditForm((current) => ({ ...current, description: event.target.value }))} rows={4} style={{ padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 13, color: '#0f172a', outline: 'none', resize: 'vertical' }} />
-              </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 12, color: '#475569', fontWeight: 700 }}>
-                CRS
-                <input value={editForm.crs} onChange={(event) => setEditForm((current) => ({ ...current, crs: event.target.value }))} style={{ padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 13, color: '#0f172a', outline: 'none' }} />
               </label>
             </div>
             <div style={{ padding: '14px 20px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
