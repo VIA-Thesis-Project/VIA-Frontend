@@ -25,7 +25,7 @@ type ParcelResponse = {
 
 export class ParcelApiRepository implements ParcelRepository {
   async listProjects(accessToken: string): Promise<Project[]> {
-    const response = await apiRequest<ProjectResponse[]>('/projects/', { token: accessToken });
+    const response = await apiRequest<ProjectResponse[]>('/projects', { token: accessToken });
     return response.map(toProject);
   }
 
@@ -89,7 +89,7 @@ export class ParcelApiRepository implements ParcelRepository {
   }
 
   private async createProject(name: string, accessToken: string): Promise<Project> {
-    const response = await apiRequest<ProjectResponse>('/projects/', {
+    const response = await apiRequest<ProjectResponse>('/projects', {
       method: 'POST',
       token: accessToken,
       body: { name },
