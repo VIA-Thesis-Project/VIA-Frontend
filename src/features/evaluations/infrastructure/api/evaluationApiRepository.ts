@@ -6,6 +6,7 @@ import {
   EvaluationAccepted,
   EvaluationMcdaResult,
   EvaluationRecommendation,
+  EvaluationSupportSummary,
   EvaluationStatusSnapshot,
   EvaluationSummary,
   FinalRecommendationResult,
@@ -91,11 +92,24 @@ type ResultResponse = {
   requested_execution_count: number;
   completed_execution_count: number;
   outcomes: OutcomeResponse[];
+  common_support: CommonSupportResponse;
   scenarios: Array<{
     water_regime: WaterRegime;
     outcomes: OutcomeResponse[];
     comparable_crops: Array<{ crop_id: string; mean: number; rank: number }>;
+    common_support: CommonSupportResponse;
   }>;
+};
+
+type CommonSupportResponse = {
+  status: string;
+  method: string;
+  area_crs: string;
+  parcel_area_m2: number;
+  common_valid_area_m2: number;
+  common_coverage_fraction: number;
+  eligible_crops: string[];
+  excluded_without_coverage: string[];
 };
 
 type LimitationsResponse = {
@@ -103,12 +117,20 @@ type LimitationsResponse = {
     crop_id: string;
     water_regime: WaterRegime;
     status: string;
+    suitability: SuitabilityResponse | null;
     limitation_evidence: {
+      availability: string;
+      reason: string | null;
+      warnings: string[];
       factors: Array<{
         factor_code: string;
+        label: string;
         display_label: string;
+        raw_code: number | string | null;
+        affected_cells: number;
         affected_fraction: number;
         affected_area_m2: number;
+        dominant: boolean;
         source_sha256: string;
       }>;
     };
@@ -154,7 +176,10 @@ export class EvaluationApiRepository implements EvaluationRepository {
       })),
       environmentalInputs: {
         minimumCount: response.environmental_inputs.minimum_count,
-        scientificallyBoundDatasetVersions: response.environmental_inputs.scientifically_bound_dataset_versions,
+        scientificallyBoundDatasetVersions: response.environmental_inputs.scientifically_bound_dataset_versions.map((binding) => ({
+          datasetId: binding.dataset_id,
+          datasetVersionId: binding.dataset_version_id,
+        })),
       },
     };
   }
@@ -207,12 +232,12 @@ export class EvaluationApiRepository implements EvaluationRepository {
     };
   }
 
-  async getMcdaResult(evaluationId: string): Promise<EvaluationMcdaResult> {
+  async getMcdaResult(evaluationId: string, waterRegime: WaterRegime = 'rainfed'): Promise<EvaluationMcdaResult> {
     const [result, limitations] = await Promise.all([
       apiRequest<ResultResponse>(`/v1/evaluations/${evaluationId}/result`, { token: authToken() }),
       apiRequest<LimitationsResponse>(`/v1/evaluations/${evaluationId}/limitations`, { token: authToken() }),
     ]);
-    const scenario = result.scenarios.find((item) => item.water_regime === 'rainfed') ?? result.scenarios[0];
+    const scenario = result.scenarios.find((item) => item.water_regime === waterRegime) ?? result.scenarios[0];
     const outcomes = scenario?.outcomes ?? result.outcomes;
     const comparable = scenario?.comparable_crops ?? [];
 
@@ -234,6 +259,7 @@ export class EvaluationApiRepository implements EvaluationRepository {
           gaps: [],
           limitingFactors: (cropLimitations?.limitation_evidence.factors ?? []).map((factor) => ({
             criterionId: factor.factor_code,
+            criterionLabel: factor.display_label,
             phaseId: '',
             policy: factor.display_label,
             penaltyFactor: null,
@@ -241,48 +267,98 @@ export class EvaluationApiRepository implements EvaluationRepository {
             optimalLimit: 1,
             membership: 1 - factor.affected_fraction,
             docSource: factor.source_sha256,
+            affectedFraction: factor.affected_fraction,
+            affectedAreaM2: factor.affected_area_m2,
+            affectedCells: factor.affected_cells,
+            dominant: factor.dominant,
+            rawCode: factor.raw_code,
           })),
           missingCriteria: [],
           unrecognizedVariables: [],
+          minimum: outcome.suitability?.minimum ?? null,
+          maximum: outcome.suitability?.maximum ?? null,
+          validCells: outcome.suitability?.valid_cells ?? null,
+          validAreaM2: outcome.suitability?.valid_area_m2 ?? null,
+          coverageFraction: outcome.suitability?.coverage_fraction ?? null,
+          zeroSuitabilityAreaM2: outcome.suitability?.zero_suitability_area_m2 ?? null,
+          limitationAvailability: cropLimitations?.limitation_evidence.availability ?? null,
+          limitationReason: cropLimitations?.limitation_evidence.reason ?? null,
+          limitationWarnings: cropLimitations?.limitation_evidence.warnings ?? [],
         };
       }),
+      commonSupport: toSupportSummary(result.common_support ?? scenario?.common_support),
     };
   }
 
   async getRecommendationsForEvaluation(evaluationId: string): Promise<EvaluationRecommendation[]> {
-    const response = await apiRequest<RecommendationRunResponse[]>(
-      `/v1/decision-support/evaluations/${evaluationId}/recommendations`,
-      { token: authToken() },
-    );
+    const response = await this.listRecommendationRuns(evaluationId);
     return response.filter((run) => run.recommendation !== null).map(toRecommendation);
   }
 
-  async getFinalRecommendation(evaluationId: string): Promise<FinalRecommendationResult> {
-    const existing = await this.getRecommendationsForEvaluation(evaluationId);
-    const available = existing.filter((item) => item.status === 'succeeded');
+  async ensureRecommendationsForEvaluation(
+    evaluationId: string,
+    waterRegime: WaterRegime = 'rainfed',
+  ): Promise<EvaluationRecommendation[]> {
+    // The backend exposes one recommendation run per crop/regime. The old
+    // frontend requested only the first successful crop; here we reconcile
+    // the complete set without forcing regeneration of existing runs.
+    const [runs, result] = await Promise.all([
+      this.listRecommendationRuns(evaluationId),
+      this.getMcdaResult(evaluationId, waterRegime),
+    ]);
+    const existingRuns = runs.filter((run) => run.water_regime === waterRegime);
+    const existingCropIds = new Set(existingRuns.map((run) => run.crop_id));
+    const eligibleCrops = result.results.filter((crop) => crop.calcCondition === 'succeeded');
+
+    const generatedRuns: RecommendationRunResponse[] = [];
+    for (const crop of eligibleCrops) {
+      if (existingCropIds.has(crop.cropId)) continue;
+
+      try {
+        const response = await apiRequest<RecommendationRunResponse>(
+          `/v1/decision-support/evaluations/${evaluationId}/recommendations`,
+          {
+            method: 'POST',
+            token: authToken(),
+            body: {
+              crop_id: crop.cropId,
+              water_regime: waterRegime,
+              force_regenerate: false,
+            } satisfies RecommendationRequest,
+          },
+        );
+        generatedRuns.push(response);
+      } catch {
+        // A failed crop must not prevent the remaining crops from being
+        // requested. The next refresh can reconcile it again if the backend
+        // did not persist a run for it.
+      }
+    }
+
+    return [...existingRuns, ...generatedRuns]
+      .filter((run) => run.recommendation !== null)
+      .map(toRecommendation);
+  }
+
+  async getFinalRecommendation(evaluationId: string, waterRegime: WaterRegime = 'rainfed'): Promise<FinalRecommendationResult> {
+    const existing = await this.ensureRecommendationsForEvaluation(evaluationId, waterRegime);
+    const available = existing.filter((item) => item.status === 'succeeded' && item.waterRegime === waterRegime);
     if (available.length > 0) {
       return { status: 'available', recommendation: available.at(-1)! };
     }
 
-    const result = await this.getMcdaResult(evaluationId);
-    const crop = result.results.find((item) => item.calcCondition === 'succeeded');
-    if (!crop) return { status: 'pending', detail: 'No hay cultivos finalizados para recomendar.' };
-
-    const response = await apiRequest<RecommendationRunResponse>(
-      `/v1/decision-support/evaluations/${evaluationId}/recommendations`,
-      {
-        method: 'POST',
-        token: authToken(),
-        body: {
-          crop_id: crop.cropId,
-          water_regime: 'rainfed',
-        } satisfies RecommendationRequest,
-      },
-    );
-    if (!response.recommendation) {
-      return { status: 'pending', detail: response.failure_reason ?? 'La recomendacion aun no esta disponible.' };
+    const result = await this.getMcdaResult(evaluationId, waterRegime);
+    if (!result.results.some((item) => item.calcCondition === 'succeeded')) {
+      return { status: 'pending', detail: 'No hay cultivos finalizados para recomendar.' };
     }
-    return { status: 'available', recommendation: toRecommendation(response) };
+    return { status: 'pending', detail: 'Las recomendaciones para los cultivos evaluados aun se estan preparando.' };
+  }
+
+  private async listRecommendationRuns(evaluationId: string): Promise<RecommendationRunResponse[]> {
+    return apiRequest<RecommendationRunResponse[]>(
+      `/v1/decision-support/evaluations/${evaluationId}/recommendations`,
+      { token: authToken() },
+    );
   }
 
   async getAgroenvVector(_evaluationId: string): Promise<never> {
@@ -302,6 +378,20 @@ function toEnvironmentalInputBody(input: EnvironmentalInputReference) {
   };
 }
 
+function toSupportSummary(support?: CommonSupportResponse | null): EvaluationSupportSummary | null {
+  if (!support) return null;
+  return {
+    status: support.status,
+    method: support.method,
+    areaCrs: support.area_crs,
+    parcelAreaM2: support.parcel_area_m2,
+    commonValidAreaM2: support.common_valid_area_m2,
+    commonCoverageFraction: support.common_coverage_fraction,
+    eligibleCrops: support.eligible_crops,
+    excludedWithoutCoverage: support.excluded_without_coverage,
+  };
+}
+
 function toRecommendation(response: RecommendationRunResponse): EvaluationRecommendation {
   const structured = response.recommendation;
   const sections = structured
@@ -317,6 +407,7 @@ function toRecommendation(response: RecommendationRunResponse): EvaluationRecomm
   return {
     recommendationId: response.run_id,
     evaluationId: response.evaluation_id,
+    waterRegime: response.water_regime,
     parcelId: null,
     cropId: response.crop_id,
     status: response.status,

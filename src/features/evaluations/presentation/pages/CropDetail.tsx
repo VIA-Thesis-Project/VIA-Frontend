@@ -58,37 +58,8 @@ function sortResults(results: CropEvaluationResult[]): CropEvaluationResult[] {
   });
 }
 
-function formatNumber(value: number): string {
-  return Number.isInteger(value) ? String(value) : value.toFixed(2);
-}
-
 function humanizePhase(raw: string): string {
   return raw.replace(/_/g, ' ');
-}
-
-function formatPeriodLabel(period: string): string {
-  if (!period) return '—';
-  // YYYY-MM date → "ene 2026"
-  if (/^\d{4}-\d{2}$/.test(period)) {
-    const [year, month] = period.split('-');
-    const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-    return `${months[parseInt(month, 10) - 1]} ${year}`;
-  }
-  if (period === 'site_static') return 'Dato estático';
-  // "phase_name_climate" → strip phase prefix, show just the type
-  if (period.endsWith('_climate')) return 'Clima';
-  if (period.endsWith('_static')) return 'Estático';
-  if (period.endsWith('_soil')) return 'Suelo';
-  return humanizePhase(period);
-}
-
-function gapSeverityStyle(gapValue: number, optimalLimit: number) {
-  const relGap = optimalLimit !== 0
-    ? Math.abs(gapValue) / Math.max(Math.abs(optimalLimit), 1)
-    : 1;
-  if (relGap > 0.5) return { bg: '#fee2e2', color: '#dc2626', border: '#fecaca' };
-  if (relGap > 0.2) return { bg: '#fff7ed', color: '#c2410c', border: '#fed7aa' };
-  return { bg: '#fefce8', color: '#854d0e', border: '#fef08a' };
 }
 
 function buildAllFactors(crop: CropEvaluationResult) {
@@ -118,10 +89,17 @@ function buildAllFactors(crop: CropEvaluationResult) {
       criterionId: factor.criterionId,
       phaseId: factor.phaseId,
       label: formatCriterionLabel(factor),
-      phaseLabel: humanizePhase(formatPhaseLabel(factor)),
+      phaseLabel: factor.affectedFraction !== undefined && factor.affectedFraction !== null
+        ? 'Impacto espacial'
+        : humanizePhase(formatPhaseLabel(factor)),
       value,
-      observed: formatNumberWithUnit(factor.observedValue, factor.unit),
-      optimal: formatNumberWithUnit(factor.optimalLimit, factor.unit),
+      isAffectedArea: factor.affectedFraction !== undefined && factor.affectedFraction !== null,
+      observed: factor.affectedFraction !== undefined && factor.affectedFraction !== null
+        ? `${Math.round(factor.affectedFraction * 100)}% del area`
+        : formatNumberWithUnit(factor.observedValue, factor.unit),
+      optimal: factor.affectedFraction !== undefined && factor.affectedFraction !== null
+        ? '0% afectada'
+        : formatNumberWithUnit(factor.optimalLimit, factor.unit),
       status: value >= 0.75 ? 'Adecuado' : value >= 0.5 ? 'Moderado' : 'Critico',
       color,
       bg: value >= 0.75 ? '#f0fdf4' : value >= 0.5 ? '#fffbeb' : '#fee2e2',
@@ -161,7 +139,7 @@ export default function CropDetail({ navigate }: Props) {
     let cancelled = false;
     const loadResult = async () => {
       try {
-        const result = await evaluationRepository.getMcdaResult(currentEvaluation.evaluationId);
+        const result = await evaluationRepository.getMcdaResult(currentEvaluation.evaluationId, currentEvaluation.waterRegime ?? 'rainfed');
         if (!cancelled) {
           setMcdaResult(result);
           setError(toUserFriendlyFailureReason(result.failureReason));
@@ -210,17 +188,6 @@ export default function CropDetail({ navigate }: Props) {
       };
     }), [groupedCards]);
 
-  // Group gaps by criterion for the table
-  const groupedGaps = useMemo(() => {
-    const map = new Map<string, typeof crop.gaps>();
-    (crop?.gaps ?? []).forEach((gap) => {
-      const group = map.get(gap.criterionId) ?? [];
-      group.push(gap);
-      map.set(gap.criterionId, group);
-    });
-    return Array.from(map.entries());
-  }, [crop]);
-
   const score = toPercent(crop?.score ?? null);
   const style = categoryStyle(crop?.viabilityCategory ?? '');
   const cropCanReceiveRecommendation = isRecommendableViabilityCategory(crop?.viabilityCategory);
@@ -235,7 +202,7 @@ export default function CropDetail({ navigate }: Props) {
             <ArrowLeft style={{ width: 13, height: 13 }} /> Resultados
           </button>
           <span style={{ color: '#e2e8f0' }}>/</span>
-          <span style={{ fontSize: 12, color: '#16a34a', fontWeight: 600 }}>Detalle MCDA</span>
+          <span style={{ fontSize: 12, color: '#16a34a', fontWeight: 600 }}>Detalle CropSuitLite</span>
         </div>
 
         {error && (
@@ -246,13 +213,13 @@ export default function CropDetail({ navigate }: Props) {
 
         {loading && (
           <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', padding: 24, color: '#64748b' }}>
-            Consultando detalle MCDA...
+            Consultando detalle de aptitud espacial...
           </div>
         )}
 
         {!loading && !crop && (
           <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', padding: 24, color: '#64748b' }}>
-            Aun no hay un resultado MCDA disponible para mostrar detalle de cultivo.
+            Aun no hay un resultado de aptitud disponible para mostrar el detalle del cultivo.
           </div>
         )}
 
@@ -270,8 +237,13 @@ export default function CropDetail({ navigate }: Props) {
                   <div style={{ background: style.bg, color: style.color, fontSize: 12, fontWeight: 700, padding: '5px 14px', borderRadius: 999, border: `1px solid ${style.border}` }}>{formatBackendStatus(crop.viabilityCategory)}</div>
                 </div>
                 <p style={{ fontSize: 14, color: '#475569', margin: 0, lineHeight: 1.6, maxWidth: 700 }}>
-                  Condicion de calculo: <strong style={{ color: '#0f172a' }}>{formatBackendStatus(crop.calcCondition)}</strong>. Se detectaron {crop.gaps.length} brechas en {groupedGaps.length} {groupedGaps.length === 1 ? 'criterio' : 'criterios'} y {crop.limitingFactors.length} factores limitantes.
+                  Aptitud espacial: <strong style={{ color: '#0f172a' }}>{formatBackendStatus(crop.calcCondition)}</strong>. CropSuitLite reporto {crop.limitingFactors.length} factores limitantes y una cobertura valida de {crop.coverageFraction !== null && crop.coverageFraction !== undefined ? `${(crop.coverageFraction * 100).toFixed(1)}%` : '—'}.
                 </p>
+                <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', marginTop: 10, fontSize: 11, color: '#64748b' }}>
+                  <span>Celdas validas: <strong style={{ color: '#0f172a' }}>{crop.validCells ?? '—'}</strong></span>
+                  <span>Area evaluada: <strong style={{ color: '#0f172a' }}>{crop.validAreaM2 !== null && crop.validAreaM2 !== undefined ? `${(crop.validAreaM2 / 10000).toFixed(2)} ha` : '—'}</strong></span>
+                  <span>Area con aptitud 0: <strong style={{ color: '#b91c1c' }}>{crop.zeroSuitabilityAreaM2 !== null && crop.zeroSuitabilityAreaM2 !== undefined ? `${(crop.zeroSuitabilityAreaM2 / 10000).toFixed(2)} ha` : '—'}</strong></span>
+                </div>
               </div>
               <button
                 onClick={() => navigate('recommendations')}
@@ -284,8 +256,8 @@ export default function CropDetail({ navigate }: Props) {
             {/* Cards + chart */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 20, marginBottom: 20 }}>
               <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', padding: 24 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 2 }}>Factores evaluados por MCDA</div>
-                <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 20 }}>Agrupados por criterio — cada fase puede tener una membresia distinta</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 2 }}>Aptitud espacial y factores limitantes</div>
+                <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 20 }}>Evidencia producida por CropSuitLite para esta parcela y cultivo</div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
                   {groupedCards.length === 0 && (
@@ -333,11 +305,11 @@ export default function CropDetail({ navigate }: Props) {
                             </div>
                             <div style={{ display: 'flex', gap: 12 }}>
                               <div>
-                                <div style={{ fontSize: 10, color: '#94a3b8' }}>Observado</div>
+                                <div style={{ fontSize: 10, color: '#94a3b8' }}>{card.isAffectedArea ? 'Area afectada' : 'Observado'}</div>
                                 <div style={{ fontSize: 12, fontWeight: 700, color: '#0f172a' }}>{card.observed}</div>
                               </div>
                               <div>
-                                <div style={{ fontSize: 10, color: '#94a3b8' }}>Optimo</div>
+                                <div style={{ fontSize: 10, color: '#94a3b8' }}>{card.isAffectedArea ? 'Objetivo' : 'Optimo'}</div>
                                 <div style={{ fontSize: 12, fontWeight: 700, color: '#64748b' }}>{card.optimal}</div>
                               </div>
                             </div>
@@ -353,12 +325,17 @@ export default function CropDetail({ navigate }: Props) {
                 <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', padding: '18px 20px' }}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 2 }}>Membresia por criterio</div>
                   <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 14 }}>Peor fase por criterio · pasa el cursor para ver todas</div>
+                  {chartData.length > 0 && chartData.every((entry) => entry.value === 0) && (
+                    <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', color: '#9a3412', borderRadius: 8, padding: '8px 10px', marginBottom: 10, fontSize: 11, lineHeight: 1.45 }}>
+                      Todos los criterios tienen membresia 0%; la barra se representa como un marcador minimo para que el valor no parezca ausente.
+                    </div>
+                  )}
                   <ResponsiveContainer width="100%" height={Math.max(120, chartData.length * 42)}>
                     <BarChart data={chartData} layout="vertical" margin={{ left: 8, right: 16, top: 4, bottom: 4 }}>
                       <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
                       <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} width={80} />
                       <Tooltip content={<PhaseTooltip />} />
-                      <Bar dataKey="value" radius={[0, 5, 5, 0]}>
+                      <Bar dataKey="value" minPointSize={6} radius={[0, 5, 5, 0]}>
                         {chartData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                       </Bar>
                     </BarChart>
@@ -374,64 +351,49 @@ export default function CropDetail({ navigate }: Props) {
               </div>
             </div>
 
-            {/* Brechas table — grouped by criterion */}
+            {/* Evidencia especifica de CropSuitLite */}
             <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
               <div style={{ padding: '18px 24px', borderBottom: '1px solid #f1f5f9' }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>Brechas agronomicas</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>Evidencia de limitaciones espaciales</div>
                 <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>
-                  {crop.gaps.length} brechas en {groupedGaps.length} {groupedGaps.length === 1 ? 'criterio' : 'criterios'} — agrupadas por criterio
+                  {crop.limitingFactors.length} {crop.limitingFactors.length === 1 ? 'factor reportado' : 'factores reportados'} por CropSuitLite · disponibilidad: {formatBackendStatus(crop.limitationAvailability)}
                 </div>
               </div>
+              {(crop.limitationReason || (crop.limitationWarnings?.length ?? 0) > 0) && (
+                <div style={{ margin: '14px 24px 0', background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', borderRadius: 8, padding: '10px 12px', fontSize: 12, lineHeight: 1.5 }}>
+                  {crop.limitationReason && <div>{crop.limitationReason}</div>}
+                  {crop.limitationWarnings?.map((warning) => <div key={warning}>• {warning}</div>)}
+                </div>
+              )}
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ background: '#fafafa' }}>
-                      {['Fase', 'Periodo', 'Observado', 'Optimo', 'Brecha'].map((h) => (
+                      {['Factor', 'Importancia', 'Area afectada', 'Celdas', 'Fuente'].map((h) => (
                         <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {groupedGaps.length === 0 && (
+                    {crop.limitingFactors.length === 0 && (
                       <tr>
-                        <td colSpan={5} style={{ padding: 16, fontSize: 13, color: '#64748b' }}>Sin brechas reportadas.</td>
+                        <td colSpan={5} style={{ padding: 16, fontSize: 13, color: '#64748b' }}>CropSuitLite no reporto factores limitantes para este cultivo.</td>
                       </tr>
                     )}
-                    {groupedGaps.map(([criterionId, gaps]) => (
-                      <Fragment key={criterionId}>
-                        {/* Criterion group header row */}
-                        <tr style={{ background: '#f8fafc', borderTop: '2px solid #e2e8f0' }}>
-                          <td colSpan={5} style={{ padding: '8px 16px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              <span style={{ fontSize: 12, fontWeight: 700, color: '#0f172a' }}>
-                                {formatCriterionLabel(gaps[0])}
-                              </span>
-                              <span style={{ fontSize: 11, color: '#94a3b8', background: '#e2e8f0', padding: '1px 8px', borderRadius: 999 }}>
-                                {gaps.length} {gaps.length === 1 ? 'fase' : 'fases'}
-                              </span>
-                            </div>
-                          </td>
-                        </tr>
-                        {/* Phase rows */}
-                        {gaps.map((row) => {
-                          const sevStyle = gapSeverityStyle(row.gapValue, row.optimalLimit);
-                          return (
-                            <tr key={`${row.criterionId}-${row.phaseId}-${row.mostLimitingPeriod}`} style={{ borderTop: '1px solid #f8fafc' }}>
-                              <td style={{ padding: '10px 16px 10px 28px', fontSize: 13, color: '#475569', fontWeight: 500 }}>
-                                {humanizePhase(formatPhaseLabel(row))}
-                              </td>
-                              <td style={{ padding: '10px 16px', fontSize: 12, color: '#94a3b8' }}>{formatPeriodLabel(row.mostLimitingPeriod)}</td>
-                              <td style={{ padding: '10px 16px', fontSize: 13, fontWeight: 600, color: '#0f172a' }}>{formatNumberWithUnit(row.observedValue, row.unit)}</td>
-                              <td style={{ padding: '10px 16px', fontSize: 13, color: '#64748b' }}>{formatNumberWithUnit(row.optimalLimit, row.unit)}</td>
-                              <td style={{ padding: '10px 16px' }}>
-                                <div style={{ background: sevStyle.bg, color: sevStyle.color, border: `1px solid ${sevStyle.border}`, fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, display: 'inline-block' }}>
-                                  {formatNumber(row.gapValue)} {row.unit ?? ''}
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </Fragment>
+                    {crop.limitingFactors.map((factor) => (
+                      <tr key={`${factor.criterionId}-${factor.docSource ?? 'factor'}`} style={{ borderTop: '1px solid #f8fafc' }}>
+                        <td style={{ padding: '12px 16px', fontSize: 13, color: '#0f172a', fontWeight: 700 }}>{formatCriterionLabel(factor)}</td>
+                        <td style={{ padding: '12px 16px' }}>
+                          <span style={{ background: factor.dominant ? '#fee2e2' : '#f8fafc', color: factor.dominant ? '#b91c1c' : '#64748b', border: `1px solid ${factor.dominant ? '#fecaca' : '#e2e8f0'}`, fontSize: 11, fontWeight: 700, padding: '4px 8px', borderRadius: 999 }}>
+                            {factor.dominant ? 'Principal' : 'Secundaria'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px 16px', fontSize: 13, color: '#475569' }}>
+                          {factor.affectedFraction !== null && factor.affectedFraction !== undefined ? `${(factor.affectedFraction * 100).toFixed(0)}% · ${((factor.affectedAreaM2 ?? 0) / 10000).toFixed(2)} ha` : '—'}
+                        </td>
+                        <td style={{ padding: '12px 16px', fontSize: 13, color: '#475569' }}>{factor.affectedCells ?? '—'}</td>
+                        <td style={{ padding: '12px 16px', fontSize: 11, color: '#64748b', fontFamily: 'monospace' }}>{factor.docSource ? `${factor.docSource.slice(0, 12)}…` : '—'}</td>
+                      </tr>
                     ))}
                   </tbody>
                 </table>

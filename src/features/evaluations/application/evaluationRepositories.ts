@@ -9,6 +9,7 @@ import {
   EvaluationMcdaResult,
   EvaluationStatusSnapshot,
   StartEvaluationInput,
+  WaterRegime,
 } from '@/features/evaluations/domain/evaluation';
 
 export interface ParcelRepository {
@@ -25,9 +26,10 @@ export interface EvaluationRepository {
   startEvaluation(input: StartEvaluationInput): Promise<EvaluationAccepted>;
   listEvaluationsForParcel(parcelId: string): Promise<EvaluationSummary[]>;
   getEvaluationStatus(evaluationId: string): Promise<EvaluationStatusSnapshot>;
-  getMcdaResult(evaluationId: string): Promise<EvaluationMcdaResult>;
+  getMcdaResult(evaluationId: string, waterRegime?: WaterRegime): Promise<EvaluationMcdaResult>;
   getAgroenvVector(evaluationId: string): Promise<AgroenvVector>;
   getRecommendationsForEvaluation(evaluationId: string): Promise<EvaluationRecommendation[]>;
-  getFinalRecommendation(evaluationId: string): Promise<FinalRecommendationResult>;
+  ensureRecommendationsForEvaluation(evaluationId: string, waterRegime?: WaterRegime): Promise<EvaluationRecommendation[]>;
+  getFinalRecommendation(evaluationId: string, waterRegime?: WaterRegime): Promise<FinalRecommendationResult>;
   getRecommendation(recommendationId: string): Promise<EvaluationRecommendation>;
 }

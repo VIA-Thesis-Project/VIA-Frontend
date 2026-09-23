@@ -1,8 +1,8 @@
-import { ChangeEvent, useEffect, useState } from 'react';
-import { ChevronRight, Edit3, MapPin, Square, Upload } from 'lucide-react';
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { Check, ChevronRight, Edit3, MapPin, Search, Square, Upload, X } from 'lucide-react';
 import { NavigateFn } from '@/app/navigation/navigation';
-import { cropCatalog } from '@/features/evaluations/application/cropCatalog';
 import { startEvaluationWorkflow } from '@/features/evaluations/application/startEvaluationWorkflow';
+import { CropCandidate, WaterRegime } from '@/features/evaluations/domain/evaluation';
 import { EvaluationApiRepository } from '@/features/evaluations/infrastructure/api/evaluationApiRepository';
 import { ParcelApiRepository } from '@/features/evaluations/infrastructure/api/parcelApiRepository';
 import { readAuthSession } from '@/features/auth/infrastructure/session/authSessionStorage';
@@ -15,6 +15,13 @@ import Sidebar from '@/shared/presentation/layouts/Sidebar';
 interface Props { navigate: NavigateFn; }
 
 type InputMethod = 'draw' | 'upload' | 'select';
+type CropOption = CropCandidate & { waterRegimes?: WaterRegime[] };
+
+function formatWaterRegime(regime: string): string {
+  if (regime === 'rainfed') return 'Secano (lluvia)';
+  if (regime === 'irrigated') return 'Irrigado (riego)';
+  return regime;
+}
 
 const parcelRepository = new ParcelApiRepository();
 const evaluationRepository = new EvaluationApiRepository();
@@ -59,12 +66,47 @@ export default function NewEvaluation({ navigate }: Props) {
   const [existingParcels, setExistingParcels] = useState<Parcel[]>([]);
   const [selectedParcelId, setSelectedParcelId] = useState('');
   const [selectedCrops, setSelectedCrops] = useState<string[]>([]);
-  const [cropOptions, setCropOptions] = useState(cropCatalog);
+  const [waterRegime, setWaterRegime] = useState<WaterRegime>('rainfed');
+  const [cropOptions, setCropOptions] = useState<CropOption[]>([]);
+  const [cropSearch, setCropSearch] = useState('');
+  const [cropPickerOpen, setCropPickerOpen] = useState(false);
+  const [cropOptionsLoading, setCropOptionsLoading] = useState(true);
+  const [cropOptionsError, setCropOptionsError] = useState<string | null>(null);
+  const cropPickerRef = useRef<HTMLDivElement | null>(null);
   const [loading, setLoading] = useState(false);
   const [parcelsLoading, setParcelsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const hasValidGeometry = geometry !== null;
   const selectedParcel = existingParcels.find((parcel) => parcel.id === selectedParcelId) ?? null;
+  const filteredCropOptions = useMemo(() => {
+    const normalizedSearch = cropSearch.trim().toLowerCase();
+    if (!normalizedSearch) return cropOptions;
+    return cropOptions.filter((crop) => `${crop.label} ${crop.id}`.toLowerCase().includes(normalizedSearch));
+  }, [cropOptions, cropSearch]);
+  const availableWaterRegimes = useMemo<WaterRegime[]>(() => {
+    const selectedOptions = cropOptions.filter((crop) => selectedCrops.includes(crop.id));
+    if (selectedOptions.length === 0) {
+      return (['rainfed', 'irrigated'] as WaterRegime[]).filter((regime) => cropOptions.some((crop) => crop.waterRegimes?.includes(regime)));
+    }
+    return (['rainfed', 'irrigated'] as WaterRegime[]).filter((regime) => selectedOptions.every((crop) => crop.waterRegimes?.includes(regime)));
+  }, [cropOptions, selectedCrops]);
+
+  useEffect(() => {
+    if (availableWaterRegimes.length > 0 && !availableWaterRegimes.includes(waterRegime)) {
+      setWaterRegime(availableWaterRegimes[0]);
+    }
+  }, [availableWaterRegimes, waterRegime]);
+
+  useEffect(() => {
+    if (!cropPickerOpen) return undefined;
+    const closeWhenClickingOutside = (event: MouseEvent) => {
+      if (cropPickerRef.current && !cropPickerRef.current.contains(event.target as Node)) {
+        setCropPickerOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', closeWhenClickingOutside);
+    return () => document.removeEventListener('mousedown', closeWhenClickingOutside);
+  }, [cropPickerOpen]);
 
   useEffect(() => {
     const session = readAuthSession();
@@ -76,11 +118,16 @@ export default function NewEvaluation({ navigate }: Props) {
         setCropOptions(capabilities.crops.map((crop) => ({
           id: crop.cropId,
           label: crop.displayName ?? crop.cropId,
+          waterRegimes: crop.waterRegimes,
         })));
+        setCropOptionsError(null);
       })
       .catch(() => {
-        // Se conserva el catalogo local como respaldo visual; el backend
-        // validara los cultivos al iniciar la evaluacion.
+        setCropOptions([]);
+        setCropOptionsError('No se pudo cargar la lista de cultivos desde el backend.');
+      })
+      .finally(() => {
+        if (!cancelled) setCropOptionsLoading(false);
       });
     return () => { cancelled = true; };
   }, []);
@@ -176,6 +223,11 @@ export default function NewEvaluation({ navigate }: Props) {
       return;
     }
 
+    if (!availableWaterRegimes.includes(waterRegime)) {
+      setError('Los cultivos seleccionados no comparten un régimen hídrico disponible.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -188,6 +240,7 @@ export default function NewEvaluation({ navigate }: Props) {
           district,
           areaHa: area || 'Area no calculada',
           selectedCropIds: selectedCrops,
+          waterRegime,
           geometry,
           existingParcel: method === 'select' ? selectedParcel : null,
         },
@@ -318,27 +371,99 @@ export default function NewEvaluation({ navigate }: Props) {
             </div>
 
             <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 8 }}>Cultivos a evaluar</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {cropOptions.map((crop) => {
-                  const selected = selectedCrops.includes(crop.id);
-                  return (
-                    <button
-                      key={crop.id}
-                      type="button"
-                      onClick={() => toggleCrop(crop.id)}
-                      style={{
-                        padding: '5px 12px', borderRadius: 999, fontSize: 13, fontWeight: 500, cursor: 'pointer',
-                        border: `1.5px solid ${selected ? '#16a34a' : '#e2e8f0'}`,
-                        background: selected ? '#f0fdf4' : 'white',
-                        color: selected ? '#15803d' : '#64748b',
-                      }}
-                    >
-                      {crop.label}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#475569' }}>Cultivos a evaluar</div>
+                <div style={{ fontSize: 11, color: '#94a3b8' }}>{selectedCrops.length} seleccionados</div>
+              </div>
+
+              <div ref={cropPickerRef} style={{ position: 'relative' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, border: `1.5px solid ${cropPickerOpen ? '#16a34a' : '#e2e8f0'}`, borderRadius: 8, padding: '8px 10px', background: 'white' }}>
+                  <Search style={{ width: 15, height: 15, color: '#94a3b8', flexShrink: 0 }} />
+                  <input
+                    value={cropSearch}
+                    onChange={(event) => { setCropSearch(event.target.value); setCropPickerOpen(true); }}
+                    onFocus={() => setCropPickerOpen(true)}
+                    onKeyDown={(event) => { if (event.key === 'Escape') setCropPickerOpen(false); }}
+                    placeholder="Buscar cultivo..."
+                    aria-label="Buscar cultivo"
+                    style={{ border: 'none', outline: 'none', width: '100%', minWidth: 0, fontSize: 13, color: '#0f172a', background: 'transparent' }}
+                  />
+                  {cropSearch && (
+                    <button type="button" onClick={() => setCropSearch('')} aria-label="Limpiar busqueda" style={{ border: 'none', background: 'transparent', color: '#94a3b8', cursor: 'pointer', padding: 0, display: 'flex' }}>
+                      <X style={{ width: 14, height: 14 }} />
                     </button>
+                  )}
+                </div>
+
+                {cropPickerOpen && (
+                  <div style={{ position: 'absolute', zIndex: 20, top: 'calc(100% + 4px)', left: 0, right: 0, maxHeight: 220, overflowY: 'auto', background: 'white', border: '1px solid #cbd5e1', borderRadius: 8, boxShadow: '0 8px 22px rgba(15,23,42,0.14)', padding: 4 }}>
+                    {cropOptionsLoading && <div style={{ padding: '10px 12px', fontSize: 12, color: '#64748b' }}>Consultando cultivos disponibles...</div>}
+                    {!cropOptionsLoading && cropOptionsError && (
+                      <div style={{ padding: '10px 12px', fontSize: 12, color: '#991b1b' }}>{cropOptionsError}</div>
+                    )}
+                    {!cropOptionsLoading && !cropOptionsError && filteredCropOptions.length === 0 && (
+                      <div style={{ padding: '10px 12px', fontSize: 12, color: '#64748b' }}>No se encontraron cultivos.</div>
+                    )}
+                    {!cropOptionsLoading && filteredCropOptions.map((crop) => {
+                      const selected = selectedCrops.includes(crop.id);
+                      return (
+                        <button
+                          key={crop.id}
+                          type="button"
+                          onClick={() => toggleCrop(crop.id)}
+                          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '9px 8px', border: 'none', borderRadius: 6, background: selected ? '#f0fdf4' : 'white', color: '#0f172a', cursor: 'pointer', textAlign: 'left' }}
+                        >
+                          <span style={{ width: 18, height: 18, borderRadius: 5, border: `1.5px solid ${selected ? '#16a34a' : '#cbd5e1'}`, background: selected ? '#16a34a' : 'white', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                            {selected && <Check style={{ width: 13, height: 13, color: 'white' }} />}
+                          </span>
+                          <span style={{ flex: 1, minWidth: 0 }}>
+                            <span style={{ display: 'block', fontSize: 13, fontWeight: selected ? 700 : 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{crop.label}</span>
+                            <span style={{ display: 'block', fontSize: 10, color: '#94a3b8', marginTop: 2 }}>{crop.id}{crop.waterRegimes?.length ? ` · Disponible: ${crop.waterRegimes.map(formatWaterRegime).join(' · ')}` : ''}</span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                    <div style={{ position: 'sticky', bottom: 0, background: 'white', borderTop: '1px solid #f1f5f9', padding: 4 }}>
+                      <button type="button" onClick={() => setCropPickerOpen(false)} style={{ width: '100%', border: 'none', borderRadius: 6, background: '#f8fafc', color: '#15803d', padding: '7px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                        Listo
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8, minHeight: 28 }}>
+                {selectedCrops.map((cropId) => {
+                  const crop = cropOptions.find((option) => option.id === cropId);
+                  return (
+                    <span key={cropId} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', borderRadius: 999, padding: '5px 8px 5px 10px', fontSize: 12, fontWeight: 600 }}>
+                      {crop?.label ?? cropId}
+                      <button type="button" onClick={() => toggleCrop(cropId)} aria-label={`Quitar ${crop?.label ?? cropId}`} style={{ display: 'flex', border: 'none', background: 'transparent', color: '#15803d', cursor: 'pointer', padding: 0 }}>
+                        <X style={{ width: 13, height: 13 }} />
+                      </button>
+                    </span>
                   );
                 })}
+                {selectedCrops.length === 0 && <span style={{ fontSize: 11, color: '#94a3b8', padding: '6px 2px' }}>Selecciona uno o mas cultivos para evaluar.</span>}
               </div>
+              <div style={{ fontSize: 10, color: cropOptionsError ? '#b91c1c' : '#94a3b8', marginTop: 6 }}>{cropOptionsError ? 'Verifica la conexion y vuelve a cargar la pagina.' : 'Lista proporcionada por el backend.'}</div>
+              {!cropOptionsError && (
+                <div style={{ marginTop: 10, border: '1px solid #e2e8f0', borderRadius: 8, padding: '9px 10px', background: '#f8fafc' }}>
+                  <label htmlFor="water-regime" style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 5 }}>Régimen hídrico de evaluación</label>
+                  <select
+                    id="water-regime"
+                    value={waterRegime}
+                    onChange={(event) => setWaterRegime(event.target.value as WaterRegime)}
+                    disabled={availableWaterRegimes.length === 0}
+                    style={{ width: '100%', padding: '7px 9px', border: '1px solid #cbd5e1', borderRadius: 6, background: 'white', color: '#0f172a', fontSize: 12, outline: 'none' }}
+                  >
+                    {availableWaterRegimes.map((regime) => <option key={regime} value={regime}>{formatWaterRegime(regime)}</option>)}
+                  </select>
+                  <div style={{ fontSize: 10, color: '#64748b', marginTop: 5 }}>
+                    Todos los cultivos seleccionados se evaluarán bajo el mismo régimen.
+                  </div>
+                </div>
+              )}
             </div>
 
             <div style={{ marginBottom: 10, background: hasValidGeometry || selectedParcel ? '#f0fdf4' : '#f8fafc', border: `1px solid ${hasValidGeometry || selectedParcel ? '#bbf7d0' : '#e2e8f0'}`, borderRadius: 8, padding: '8px 12px' }}>

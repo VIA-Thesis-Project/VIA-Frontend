@@ -2,8 +2,16 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     {
+      "source": "/api/projects/:path*",
+      "destination": "https://ubuntu-s-1vcpu-2gb-nyc1.tail5eff67.ts.net/projects/:path*"
+    },
+    {
+      "source": "/api/health",
+      "destination": "https://ubuntu-s-1vcpu-2gb-nyc1.tail5eff67.ts.net/health"
+    },
+    {
       "source": "/api/:path*",
-      "destination": "https://via-api-lpot.onrender.com/:path*"
+      "destination": "https://ubuntu-s-1vcpu-2gb-nyc1.tail5eff67.ts.net/api/:path*"
     },
     {
       "source": "/:path*",

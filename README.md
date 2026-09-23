@@ -47,10 +47,10 @@ npm run build
 El proxy de Vite esta configurado asi:
 
 ```text
-/api -> https://via-api-lpot.onrender.com
+/api -> https://ubuntu-s-1vcpu-2gb-nyc1.tail5eff67.ts.net
 ```
 
-En desarrollo local, Vite reenvia `/api` al backend desplegado en Render para evitar CORS.
+En desarrollo local, Vite reenvia `/api` al backend desplegado para evitar CORS.
 
 ## Backend esperado
 
@@ -80,20 +80,21 @@ Cultivos demo alineados con backend:
 
 ### Auth
 
-- `POST /auth/login`
+- `POST /api/v1/auth/login`
 - Guarda sesion JWT en `sessionStorage`.
 - Usa Bearer token para endpoints protegidos.
 
 ### Parcelas
 
-- `GET /parcelas`
-- `POST /parcelas`
+- `GET /projects` y `GET /projects/{project_id}/parcels`
+- `POST /projects/{project_id}/parcels`
 
 Uso actual:
 
 - Dashboard lista parcelas reales.
 - Nueva evaluacion crea parcela real.
-- Nueva evaluacion permite dibujar poligonos con Leaflet.
+- Nueva evaluacion permite dibujar poligonos con Mapbox en 2D/3D.
+- La navegacion y el dibujo quedan limitados a la provincia de Huaura.
 - El poligono se convierte a GeoJSON en orden `[lng, lat]`, como espera el backend.
 - Tambien se puede cargar un archivo GeoJSON con `Polygon` o `MultiPolygon`.
 
@@ -105,9 +106,9 @@ Limitacion:
 
 ### Evaluaciones
 
-- `POST /evaluaciones`
-- `GET /evaluaciones/{evaluation_id}/estado`
-- `GET /evaluaciones/{evaluation_id}/resultado-mcda`
+- `POST /api/v1/evaluations`
+- `GET /api/v1/evaluations/{evaluation_id}`
+- `GET /api/v1/evaluations/{evaluation_id}/result`
 
 Uso actual:
 
@@ -123,7 +124,7 @@ Limitacion:
 
 ### Recomendaciones
 
-- `GET /evaluaciones/{evaluation_id}/recomendacion-final`
+- `GET /api/v1/decision-support/evaluations/{evaluation_id}/recommendations`
 
 Estado:
 
@@ -153,21 +154,20 @@ Install Command: npm install
 `vercel.json` define:
 
 ```text
-/api/* -> https://via-api-lpot.onrender.com/*
+/api/* -> https://ubuntu-s-1vcpu-2gb-nyc1.tail5eff67.ts.net/*
 /*     -> /index.html
 ```
 
 Esto mantiene al frontend consumiendo `/api` en produccion y evita depender de CORS del backend. No se requiere configurar `VITE_API_BASE_URL` en Vercel mientras se mantenga el valor por defecto `/api`.
 
-## Delimitacion con Leaflet y Google Earth Engine
+## Delimitacion cartografica y Google Earth Engine
 
-La delimitacion de parcela se realiza en frontend con Leaflet:
+La delimitacion de parcela se realiza en frontend con el componente cartografico configurado para la etapa actual:
 
 - El usuario hace click sobre el mapa para agregar vertices.
 - Con 3 o mas vertices se arma un poligono.
-- Leaflet trabaja con coordenadas `[lat, lng]`.
-- El frontend convierte la geometria a GeoJSON `[lng, lat]`.
-- El GeoJSON se envia a `POST /parcelas`.
+- La geometria persistida sigue el contrato GeoJSON `[lng, lat]`.
+- El GeoJSON se envia a `POST /projects/{project_id}/parcels`.
 
 Google Earth Engine no se usa desde React. Las credenciales GEE deben vivir solo en backend. El frontend solo envia la geometria; el backend usa GEE para extraer variables agroambientales y luego calcular MCDA.
 

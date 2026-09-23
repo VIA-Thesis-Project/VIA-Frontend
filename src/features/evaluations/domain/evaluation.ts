@@ -88,6 +88,11 @@ export type LimitingFactor = {
   phaseName?: string | null;
   unit?: string | null;
   interventionClass?: string | null;
+  affectedFraction?: number | null;
+  affectedAreaM2?: number | null;
+  affectedCells?: number | null;
+  dominant?: boolean;
+  rawCode?: number | string | null;
 };
 
 export type CropEvaluationResult = {
@@ -100,6 +105,26 @@ export type CropEvaluationResult = {
   limitingFactors: LimitingFactor[];
   missingCriteria: string[];
   unrecognizedVariables: string[];
+  minimum?: number | null;
+  maximum?: number | null;
+  validCells?: number | null;
+  validAreaM2?: number | null;
+  coverageFraction?: number | null;
+  zeroSuitabilityAreaM2?: number | null;
+  limitationAvailability?: string | null;
+  limitationReason?: string | null;
+  limitationWarnings?: string[];
+};
+
+export type EvaluationSupportSummary = {
+  status: string;
+  method: string;
+  areaCrs: string;
+  parcelAreaM2: number;
+  commonValidAreaM2: number;
+  commonCoverageFraction: number;
+  eligibleCrops: string[];
+  excludedWithoutCoverage: string[];
 };
 
 export type EvaluationMcdaResult = {
@@ -107,6 +132,7 @@ export type EvaluationMcdaResult = {
   status: EvaluationStatus;
   results: CropEvaluationResult[];
   failureReason: string | null;
+  commonSupport?: EvaluationSupportSummary | null;
 };
 
 export type AgroenvVariable = {
@@ -154,6 +180,7 @@ export type RecommendationEvidence = {
 export type EvaluationRecommendation = {
   recommendationId: string;
   evaluationId: string;
+  waterRegime: WaterRegime;
   parcelId: string | null;
   cropId: string;
   status: string;

@@ -68,13 +68,32 @@ async function requestWithRefresh<T>(
       window.dispatchEvent(new CustomEvent('via:session-expired'));
       throw new ApiError('Tu sesion ha expirado. Inicia sesion nuevamente.', 401, payload);
     }
-    const message = typeof payload === 'object' && payload && 'detail' in payload
-      ? String((payload as { detail: unknown }).detail)
-      : 'No se pudo completar la solicitud.';
+    const message = formatApiErrorMessage(payload);
     throw new ApiError(message, response.status, payload);
   }
 
   return payload as T;
+}
+
+function formatApiErrorMessage(payload: unknown): string {
+  if (!payload || typeof payload !== 'object' || !('detail' in payload)) {
+    return 'No se pudo completar la solicitud.';
+  }
+
+  const detail = (payload as { detail: unknown }).detail;
+  if (typeof detail === 'string') return detail;
+
+  if (Array.isArray(detail)) {
+    const messages = detail.map((item) => {
+      if (!item || typeof item !== 'object') return String(item);
+      const validation = item as { msg?: unknown; loc?: unknown };
+      const location = Array.isArray(validation.loc) ? validation.loc.slice(1).join('.') : '';
+      return location && validation.msg ? `${location}: ${String(validation.msg)}` : String(validation.msg ?? item);
+    });
+    return messages.join(' · ') || 'La solicitud contiene datos invalidos.';
+  }
+
+  return String(detail);
 }
 
 async function refreshAccessToken(): Promise<string | null> {

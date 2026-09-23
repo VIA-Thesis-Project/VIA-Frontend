@@ -86,7 +86,7 @@ export default function Processing({ navigate }: Props) {
     let cancelled = false;
     const fetchMcdaResult = async () => {
       try {
-        const result = await evaluationRepository.getMcdaResult(currentEvaluation.evaluationId);
+        const result = await evaluationRepository.getMcdaResult(currentEvaluation.evaluationId, currentEvaluation.waterRegime ?? 'rainfed');
         if (!cancelled) setMcdaResult(result);
       } catch {
         if (!cancelled) setMcdaResult(null);

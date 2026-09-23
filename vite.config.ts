@@ -3,7 +3,7 @@ import path from 'path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 
-const apiProxyTarget = process.env.VITE_API_PROXY_TARGET ?? 'http://127.0.0.1:8000'
+const apiProxyTarget = process.env.VITE_API_PROXY_TARGET ?? 'https://ubuntu-s-1vcpu-2gb-nyc1.tail5eff67.ts.net'
 
 function figmaAssetResolver() {
   return {
@@ -37,7 +37,11 @@ export default defineConfig({
       '/api': {
         target: apiProxyTarget,
         changeOrigin: true,
-        rewrite: (requestPath) => requestPath.replace(/^\/api/, ''),
+        rewrite: (requestPath) => {
+          if (requestPath === '/api/health') return '/health';
+          if (requestPath.startsWith('/api/projects')) return requestPath.replace(/^\/api/, '');
+          return requestPath;
+        },
       },
     },
   },

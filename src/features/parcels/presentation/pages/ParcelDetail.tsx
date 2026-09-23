@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { MapContainer, Polygon, TileLayer } from 'react-leaflet';
 import { AlertTriangle, ArrowLeft, Check, Edit3, History, MapPin, Play, X } from 'lucide-react';
 import { NavigateFn } from '@/app/navigation/navigation';
 import { readAuthSession } from '@/features/auth/infrastructure/session/authSessionStorage';
@@ -10,7 +9,7 @@ import { EvaluationApiRepository } from '@/features/evaluations/infrastructure/a
 import { ParcelApiRepository } from '@/features/evaluations/infrastructure/api/parcelApiRepository';
 import { saveCurrentEvaluation } from '@/features/evaluations/infrastructure/session/currentEvaluationStorage';
 import { readDetailParcelId, saveSelectedParcelId } from '@/features/evaluations/infrastructure/session/selectedParcelStorage';
-import { calculateAreaHa, geoJsonToPoints, ParcelDrawMap, pointsToGeoJson } from '@/features/evaluations/presentation/components/ParcelDrawMap';
+import { calculateAreaHa, geoJsonToPoints, ParcelDrawMap, ParcelMapView, pointsToGeoJson } from '@/features/evaluations/presentation/components/ParcelDrawMap';
 import Sidebar from '@/shared/presentation/layouts/Sidebar';
 
 interface Props { navigate: NavigateFn; }
@@ -67,12 +66,6 @@ export default function ParcelDetail({ navigate }: Props) {
   const session = readAuthSession();
 
   const viewPoints = useMemo(() => (parcel ? geoJsonToPoints(parcel.geometry) : []), [parcel]);
-  const mapCenter = useMemo<[number, number]>(() => {
-    if (viewPoints.length === 0) return [-12.0464, -77.0428];
-    const lat = viewPoints.reduce((sum, point) => sum + point.lat, 0) / viewPoints.length;
-    const lng = viewPoints.reduce((sum, point) => sum + point.lng, 0) / viewPoints.length;
-    return [lat, lng];
-  }, [viewPoints]);
 
   useEffect(() => {
     if (!parcelId || !session) {
@@ -265,18 +258,7 @@ export default function ParcelDetail({ navigate }: Props) {
                       onAreaChange={() => undefined}
                     />
                   ) : (
-                    <MapContainer center={mapCenter} zoom={viewPoints.length > 0 ? 15 : 10} style={{ width: '100%', height: '100%' }} scrollWheelZoom>
-                      <TileLayer
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                      />
-                      {viewPoints.length >= 3 && (
-                        <Polygon
-                          positions={viewPoints.map((point) => [point.lat, point.lng] as [number, number])}
-                          pathOptions={{ color: '#15803d', weight: 3, fillColor: '#16a34a', fillOpacity: 0.24 }}
-                        />
-                      )}
-                    </MapContainer>
+                    <ParcelMapView points={viewPoints} />
                   )}
                 </div>
               </div>

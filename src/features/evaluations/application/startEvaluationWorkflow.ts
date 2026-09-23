@@ -1,6 +1,6 @@
 import { readAuthSession } from '@/features/auth/infrastructure/session/authSessionStorage';
 import { EvaluationRepository, ParcelRepository } from '@/features/evaluations/application/evaluationRepositories';
-import { CurrentEvaluationContext } from '@/features/evaluations/domain/evaluation';
+import { CurrentEvaluationContext, WaterRegime } from '@/features/evaluations/domain/evaluation';
 import { GeoJsonGeometry, Parcel } from '@/features/evaluations/domain/parcel';
 
 type StartEvaluationWorkflowInput = {
@@ -8,6 +8,7 @@ type StartEvaluationWorkflowInput = {
   district: string;
   areaHa: string;
   selectedCropIds: string[];
+  waterRegime: WaterRegime;
   geometry: GeoJsonGeometry | null;
   existingParcel?: Parcel | null;
 };
@@ -60,14 +61,14 @@ export async function startEvaluationWorkflow(
     parcelId: parcel.id,
     parcelVersion: parcel.currentVersion,
     requestedCrops: input.selectedCropIds,
-    waterRegimes: ['rainfed'],
+    waterRegimes: [input.waterRegime],
     environmentalInputs,
   });
 
   return {
     projectId: parcel.projectId,
     parcelVersion: parcel.currentVersion,
-    waterRegime: 'rainfed',
+    waterRegime: input.waterRegime,
     parcelId: parcel.id,
     parcelName: parcel.metadata.name,
     parcelLocation: input.existingParcel ? parcel.metadata.description : input.district,

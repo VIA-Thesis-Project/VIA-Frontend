@@ -46,10 +46,6 @@ function normalizeBackendText(value: string): string {
     .replaceAll('Ã±', 'n');
 }
 
-function readErrorMessage(reason: unknown, fallback: string): string {
-  return reason instanceof Error ? reason.message : fallback;
-}
-
 function humanizeProvider(provider: string): string {
   const map: Record<string, string> = {
     tavily_rag: 'Búsqueda web',
@@ -203,6 +199,7 @@ export default function Recommendations({ navigate }: Props) {
   const [mcdaResult, setMcdaResult] = useState<EvaluationMcdaResult | null>(null);
   const [recommendation, setRecommendation] = useState<FinalRecommendationResult | null>(null);
   const [allRecommendations, setAllRecommendations] = useState<EvaluationRecommendation[]>([]);
+  const [activeRecommendationCropId, setActiveRecommendationCropId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [pollAttempts, setPollAttempts] = useState(0);
@@ -212,35 +209,19 @@ export default function Recommendations({ navigate }: Props) {
   const fetchRecommendationSnapshot = async () => {
     if (!currentEvaluation) return false;
 
-    const [finalRecommendationResult, recommendationsResult] = await Promise.allSettled([
-      evaluationRepository.getFinalRecommendation(currentEvaluation.evaluationId),
-      evaluationRepository.getRecommendationsForEvaluation(currentEvaluation.evaluationId),
-    ]);
-
-    let hasRecommendation = false;
-    const requestErrors: string[] = [];
-
-    if (finalRecommendationResult.status === 'fulfilled') {
-      setRecommendation(finalRecommendationResult.value);
-      hasRecommendation = finalRecommendationResult.value.status === 'available';
-    } else {
-      requestErrors.push(readErrorMessage(finalRecommendationResult.reason, 'No se pudo consultar la recomendacion.'));
-    }
-
-    if (recommendationsResult.status === 'fulfilled') {
-      setAllRecommendations(recommendationsResult.value);
-      hasRecommendation = hasRecommendation || recommendationsResult.value.length > 0;
-    } else {
-      requestErrors.push(readErrorMessage(recommendationsResult.reason, 'No se pudo consultar las recomendaciones.'));
-    }
+    const waterRegime = currentEvaluation.waterRegime ?? 'rainfed';
+    const recommendations = await evaluationRepository.ensureRecommendationsForEvaluation(
+      currentEvaluation.evaluationId,
+      waterRegime,
+    );
+    setAllRecommendations(recommendations);
+    const latestRecommendation = recommendations.at(-1) ?? null;
+    setRecommendation(latestRecommendation
+      ? { status: 'available', recommendation: latestRecommendation }
+      : { status: 'pending', detail: 'Las recomendaciones para los cultivos evaluados aun se estan preparando.' });
 
     setLastPolledAt(new Date());
-
-    if (!hasRecommendation && requestErrors.length === 2) {
-      throw new Error(requestErrors[0]);
-    }
-
-    return hasRecommendation;
+    return recommendations.length > 0;
   };
 
   const refreshRecommendation = async () => {
@@ -269,10 +250,9 @@ export default function Recommendations({ navigate }: Props) {
     let cancelled = false;
     const loadRecommendation = async () => {
       try {
-        const [mcdaResultPromise, finalRecommendationPromise, recommendationsPromise] = await Promise.allSettled([
-          evaluationRepository.getMcdaResult(currentEvaluation.evaluationId),
-          evaluationRepository.getFinalRecommendation(currentEvaluation.evaluationId),
-          evaluationRepository.getRecommendationsForEvaluation(currentEvaluation.evaluationId),
+        const [mcdaResultPromise, recommendationsPromise] = await Promise.allSettled([
+          evaluationRepository.getMcdaResult(currentEvaluation.evaluationId, currentEvaluation.waterRegime ?? 'rainfed'),
+          evaluationRepository.ensureRecommendationsForEvaluation(currentEvaluation.evaluationId, currentEvaluation.waterRegime ?? 'rainfed'),
         ]);
 
         if (!cancelled) {
@@ -282,11 +262,12 @@ export default function Recommendations({ navigate }: Props) {
           } else {
             setError(mcdaResultPromise.reason instanceof Error ? mcdaResultPromise.reason.message : 'No se pudo consultar el resultado de viabilidad.');
           }
-          if (finalRecommendationPromise.status === 'fulfilled') {
-            setRecommendation(finalRecommendationPromise.value);
-          }
           if (recommendationsPromise.status === 'fulfilled') {
             setAllRecommendations(recommendationsPromise.value);
+            const latestRecommendation = recommendationsPromise.value.at(-1) ?? null;
+            setRecommendation(latestRecommendation
+              ? { status: 'available', recommendation: latestRecommendation }
+              : { status: 'pending', detail: 'Las recomendaciones para los cultivos evaluados aun se estan preparando.' });
           }
           setLastPolledAt(new Date());
         }
@@ -304,25 +285,37 @@ export default function Recommendations({ navigate }: Props) {
   }, [currentEvaluation]);
 
   const selectedCropId = useMemo(() => readSelectedCropId(), []);
-  const topCrop = useMemo(() => {
-    const results = sortResults(mcdaResult?.results ?? []);
-    return results.find((result) => result.cropId === selectedCropId) ?? results[0] ?? null;
-  }, [mcdaResult, selectedCropId]);
-  const derivedActions = useMemo(() => buildDerivedActions(topCrop), [topCrop]);
-  const score = toPercent(topCrop?.score ?? null);
-  const cropLabel = topCrop ? getCropLabel(topCrop.cropId) : '-';
+  const sortedCrops = useMemo(() => sortResults(mcdaResult?.results ?? []), [mcdaResult]);
+  const topCrop = useMemo(() => (
+    sortedCrops.find((result) => result.cropId === selectedCropId) ?? sortedCrops[0] ?? null
+  ), [selectedCropId, sortedCrops]);
+
+  useEffect(() => {
+    if (activeRecommendationCropId && sortedCrops.some((crop) => crop.cropId === activeRecommendationCropId)) return;
+    if (topCrop) setActiveRecommendationCropId(topCrop.cropId);
+  }, [activeRecommendationCropId, sortedCrops, topCrop]);
+
+  const activeCrop = sortedCrops.find((crop) => crop.cropId === activeRecommendationCropId) ?? topCrop;
+  const derivedActions = useMemo(() => buildDerivedActions(activeCrop), [activeCrop]);
+  const score = toPercent(activeCrop?.score ?? null);
+  const cropLabel = activeCrop ? getCropLabel(activeCrop.cropId) : '-';
   const finalRecommendation = recommendation?.status === 'available' ? recommendation.recommendation : null;
-  const selectedRecommendation = allRecommendations.find((item) => item.cropId === topCrop?.cropId) ?? null;
-  const listRecommendation = selectedRecommendation ?? allRecommendations.at(-1) ?? null;
-  const backendRecommendation = (finalRecommendation?.cropId === topCrop?.cropId ? finalRecommendation : null) ?? listRecommendation ?? finalRecommendation;
-  const pendingDetail = recommendation?.status === 'pending' && !listRecommendation ? recommendation.detail : null;
+  const selectedRecommendation = allRecommendations.find((item) => item.cropId === activeCrop?.cropId) ?? null;
+  const backendRecommendation = (finalRecommendation?.cropId === activeCrop?.cropId ? finalRecommendation : null) ?? selectedRecommendation;
+  const pendingDetail = !selectedRecommendation ? recommendation?.status === 'pending' ? recommendation.detail : 'La recomendacion para este cultivo aun se esta preparando.' : null;
   const mcdaPending = isEvaluationPending(mcdaResult?.status);
   const hasMcdaResults = (mcdaResult?.results.length ?? 0) > 0;
   const noRecommendableCrops = Boolean(!mcdaPending && hasMcdaResults && !hasRecommendableCrop(mcdaResult?.results ?? []));
   const backendSections = backendRecommendation?.sections ?? [];
   const gapRecommendations = backendRecommendation?.gapRecommendations ?? [];
-  const shouldAutoPoll = Boolean(currentEvaluation && !loading && !backendRecommendation && !mcdaPending && !noRecommendableCrops && pollAttempts < RECOMMENDATION_POLL_MAX_ATTEMPTS);
-  const pollLimitReached = Boolean(currentEvaluation && !backendRecommendation && !mcdaPending && !noRecommendableCrops && pollAttempts >= RECOMMENDATION_POLL_MAX_ATTEMPTS);
+  const missingRecommendationCount = sortedCrops.filter(
+    (crop) => crop.calcCondition === 'succeeded' && !allRecommendations.some((item) => item.cropId === crop.cropId),
+  ).length;
+  const availableRecommendationCount = sortedCrops.filter(
+    (crop) => crop.calcCondition === 'succeeded' && allRecommendations.some((item) => item.cropId === crop.cropId),
+  ).length;
+  const shouldAutoPoll = Boolean(currentEvaluation && !loading && missingRecommendationCount > 0 && !mcdaPending && !noRecommendableCrops && pollAttempts < RECOMMENDATION_POLL_MAX_ATTEMPTS);
+  const pollLimitReached = Boolean(currentEvaluation && missingRecommendationCount > 0 && !mcdaPending && !noRecommendableCrops && pollAttempts >= RECOMMENDATION_POLL_MAX_ATTEMPTS);
 
   useEffect(() => {
     if (!shouldAutoPoll || refreshing) return;
@@ -448,6 +441,50 @@ export default function Recommendations({ navigate }: Props) {
                 )}
               </div>
             </div>
+
+            {sortedCrops.length > 0 && (
+              <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', padding: '18px 22px', marginBottom: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 14 }}>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: '#0f172a' }}>Recomendaciones por cultivo</div>
+                    <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>
+                      Se solicita una recomendacion independiente para cada cultivo evaluado bajo el mismo regimen hidrico.
+                    </div>
+                  </div>
+                  <div style={{ background: missingRecommendationCount > 0 ? '#fffbeb' : '#f0fdf4', color: missingRecommendationCount > 0 ? '#b45309' : '#15803d', fontSize: 11, fontWeight: 800, padding: '5px 9px', borderRadius: 999, whiteSpace: 'nowrap' }}>
+                    {availableRecommendationCount}/{sortedCrops.filter((crop) => crop.calcCondition === 'succeeded').length} disponibles
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
+                  {sortedCrops.map((crop) => {
+                    const cropRecommendation = allRecommendations.find((item) => item.cropId === crop.cropId) ?? null;
+                    const isActive = activeCrop?.cropId === crop.cropId;
+                    const isEligible = crop.calcCondition === 'succeeded';
+                    return (
+                      <button
+                        key={crop.cropId}
+                        type="button"
+                        onClick={() => setActiveRecommendationCropId(crop.cropId)}
+                        style={{ textAlign: 'left', background: isActive ? '#f0fdf4' : '#fafafa', border: isActive ? '1.5px solid #86efac' : '1px solid #f1f5f9', borderRadius: 12, padding: '13px 14px', cursor: 'pointer', transition: 'border-color 120ms ease, background 120ms ease' }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                          <span style={{ fontSize: 13, fontWeight: 800, color: '#0f172a' }}>{getCropLabel(crop.cropId)}</span>
+                          <span style={{ fontSize: 11, fontWeight: 800, color: '#475569' }}>Score {toPercent(crop.score)}%</span>
+                        </div>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                          <span style={{ background: isEligible ? '#dcfce7' : '#fef2f2', color: isEligible ? '#15803d' : '#b91c1c', fontSize: 10, fontWeight: 800, padding: '4px 7px', borderRadius: 999 }}>
+                            {formatBackendStatus(crop.viabilityCategory)}
+                          </span>
+                          <span style={{ background: cropRecommendation ? '#ecfeff' : '#fff7ed', color: cropRecommendation ? '#0e7490' : '#c2410c', fontSize: 10, fontWeight: 800, padding: '4px 7px', borderRadius: 999 }}>
+                            {cropRecommendation ? 'Recomendacion lista' : isEligible ? 'Pendiente' : 'No elegible'}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {noRecommendableCrops && (
               <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', padding: '18px 22px', marginBottom: 20 }}>

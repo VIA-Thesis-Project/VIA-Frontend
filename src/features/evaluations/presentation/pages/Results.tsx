@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, ChevronRight, Eye, Sprout, TrendingUp } from 'lucide-react';
+import { AlertTriangle, ChevronRight, Eye, Info, Sprout, TrendingUp } from 'lucide-react';
 import Sidebar from '@/shared/presentation/layouts/Sidebar';
 import { NavigateFn } from '@/app/navigation/navigation';
 import { isNoRankedCropFailure, toUserFriendlyFailureReason } from '@/features/evaluations/application/backendFailureMessages';
@@ -18,7 +18,7 @@ function ScoreBar({ score, color }: { score: number; color: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
       <div style={{ flex: 1, height: 8, background: '#f1f5f9', borderRadius: 4, overflow: 'hidden' }}>
-        <div style={{ width: `${score}%`, height: '100%', background: `linear-gradient(90deg, ${color}, ${color}cc)`, borderRadius: 4 }} />
+        <div style={{ width: `${score}%`, minWidth: score === 0 ? 4 : undefined, height: '100%', background: `linear-gradient(90deg, ${color}, ${color}cc)`, borderRadius: 4 }} />
       </div>
       <span style={{ fontSize: 16, fontWeight: 800, color, minWidth: 48 }}>{score}%</span>
     </div>
@@ -79,7 +79,7 @@ export default function Results({ navigate }: Props) {
     const fetchResult = async () => {
       try {
         setLoading(true);
-        const result = await evaluationRepository.getMcdaResult(currentEvaluation.evaluationId);
+        const result = await evaluationRepository.getMcdaResult(currentEvaluation.evaluationId, currentEvaluation.waterRegime ?? 'rainfed');
         if (!cancelled) {
           setMcdaResult(result);
           setError(toUserFriendlyFailureReason(result.failureReason));
@@ -106,6 +106,8 @@ export default function Results({ navigate }: Props) {
   const canUseResults = sortedResults.length > 0;
   const canRequestRecommendations = hasRecommendableCrop(sortedResults);
   const noRecommendableCrops = canUseResults && !canRequestRecommendations && !pending && !failed;
+  const allScoresZero = canUseResults && sortedResults.every((crop) => crop.score === 0);
+  const commonSupport = mcdaResult?.commonSupport;
   const limitingFactors = sortedResults.flatMap((result) => result.limitingFactors.slice(0, 2).map((factor) => ({
     cropId: result.cropId,
     factor,
@@ -165,13 +167,29 @@ export default function Results({ navigate }: Props) {
           </div>
         )}
 
+        {allScoresZero && (
+          <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', color: '#9a3412', borderRadius: 12, padding: 14, marginBottom: 16, fontSize: 13, lineHeight: 1.55, display: 'flex', gap: 10 }}>
+            <Info style={{ width: 16, height: 16, flexShrink: 0, marginTop: 1 }} />
+            <span>El backend devolvio resultados completos, pero la aptitud media es <strong>0%</strong> para todos los cultivos bajo las condiciones evaluadas. No es ausencia de datos: representa una aptitud calculada igual a cero.</span>
+          </div>
+        )}
+
+        {commonSupport && (
+          <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'center', fontSize: 12 }}>
+            <strong>Soporte espacial: {formatBackendStatus(commonSupport.status)}</strong>
+            <span>Cobertura comparable: {(commonSupport.commonCoverageFraction * 100).toFixed(1)}%</span>
+            <span>Area evaluada: {(commonSupport.commonValidAreaM2 / 10000).toFixed(2)} ha</span>
+            <span>Cultivos comparables: {commonSupport.eligibleCrops.length}</span>
+          </div>
+        )}
+
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 20 }}>
           <div>
             <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', overflow: 'hidden', marginBottom: 16 }}>
               <div style={{ padding: '18px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: 10 }}>
                 <TrendingUp style={{ width: 16, height: 16, color: '#16a34a' }} />
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>Ranking de cultivos viables</div>
-                <div style={{ marginLeft: 'auto', fontSize: 12, color: '#94a3b8' }}>Datos reales del endpoint MCDA</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>Ranking de aptitud de cultivos</div>
+                <div style={{ marginLeft: 'auto', fontSize: 12, color: '#94a3b8' }}>Datos reales de CropSuitLite</div>
               </div>
 
               {loading && <div style={{ padding: 24, color: '#64748b', fontSize: 14 }}>Consultando resultado MCDA...</div>}
@@ -231,9 +249,9 @@ export default function Results({ navigate }: Props) {
                           <div style={{ fontSize: 12, color: '#475569' }}>{formatBackendStatus(crop.calcCondition)}</div>
                         </div>
                         <div>
-                          <div style={{ fontSize: 11, fontWeight: 600, color: '#d97706', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Brechas</div>
+                          <div style={{ fontSize: 11, fontWeight: 600, color: '#d97706', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Limitaciones</div>
                           <div style={{ fontSize: 12, color: '#475569' }}>
-                            {gapCriteriaCount} criterios con brecha · {crop.gaps.length} ocurrencias · {crop.limitingFactors.length} limitantes
+                            {crop.limitingFactors.length} factores · {crop.gaps.length} brechas agronomicas
                           </div>
                         </div>
                       </div>
@@ -284,7 +302,7 @@ export default function Results({ navigate }: Props) {
               {limitingFactors.map(({ cropId, factor }) => (
                 <div key={`${cropId}-${factor.criterionId}-${factor.phaseId}`} style={{ fontSize: 12, color: '#78350f', marginBottom: 6, display: 'flex', gap: 6 }}>
                   <span style={{ color: '#d97706', flexShrink: 0, fontWeight: 700 }}>·</span>
-                  {getCropLabel(cropId)}: {formatCriterionLabel(factor)} ({formatBackendStatus(factor.policy)})
+                  {getCropLabel(cropId)}: {formatCriterionLabel(factor)}
                 </div>
               ))}
             </div>
