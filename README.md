@@ -160,22 +160,16 @@ Install Command: npm install
 
 Esto mantiene al frontend consumiendo `/api` en produccion y evita depender de CORS del backend. No se requiere configurar `VITE_API_BASE_URL` en Vercel mientras se mantenga el valor por defecto `/api`.
 
-## Deploy en Render
-
-El archivo `render.yaml` deja configurado el frontend como Static Site:
+En el proyecto de Vercel configura estas variables para `Production`, `Preview` y `Development`:
 
 ```text
-Build Command: npm ci && npm run build
-Publish Directory: ./dist
-```
-
-Tambien define los rewrites de `/api` hacia el backend y el fallback de las rutas SPA hacia `/index.html`. En Render solo es necesario crear el Blueprint desde este repositorio y proporcionar:
-
-```text
+VITE_API_BASE_URL=/api
 VITE_MAPBOX_ACCESS_TOKEN=tu_token_publico_de_mapbox
 ```
 
-`VITE_API_BASE_URL` ya queda configurada como `/api`. El backend debe ser accesible publicamente desde Render por HTTPS; si el dominio `*.ts.net` solo funciona dentro de Tailscale, Render no podra consumirlo hasta habilitar Tailscale Funnel o publicar el backend mediante un dominio/IP accesible desde internet.
+`VITE_API_PROXY_TARGET` solo se utiliza durante el desarrollo local con Vite; no es necesario configurarla en Vercel porque el proxy de produccion queda definido en `vercel.json`.
+
+El backend debe ser accesible publicamente desde Vercel por HTTPS. Si el dominio `*.ts.net` solo funciona dentro de Tailscale, Vercel no podra consumirlo hasta habilitar una salida publica, como Tailscale Funnel, o publicar el backend mediante un dominio/IP accesible desde internet.
 
 ## Delimitacion cartografica y Google Earth Engine
 
