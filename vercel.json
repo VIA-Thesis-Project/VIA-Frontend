@@ -4,6 +4,10 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/api/projects",
+      "destination": "https://ubuntu-s-1vcpu-2gb-nyc1.tail5eff67.ts.net/projects/"
+    },
+    {
       "source": "/api/projects/:path*",
       "destination": "https://ubuntu-s-1vcpu-2gb-nyc1.tail5eff67.ts.net/projects/:path*"
     },
