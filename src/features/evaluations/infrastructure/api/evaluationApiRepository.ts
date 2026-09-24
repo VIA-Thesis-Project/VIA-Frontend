@@ -299,23 +299,25 @@ export class EvaluationApiRepository implements EvaluationRepository {
     evaluationId: string,
     waterRegime: WaterRegime = 'rainfed',
   ): Promise<EvaluationRecommendation[]> {
-    // The backend exposes one recommendation run per crop/regime. The old
-    // frontend requested only the first successful crop; here we reconcile
-    // the complete set without forcing regeneration of existing runs.
-    const [runs, result] = await Promise.all([
+    // Creation is still requested per eligible crop because the backend
+    // generation contract requires crop_id. Retrieval is grouped: after the
+    // creation requests, read all persisted recommendations in one GET.
+    const [existingRuns, result] = await Promise.all([
       this.listRecommendationRuns(evaluationId),
       this.getMcdaResult(evaluationId, waterRegime),
     ]);
-    const existingRuns = runs.filter((run) => run.water_regime === waterRegime);
-    const existingCropIds = new Set(existingRuns.map((run) => run.crop_id));
+    const existingCropIds = new Set(
+      existingRuns
+        .filter((run) => run.water_regime === waterRegime)
+        .map((run) => run.crop_id),
+    );
     const eligibleCrops = result.results.filter((crop) => crop.calcCondition === 'succeeded');
 
-    const generatedRuns: RecommendationRunResponse[] = [];
     for (const crop of eligibleCrops) {
       if (existingCropIds.has(crop.cropId)) continue;
 
       try {
-        const response = await apiRequest<RecommendationRunResponse>(
+        await apiRequest<RecommendationRunResponse>(
           `/v1/decision-support/evaluations/${evaluationId}/recommendations`,
           {
             method: 'POST',
@@ -327,16 +329,15 @@ export class EvaluationApiRepository implements EvaluationRepository {
             } satisfies RecommendationRequest,
           },
         );
-        generatedRuns.push(response);
       } catch {
-        // A failed crop must not prevent the remaining crops from being
-        // requested. The next refresh can reconcile it again if the backend
-        // did not persist a run for it.
+        // A failed creation must not prevent the remaining crops from being
+        // requested. The next polling attempt can retry it.
       }
     }
 
-    return [...existingRuns, ...generatedRuns]
-      .filter((run) => run.recommendation !== null)
+    const persistedRuns = await this.listRecommendationRuns(evaluationId);
+    return persistedRuns
+      .filter((run) => run.water_regime === waterRegime && run.recommendation !== null)
       .map(toRecommendation);
   }
 

@@ -394,7 +394,7 @@ export default function Recommendations({ navigate }: Props) {
                         {formatBackendStatus(backendRecommendation.status)}
                       </div>
                       <div style={{ background: '#ecfeff', color: '#0891b2', fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 999 }}>
-                        Fuente: {humanizeProvider(backendRecommendation.provider)}
+                        Generado por IA: {humanizeProvider(backendRecommendation.provider)}
                       </div>
                     </div>
                   </>
