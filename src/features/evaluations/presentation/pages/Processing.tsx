@@ -15,7 +15,7 @@ const evaluationRepository = new EvaluationApiRepository();
 const processingSteps = [
   { id: 1, label: 'Evaluacion iniciada', sub: 'La evaluacion fue registrada correctamente' },
   { id: 2, label: 'Extraccion agroambiental', sub: 'Se analizan los datos climaticos y de suelo de tu parcela' },
-  { id: 3, label: 'Evaluacion MCDA', sub: 'Se calcula la viabilidad de cada cultivo y se identifican las brechas' },
+  { id: 3, label: 'Evaluacion de viabilidad', sub: 'Se calcula la viabilidad de cada cultivo y se identifican las brechas' },
   { id: 4, label: 'Recomendacion', sub: 'Se genera la recomendacion agronomica para los cultivos viables' },
 ];
 const stepByStatus: Record<string, number> = {
@@ -204,7 +204,7 @@ export default function Processing({ navigate }: Props) {
             <div style={{ background: failed ? '#fee2e2' : 'linear-gradient(135deg, #f0fdf4, #ecfeff)', borderRadius: 16, border: failed ? '1px solid #fecaca' : '1px solid #bbf7d0', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: failed ? '#991b1b' : '#0f172a', marginBottom: 6 }}>
-                  {failed ? 'Evaluacion fallida' : recommendationDone ? 'Analisis y recomendacion completados' : noRecommendableCrops ? 'MCDA completado sin cultivos recomendables' : done ? 'MCDA completado, recomendacion en proceso' : 'Procesando analisis MCDA...'}
+                  {failed ? 'Evaluacion fallida' : recommendationDone ? 'Analisis y recomendacion completados' : noRecommendableCrops ? 'Analisis completado sin cultivos recomendables' : done ? 'Analisis completado, recomendacion en proceso' : 'Procesando analisis de viabilidad...'}
                 </div>
                 <div style={{ fontSize: 13, color: '#475569' }}>
                   {recommendationDone ? 'Resultado y recomendacion disponibles para consulta' : noRecommendableCrops ? 'Solo se generan recomendaciones para cultivos con viabilidad VIABLE o CONDICIONAL' : done ? 'Puedes ver el ranking mientras se prepara la recomendacion' : status ? `Estado actual: ${formatBackendStatus(status.status)}` : 'Iniciando analisis...'}
