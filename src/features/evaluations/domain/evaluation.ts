@@ -175,6 +175,12 @@ export type RecommendationEvidence = {
   score?: number | null;
   sourceFilename?: string | null;
   sourceFileId?: string | null;
+  organization?: string | null;
+  title?: string | null;
+  pageStart?: number | null;
+  pageEnd?: number | null;
+  section?: string | null;
+  sourceReference?: string | null;
 };
 
 export type EvaluationRecommendation = {

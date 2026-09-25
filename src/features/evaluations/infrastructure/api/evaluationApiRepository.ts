@@ -10,6 +10,7 @@ import {
   EvaluationStatusSnapshot,
   EvaluationSummary,
   FinalRecommendationResult,
+  RecommendationEvidence,
   StartEvaluationInput,
   WaterRegime,
 } from '@/features/evaluations/domain/evaluation';
@@ -153,6 +154,16 @@ type RecommendationRunResponse = {
     uncertainties: string[];
     citation_ids: string[];
   } | null;
+  citations?: Array<{
+    evidence_id: string;
+    chunk_id: string;
+    organization: string | null;
+    title: string | null;
+    page_start: number | null;
+    page_end: number | null;
+    section: string | null;
+    source_reference: string | null;
+  }>;
   failure_reason: string | null;
   created_at: string;
 };
@@ -414,7 +425,20 @@ function toRecommendation(response: RecommendationRunResponse): EvaluationRecomm
     status: response.status,
     title: structured?.summary ?? `Recomendacion para ${response.crop_id}`,
     sections,
-    evidence: [],
+    evidence: (response.citations ?? []).map((citation): RecommendationEvidence => ({
+      fragmentId: citation.evidence_id,
+      documentId: citation.chunk_id,
+      text: citation.title,
+      pageRef: citation.page_start,
+      sourceFilename: citation.source_reference,
+      sourceFileId: citation.source_reference,
+      organization: citation.organization,
+      title: citation.title,
+      pageStart: citation.page_start,
+      pageEnd: citation.page_end,
+      section: citation.section,
+      sourceReference: citation.source_reference,
+    })),
     structuredOutput: structured ?? {},
     gapRecommendations: [],
     createdAt: response.created_at,

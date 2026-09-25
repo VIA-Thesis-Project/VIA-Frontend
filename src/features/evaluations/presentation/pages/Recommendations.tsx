@@ -72,8 +72,24 @@ function supportLevel(confidence: string | null): { label: string; bg: string; c
   }
 }
 
-function renderInline(text: string) {
-  const parts = text.split(/(\*\*[^*]+\*\*|https?:\/\/[^\s,)]+)/g);
+function formatCitationPages(source: EvaluationRecommendation['evidence'][number]): string {
+  if (source.pageStart && source.pageEnd && source.pageStart !== source.pageEnd) {
+    return `pp. ${source.pageStart}–${source.pageEnd}`;
+  }
+  if (source.pageStart) return `p. ${source.pageStart}`;
+  return '';
+}
+
+function formatCitationLabel(source: EvaluationRecommendation['evidence'][number], fallback: string): string {
+  const label = [source.organization, source.title].filter(Boolean).join(' · ');
+  const pages = formatCitationPages(source);
+  return [label || fallback, pages].filter(Boolean).join(' · ');
+}
+
+function renderInline(text: string, evidence: EvaluationRecommendation['evidence'] = []) {
+  const citations = new Map(evidence.map((source) => [source.fragmentId, source]));
+  const cleanCitationBrackets = text.replace(/\[\s*(SOURCE_\d+(?:\s*,\s*SOURCE_\d+)*)\s*\]/g, '$1');
+  const parts = cleanCitationBrackets.split(/(\*\*[^*]+\*\*|https?:\/\/[^\s,)]+|SOURCE_\d+)/g);
   return (
     <>
       {parts.map((part, i) => {
@@ -93,13 +109,27 @@ function renderInline(text: string) {
             return <span key={i}>{part}</span>;
           }
         }
+        if (/^SOURCE_\d+$/.test(part)) {
+          const source = citations.get(part);
+          if (!source) return <span key={i}>{part}</span>;
+          const label = formatCitationLabel(source, part);
+          return (
+            <span
+              key={i}
+              title={`Fuente de respaldo: ${label}`}
+              style={{ display: 'inline-flex', alignItems: 'center', background: '#ecfeff', color: '#0e7490', border: '1px solid #a5f3fc', borderRadius: 999, padding: '2px 7px', fontSize: 11, fontWeight: 700, lineHeight: 1.35, verticalAlign: 'middle' }}
+            >
+              {label}
+            </span>
+          );
+        }
         return <span key={i}>{part}</span>;
       })}
     </>
   );
 }
 
-function renderMarkdownContent(text: string) {
+function renderMarkdownContent(text: string, evidence: EvaluationRecommendation['evidence'] = []) {
   const lines = normalizeBackendText(text).split('\n');
   const elements: React.ReactNode[] = [];
 
@@ -132,7 +162,7 @@ function renderMarkdownContent(text: string) {
         <div key={i} style={{ display: 'flex', gap: 10, marginTop: 12, marginBottom: 2 }}>
           <span style={{ color: '#16a34a', fontWeight: 800, fontSize: 14, flexShrink: 0, marginTop: 1 }}>→</span>
           <span style={{ fontSize: 13, color: '#0f172a', lineHeight: 1.65, fontWeight: 600 }}>
-            {renderInline(content)}
+            {renderInline(content, evidence)}
           </span>
         </div>
       );
@@ -143,7 +173,7 @@ function renderMarkdownContent(text: string) {
         <div key={i} style={{ display: 'flex', gap: 8, marginTop: 4, paddingLeft: 4 }}>
           <span style={{ color: '#94a3b8', flexShrink: 0 }}>•</span>
           <span style={{ fontSize: 13, color: '#475569', lineHeight: 1.65 }}>
-            {renderInline(line.replace(/^- /, ''))}
+            {renderInline(line.replace(/^- /, ''), evidence)}
           </span>
         </div>
       );
@@ -153,7 +183,7 @@ function renderMarkdownContent(text: string) {
 
     elements.push(
       <p key={i} style={{ fontSize: 13, color: '#475569', lineHeight: 1.75, margin: '4px 0' }}>
-        {renderInline(line)}
+        {renderInline(line, evidence)}
       </p>
     );
   });
@@ -483,9 +513,37 @@ export default function Recommendations({ navigate }: Props) {
                           {normalizeBackendText(section.title)}
                         </div>
                       )}
-                      {renderMarkdownContent(section.content)}
+                      {renderMarkdownContent(section.content, backendRecommendation?.evidence ?? [])}
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {backendRecommendation && backendRecommendation.evidence.length > 0 && (
+              <div style={{ background: 'white', borderRadius: 16, border: '1px solid #bae6fd', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', padding: '20px 22px', marginBottom: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 8, background: '#ecfeff', color: '#0891b2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, fontWeight: 800 }}>i</div>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: '#0f172a' }}>Fuentes consultadas</div>
+                    <div style={{ fontSize: 12, color: '#64748b' }}>Documentos que respaldan la orientación presentada.</div>
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 10, marginTop: 14 }}>
+                  {backendRecommendation.evidence.map((source, index) => {
+                    const pages = formatCitationPages(source);
+                    const title = source.title ?? source.sourceFilename ?? `Fuente documental ${index + 1}`;
+                    return (
+                      <div key={source.fragmentId} style={{ background: '#f8fafc', border: '1px solid #e0f2fe', borderRadius: 12, padding: '13px 15px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 7 }}>
+                          <span style={{ background: '#cffafe', color: '#0e7490', fontSize: 10, fontWeight: 800, padding: '4px 8px', borderRadius: 999 }}>{source.organization ?? 'Documento técnico'}</span>
+                          <span style={{ color: '#64748b', fontSize: 11, fontWeight: 700 }}>Fuente {index + 1}</span>
+                        </div>
+                        <div style={{ color: '#0f172a', fontSize: 13, fontWeight: 800, lineHeight: 1.45 }}>{normalizeBackendText(title)}</div>
+                        {pages && <div style={{ color: '#64748b', fontSize: 11, marginTop: 6 }}>{pages}</div>}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
