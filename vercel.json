@@ -5,19 +5,19 @@
   "rewrites": [
     {
       "source": "/api/projects",
-      "destination": "https://ubuntu-s-1vcpu-2gb-nyc1.tail5eff67.ts.net/projects"
+      "destination": "https://via-api-staging-512290877468.southamerica-east1.run.app/projects"
     },
     {
       "source": "/api/projects/:path*",
-      "destination": "https://ubuntu-s-1vcpu-2gb-nyc1.tail5eff67.ts.net/projects/:path*"
+      "destination": "https://via-api-staging-512290877468.southamerica-east1.run.app/projects/:path*"
     },
     {
       "source": "/api/health",
-      "destination": "https://ubuntu-s-1vcpu-2gb-nyc1.tail5eff67.ts.net/health"
+      "destination": "https://via-api-staging-512290877468.southamerica-east1.run.app/health"
     },
     {
       "source": "/api/:path*",
-      "destination": "https://ubuntu-s-1vcpu-2gb-nyc1.tail5eff67.ts.net/api/:path*"
+      "destination": "https://via-api-staging-512290877468.southamerica-east1.run.app/api/:path*"
     },
     {
       "source": "/:path*",
