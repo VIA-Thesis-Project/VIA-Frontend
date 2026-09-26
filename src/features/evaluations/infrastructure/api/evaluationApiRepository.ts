@@ -266,7 +266,7 @@ export class EvaluationApiRepository implements EvaluationRepository {
           score: outcome.suitability?.mean ?? null,
           rankPosition: rank?.rank ?? null,
           calcCondition: outcome.status,
-          viabilityCategory: outcome.status,
+          viabilityCategory: null,
           gaps: [],
           limitingFactors: (cropLimitations?.limitation_evidence.factors ?? []).map((factor) => ({
             criterionId: factor.factor_code,

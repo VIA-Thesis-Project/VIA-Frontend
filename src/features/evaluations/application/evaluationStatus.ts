@@ -37,15 +37,15 @@ export function isEvaluationPending(status: EvaluationStatus | null | undefined)
 }
 
 /**
- * Matches the backend process-manager gate for recommendation commands.
+ * Matches the backend recommendation gate for finalized scientific crop outcomes.
  */
-export function isRecommendableViabilityCategory(category: string | null | undefined): boolean {
-  return category === 'succeeded';
+export function isRecommendableCropOutcome(status: string | null | undefined): boolean {
+  return status === 'succeeded';
 }
 
 /**
  * Indicates whether MCDA produced at least one crop that can receive a backend recommendation.
  */
 export function hasRecommendableCrop(results: CropEvaluationResult[]): boolean {
-  return results.some((result) => isRecommendableViabilityCategory(result.viabilityCategory));
+  return results.some((result) => isRecommendableCropOutcome(result.calcCondition));
 }

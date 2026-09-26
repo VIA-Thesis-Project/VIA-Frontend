@@ -389,7 +389,7 @@ export default function Recommendations({ navigate }: Props) {
                         </div>
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                           <span style={{ background: isEligible ? '#dcfce7' : '#fef2f2', color: isEligible ? '#15803d' : '#b91c1c', fontSize: 10, fontWeight: 800, padding: '4px 7px', borderRadius: 999 }}>
-                            {formatBackendStatus(crop.viabilityCategory)}
+                            {formatBackendStatus(crop.calcCondition)}
                           </span>
                           <span style={{ background: cropRecommendation ? '#ecfeff' : '#fff7ed', color: cropRecommendation ? '#0e7490' : '#c2410c', fontSize: 10, fontWeight: 800, padding: '4px 7px', borderRadius: 999 }}>
                             {cropRecommendation ? 'Recomendacion lista' : isEligible ? 'Pendiente' : 'No elegible'}
@@ -480,7 +480,7 @@ export default function Recommendations({ navigate }: Props) {
                     <div key={crop.cropId} style={{ background: '#fafafa', border: '1px solid #f1f5f9', borderRadius: 12, padding: '12px 14px' }}>
                       <div style={{ fontSize: 13, fontWeight: 800, color: '#0f172a', marginBottom: 6 }}>{getCropLabel(crop.cropId)}</div>
                       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                        <span style={{ background: '#fee2e2', color: '#dc2626', fontSize: 11, fontWeight: 800, padding: '4px 9px', borderRadius: 999 }}>{formatBackendStatus(crop.viabilityCategory)}</span>
+                        <span style={{ background: '#fee2e2', color: '#dc2626', fontSize: 11, fontWeight: 800, padding: '4px 9px', borderRadius: 999 }}>{formatBackendStatus(crop.calcCondition)}</span>
                         <span style={{ background: '#f8fafc', color: '#475569', fontSize: 11, fontWeight: 700, padding: '4px 9px', borderRadius: 999 }}>Score {toPercent(crop.score)}%</span>
                       </div>
                     </div>

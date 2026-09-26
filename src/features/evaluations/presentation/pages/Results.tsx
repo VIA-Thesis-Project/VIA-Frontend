@@ -25,18 +25,12 @@ function ScoreBar({ score, color }: { score: number; color: string }) {
   );
 }
 
-function categoryStyle(category: string) {
-  const normalized = category.toUpperCase();
+function outcomeStatusStyle(status: string) {
+  const normalized = status.toUpperCase();
   if (normalized === 'SUCCEEDED') {
     return { color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' };
   }
   if (normalized === 'NO_COVERAGE') {
-    return { color: '#d97706', bg: '#fffbeb', border: '#fde68a' };
-  }
-  if (normalized.includes('VIABLE') && !normalized.includes('NO')) {
-    return { color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' };
-  }
-  if (normalized.includes('CONDICIONAL')) {
     return { color: '#d97706', bg: '#fffbeb', border: '#fde68a' };
   }
   return { color: '#dc2626', bg: '#fee2e2', border: '#fecaca' };
@@ -121,11 +115,11 @@ export default function Results({ navigate }: Props) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
             <div style={{ fontSize: 12, color: '#94a3b8', cursor: 'pointer' }} onClick={() => navigate('dashboard')}>Dashboard</div>
             <span style={{ color: '#e2e8f0' }}>/</span>
-            <div style={{ fontSize: 12, color: '#16a34a', fontWeight: 600 }}>Resultados de viabilidad</div>
+            <div style={{ fontSize: 12, color: '#16a34a', fontWeight: 600 }}>Resultados de aptitud</div>
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
             <div>
-              <h1 style={{ fontSize: 20, fontWeight: 700, color: '#0f172a', margin: 0, marginBottom: 6 }}>Resultados de viabilidad de cultivos</h1>
+              <h1 style={{ fontSize: 20, fontWeight: 700, color: '#0f172a', margin: 0, marginBottom: 6 }}>Resultados de aptitud de cultivos</h1>
               <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
                 {[
                   { label: 'Parcela', value: currentEvaluation?.parcelName ?? '-' },
@@ -217,7 +211,7 @@ export default function Results({ navigate }: Props) {
 
               {sortedResults.map((crop, i) => {
                 const score = toPercent(crop.score);
-                const style = categoryStyle(crop.viabilityCategory);
+                const style = outcomeStatusStyle(crop.calcCondition);
                 const gapCriteriaCount = countGapCriteria(crop);
                 return (
                   <div key={crop.cropId} style={{ padding: '18px 24px', borderBottom: i < sortedResults.length - 1 ? '1px solid #f8fafc' : 'none', display: 'flex', gap: 16 }}>
@@ -229,7 +223,7 @@ export default function Results({ navigate }: Props) {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                         <span style={{ fontSize: 16, fontWeight: 700, color: '#0f172a' }}>{getCropLabel(crop.cropId)}</span>
                         <div style={{ fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 999, background: style.bg, color: style.color, border: `1px solid ${style.border}` }}>
-                          {formatBackendStatus(crop.viabilityCategory)}
+                          {formatBackendStatus(crop.calcCondition)}
                         </div>
                       </div>
 
@@ -237,7 +231,7 @@ export default function Results({ navigate }: Props) {
 
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10 }}>
                         <div>
-                          <div style={{ fontSize: 11, fontWeight: 600, color: '#16a34a', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Condicion</div>
+                          <div style={{ fontSize: 11, fontWeight: 600, color: '#16a34a', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Estado del calculo</div>
                           <div style={{ fontSize: 12, color: '#475569' }}>{formatBackendStatus(crop.calcCondition)}</div>
                         </div>
                         <div>
@@ -272,7 +266,7 @@ export default function Results({ navigate }: Props) {
               <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 14 }}>Resumen de scores</div>
               {sortedResults.map((crop) => {
                 const score = toPercent(crop.score);
-                const style = categoryStyle(crop.viabilityCategory);
+                const style = outcomeStatusStyle(crop.calcCondition);
                 return (
                   <div key={crop.cropId} style={{ display: 'grid', gridTemplateColumns: '112px 1fr 44px', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                     <span title={getCropLabel(crop.cropId)} style={{ fontSize: 13, color: '#475569', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{getCropLabel(crop.cropId)}</span>

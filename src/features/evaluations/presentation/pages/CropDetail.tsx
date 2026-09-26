@@ -5,7 +5,7 @@ import { NavigateFn } from '@/app/navigation/navigation';
 import { toUserFriendlyFailureReason } from '@/features/evaluations/application/backendFailureMessages';
 import { getCropLabel } from '@/features/evaluations/application/cropCatalog';
 import { formatBackendStatus, formatCriterionLabel, formatNumberWithUnit, formatPhaseLabel } from '@/features/evaluations/application/displayFormatters';
-import { isRecommendableViabilityCategory } from '@/features/evaluations/application/evaluationStatus';
+import { isRecommendableCropOutcome } from '@/features/evaluations/application/evaluationStatus';
 import { CropEvaluationResult, EvaluationMcdaResult } from '@/features/evaluations/domain/evaluation';
 import { EvaluationApiRepository } from '@/features/evaluations/infrastructure/api/evaluationApiRepository';
 import { readCurrentEvaluation, readSelectedCropId } from '@/features/evaluations/infrastructure/session/currentEvaluationStorage';
@@ -31,19 +31,13 @@ function toPercent(score: number | null): number {
   return Math.round(score <= 1 ? score * 100 : score);
 }
 
-function categoryStyle(category: string) {
-  const normalized = category.toUpperCase();
+function outcomeStatusStyle(status: string) {
+  const normalized = status.toUpperCase();
   if (normalized === 'SUCCEEDED') {
     return { color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' };
   }
   if (normalized === 'NO_COVERAGE') {
     return { color: '#d97706', bg: '#fffbeb', border: '#fde68a' };
-  }
-  if (normalized.includes('VIABLE') && !normalized.includes('NO')) {
-    return { color: '#16a34a', bg: '#dcfce7', border: '#bbf7d0' };
-  }
-  if (normalized.includes('CONDICIONAL')) {
-    return { color: '#d97706', bg: '#fef3c7', border: '#fde68a' };
   }
   return { color: '#dc2626', bg: '#fee2e2', border: '#fecaca' };
 }
@@ -189,8 +183,8 @@ export default function CropDetail({ navigate }: Props) {
     }), [groupedCards]);
 
   const score = toPercent(crop?.score ?? null);
-  const style = categoryStyle(crop?.viabilityCategory ?? '');
-  const cropCanReceiveRecommendation = isRecommendableViabilityCategory(crop?.viabilityCategory);
+  const style = outcomeStatusStyle(crop?.calcCondition ?? '');
+  const cropCanReceiveRecommendation = isRecommendableCropOutcome(crop?.calcCondition);
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc' }}>
@@ -234,12 +228,13 @@ export default function CropDetail({ navigate }: Props) {
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
                   <h1 style={{ fontSize: 20, fontWeight: 800, color: '#0f172a', margin: 0 }}>{getCropLabel(crop.cropId)}</h1>
-                  <div style={{ background: style.bg, color: style.color, fontSize: 12, fontWeight: 700, padding: '5px 14px', borderRadius: 999, border: `1px solid ${style.border}` }}>{formatBackendStatus(crop.viabilityCategory)}</div>
+                  <div style={{ background: style.bg, color: style.color, fontSize: 12, fontWeight: 700, padding: '5px 14px', borderRadius: 999, border: `1px solid ${style.border}` }}>{formatBackendStatus(crop.calcCondition)}</div>
                 </div>
                 <p style={{ fontSize: 14, color: '#475569', margin: 0, lineHeight: 1.6, maxWidth: 700 }}>
                   Aptitud espacial: <strong style={{ color: '#0f172a' }}>{formatBackendStatus(crop.calcCondition)}</strong>. CropSuitLite reporto {crop.limitingFactors.length} factores limitantes y una cobertura valida de {crop.coverageFraction !== null && crop.coverageFraction !== undefined ? `${(crop.coverageFraction * 100).toFixed(1)}%` : '—'}.
                 </p>
                 <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', marginTop: 10, fontSize: 11, color: '#64748b' }}>
+                  <span>Viabilidad determinista: <strong style={{ color: '#64748b' }}>no disponible en la API actual</strong></span>
                   <span>Celdas validas: <strong style={{ color: '#0f172a' }}>{crop.validCells ?? '—'}</strong></span>
                   <span>Area evaluada: <strong style={{ color: '#0f172a' }}>{crop.validAreaM2 !== null && crop.validAreaM2 !== undefined ? `${(crop.validAreaM2 / 10000).toFixed(2)} ha` : '—'}</strong></span>
                   <span>Area con aptitud 0: <strong style={{ color: '#b91c1c' }}>{crop.zeroSuitabilityAreaM2 !== null && crop.zeroSuitabilityAreaM2 !== undefined ? `${(crop.zeroSuitabilityAreaM2 / 10000).toFixed(2)} ha` : '—'}</strong></span>

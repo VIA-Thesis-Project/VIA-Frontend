@@ -1,5 +1,11 @@
 import { AuthRepository } from '@/features/auth/application/authRepository';
-import { AuthSession, LoginCredentials, RegisteredUser, RegisterCredentials } from '@/features/auth/domain/authSession';
+import {
+  AuthenticatedUser,
+  AuthSession,
+  LoginCredentials,
+  RegisteredUser,
+  RegisterCredentials,
+} from '@/features/auth/domain/authSession';
 import { apiRequest } from '@/shared/infrastructure/http/apiClient';
 
 type LoginResponse = {
@@ -13,21 +19,29 @@ type LoginResponse = {
   };
 };
 
-type RegisterResponse = {
-  user_id: string;
+type CurrentUserResponse = {
+  id: string;
   email: string;
+  status: string;
+  role: string;
+};
+
+type RegisterResponse = {
+  id: string;
+  email: string;
+  status: string;
   role: string;
 };
 
 export class AuthApiRepository implements AuthRepository {
   async register(credentials: RegisterCredentials): Promise<RegisteredUser> {
-    const response = await apiRequest<RegisterResponse>('/auth/register', {
+    const response = await apiRequest<RegisterResponse>('/v1/auth/register', {
       method: 'POST',
       body: credentials,
     });
 
     return {
-      userId: response.user_id,
+      userId: response.id,
       email: response.email,
       role: response.role,
     };
@@ -45,6 +59,15 @@ export class AuthApiRepository implements AuthRepository {
       expiresInSeconds: response.expires_in,
       expiresAt: new Date(Date.now() + response.expires_in * 1000).toISOString(),
       user: response.user,
+    };
+  }
+
+  async getCurrentUser(token: string): Promise<AuthenticatedUser> {
+    const response = await apiRequest<CurrentUserResponse>('/v1/auth/me', { token });
+    return {
+      id: response.id,
+      email: response.email,
+      role: response.role,
     };
   }
 }

@@ -100,7 +100,7 @@ export type CropEvaluationResult = {
   score: number | null;
   rankPosition: number | null;
   calcCondition: string;
-  viabilityCategory: string;
+  viabilityCategory: string | null;
   gaps: AgronomyGap[];
   limitingFactors: LimitingFactor[];
   missingCriteria: string[];

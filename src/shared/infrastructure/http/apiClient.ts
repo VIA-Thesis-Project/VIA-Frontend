@@ -1,3 +1,5 @@
+import { readAuthSession, saveAuthSession } from '@/features/auth/infrastructure/session/authSessionStorage';
+
 export class ApiError extends Error {
   readonly status: number;
   readonly details: unknown;
@@ -54,8 +56,12 @@ async function requestWithRefresh<T>(
 
   if (!response.ok) {
     if (response.status === 401) {
-      const isAuthenticationRoute = path.startsWith('/v1/auth/');
-      if (!retriedAfterRefresh && !isAuthenticationRoute && options.token) {
+      const cannotRefresh = (
+        path === '/v1/auth/register'
+        || path === '/v1/auth/login'
+        || path === '/v1/auth/refresh'
+      );
+      if (!retriedAfterRefresh && !cannotRefresh && options.token) {
         const replacementToken = await refreshAccessToken();
         if (replacementToken) {
           return requestWithRefresh(
@@ -114,7 +120,6 @@ async function refreshAccessToken(): Promise<string | null> {
         expires_in: number;
         user: { id: string; email: string; role: string };
       };
-      const { readAuthSession, saveAuthSession } = await import('@/features/auth/infrastructure/session/authSessionStorage');
       const current = readAuthSession();
       saveAuthSession({
         accessToken: payload.access_token,
