@@ -63,6 +63,7 @@ function buildAllFactors(crop: CropEvaluationResult) {
         criterionId: gap.criterionId,
         phaseId: gap.phaseId,
         policy: 'gap',
+        affectedFraction: null,
         penaltyFactor: null,
         observedValue: gap.observedValue,
         optimalLimit: gap.optimalLimit,

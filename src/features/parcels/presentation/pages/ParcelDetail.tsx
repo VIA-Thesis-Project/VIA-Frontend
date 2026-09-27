@@ -255,7 +255,6 @@ export default function ParcelDetail({ navigate }: Props) {
                       points={draftPoints}
                       onPointsChange={setDraftPoints}
                       onGeometryChange={setDraftGeometry}
-                      onAreaChange={() => undefined}
                     />
                   ) : (
                     <ParcelMapView points={viewPoints} />
