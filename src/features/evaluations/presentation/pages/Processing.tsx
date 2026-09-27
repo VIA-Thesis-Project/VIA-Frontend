@@ -125,13 +125,7 @@ export default function Processing({ navigate }: Props) {
           <h1 style={{ fontSize: 20, fontWeight: 700, color: '#0f172a', margin: 0 }}>Procesamiento de variables agroambientales</h1>
           <p style={{ fontSize: 14, color: '#64748b', marginTop: 4 }}>
             Parcela: <strong style={{ color: '#0f172a' }}>{currentEvaluation?.parcelName ?? 'Sin parcela activa'}</strong>
-            {' '}· {currentEvaluation?.parcelLocation ?? '-'} · {currentEvaluation?.areaHa ?? '-'} ha
           </p>
-          {status && (
-            <p style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>
-              Estado: <strong>{formatBackendStatus(status.status)}</strong> · Evaluacion: {status.evaluationId}
-            </p>
-          )}
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: 24 }}>

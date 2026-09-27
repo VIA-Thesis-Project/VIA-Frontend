@@ -83,7 +83,7 @@ export default function Login({ navigate }: Props) {
               />
             </div>
 
-            <div style={{ marginBottom: 28 }}>
+            <div style={{ marginBottom: 20 }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: '#475569', marginBottom: 8 }}>Contraseña</div>
               <div style={{ position: 'relative' }}>
                 <input
@@ -105,9 +105,6 @@ export default function Login({ navigate }: Props) {
                 >
                   {showPw ? <EyeOff style={{ width: 16, height: 16 }} /> : <Eye style={{ width: 16, height: 16 }} />}
                 </button>
-              </div>
-              <div style={{ textAlign: 'right', marginTop: 6 }}>
-                <a href="#" style={{ fontSize: 12, color: '#16a34a', textDecoration: 'none', fontWeight: 500 }}>¿Olvidaste tu contraseña?</a>
               </div>
             </div>
 

@@ -123,8 +123,6 @@ export default function Results({ navigate }: Props) {
               <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
                 {[
                   { label: 'Parcela', value: currentEvaluation?.parcelName ?? '-' },
-                  { label: 'Area', value: `${currentEvaluation?.areaHa ?? '-'} ha` },
-                  { label: 'Ubicacion', value: currentEvaluation?.parcelLocation ?? '-' },
                   { label: 'Estado', value: mcdaResult?.status ? formatBackendStatus(mcdaResult.status) : (loading ? 'Consultando...' : '-') },
                 ].map(({ label, value }) => (
                   <div key={label} style={{ display: 'flex', gap: 6 }}>
@@ -150,7 +148,7 @@ export default function Results({ navigate }: Props) {
 
         {noRecommendableCrops && (
           <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', borderRadius: 12, padding: 16, marginBottom: 16, fontSize: 13, lineHeight: 1.6 }}>
-            No se generaron recomendaciones para esta evaluacion: ningun cultivo alcanzo la categoria <strong>VIABLE</strong> ni <strong>CONDICIONAL</strong>. Revisa las brechas por criterio en el detalle de cada cultivo, ajusta los umbrales en Configuracion, o evalua otra parcela u otros cultivos.
+            No se generaron recomendaciones para esta evaluacion: ningun cultivo alcanzo la categoria <strong>VIABLE</strong> ni <strong>CONDICIONAL</strong>. Revisa las brechas por criterio en el detalle de cada cultivo, ajusta el umbral de viabilidad, o evalua otra parcela u otros cultivos.
           </div>
         )}
 
@@ -164,7 +162,6 @@ export default function Results({ navigate }: Props) {
           <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'center', fontSize: 12 }}>
             <strong>Soporte espacial: {formatBackendStatus(commonSupport.status)}</strong>
             <span>Cobertura comparable: {(commonSupport.commonCoverageFraction * 100).toFixed(1)}%</span>
-            <span>Area evaluada: {(commonSupport.commonValidAreaM2 / 10000).toFixed(2)} ha</span>
             <span>Cultivos comparables: {commonSupport.eligibleCrops.length}</span>
           </div>
         )}

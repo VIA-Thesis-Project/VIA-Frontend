@@ -25,6 +25,7 @@ function formatWaterRegime(regime: string): string {
 
 const parcelRepository = new ParcelApiRepository();
 const evaluationRepository = new EvaluationApiRepository();
+const DISTRICT = 'Huaura';
 function extractGeoJsonGeometry(payload: unknown): GeoJsonGeometry {
   if (!payload || typeof payload !== 'object') {
     throw new Error('El archivo no contiene JSON valido.');
@@ -58,7 +59,7 @@ function extractGeoJsonGeometry(payload: unknown): GeoJsonGeometry {
 export default function NewEvaluation({ navigate }: Props) {
   const selectedParcelFromList = readSelectedParcelId();
   const [name, setName] = useState('');
-  const [district, setDistrict] = useState('');
+  const [location, setLocation] = useState('');
   const [method, setMethod] = useState<InputMethod>(selectedParcelFromList ? 'select' : 'draw');
   const [mapPoints, setMapPoints] = useState<Array<{ lat: number; lng: number }>>([]);
   const [geometry, setGeometry] = useState<GeoJsonGeometry | null>(null);
@@ -236,7 +237,8 @@ export default function NewEvaluation({ navigate }: Props) {
         evaluationRepository,
         {
           name,
-          district,
+          district: DISTRICT,
+          location,
           areaHa: 'Area no registrada',
           selectedCropIds: selectedCrops,
           waterRegime,
@@ -288,8 +290,7 @@ export default function NewEvaluation({ navigate }: Props) {
               </div>
 
               {[
-                { label: 'Nombre de parcela', value: name, setter: setName, placeholder: 'Ej: Parcela Canete 01' },
-                { label: 'Ubicacion / Distrito', value: district, setter: setDistrict, placeholder: 'Ej: Huaral, Lima' },
+                { label: 'Nombre de parcela', value: name, setter: setName, placeholder: 'Ej: Parcela Huaura' },
               ].map(({ label, value, setter, placeholder }) => (
                 <div key={label} style={{ marginBottom: 10 }}>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 4 }}>{label}</label>
@@ -304,6 +305,28 @@ export default function NewEvaluation({ navigate }: Props) {
                   />
                 </div>
               ))}
+              <div style={{ marginBottom: 10 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 4 }}>Distrito</label>
+                <input
+                  type="text"
+                  value={DISTRICT}
+                  readOnly
+                  aria-readonly="true"
+                  style={{ width: '100%', padding: '8px 12px', border: '1.5px solid #d1fae5', borderRadius: 8, fontSize: 13, color: '#166534', background: '#f0fdf4', outline: 'none', boxSizing: 'border-box', cursor: 'default' }}
+                />
+              </div>
+              <div style={{ marginBottom: 10 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 4 }}>Ubicación</label>
+                <input
+                  type="text"
+                  value={location}
+                  onChange={(event) => setLocation(event.target.value)}
+                  placeholder="Ej: Santa María, Huaura"
+                  style={{ width: '100%', padding: '8px 12px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 13, color: '#0f172a', background: '#fafafa', outline: 'none', boxSizing: 'border-box' }}
+                  onFocus={(event) => (event.target.style.borderColor = '#16a34a')}
+                  onBlur={(event) => (event.target.style.borderColor = '#e2e8f0')}
+                />
+              </div>
             </div>
 
             <div style={{ marginBottom: 14 }}>

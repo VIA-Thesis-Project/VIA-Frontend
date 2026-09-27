@@ -60,9 +60,9 @@ export default function Settings({ navigate }: Props) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
             <button onClick={() => navigate('dashboard')} style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: 12, cursor: 'pointer', padding: 0 }}>Dashboard</button>
             <span style={{ color: '#e2e8f0' }}>/</span>
-            <span style={{ color: '#16a34a', fontSize: 12, fontWeight: 700 }}>Configuracion</span>
+            <span style={{ color: '#16a34a', fontSize: 12, fontWeight: 700 }}>Umbral de viabilidad</span>
           </div>
-          <h1 style={{ fontSize: 20, fontWeight: 800, color: '#0f172a', margin: 0, marginBottom: 4 }}>Configuracion</h1>
+          <h1 style={{ fontSize: 20, fontWeight: 800, color: '#0f172a', margin: 0, marginBottom: 4 }}>Umbral de viabilidad</h1>
           <p style={{ fontSize: 13, color: '#64748b', margin: 0, maxWidth: 640 }}>
             Define los rangos de score que determinan la categoria de viabilidad de cada cultivo.
           </p>
@@ -78,7 +78,7 @@ export default function Settings({ navigate }: Props) {
         <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', padding: 24, maxWidth: 720 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 6 }}>
             <SlidersHorizontal style={{ width: 16, height: 16, color: '#16a34a' }} />
-            <div style={{ fontSize: 14, fontWeight: 800, color: '#0f172a' }}>Umbrales de viabilidad</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#0f172a' }}>Configuración del umbral</div>
           </div>
           <p style={{ fontSize: 13, color: '#64748b', margin: '0 0 20px', lineHeight: 1.55 }}>
             Cada cultivo recibe un score entre 0% y 100%. El score define su categoria segun estos

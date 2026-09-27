@@ -15,7 +15,7 @@ const navItems = [
   { icon: Plus, label: 'Nueva evaluacion', screen: 'new-evaluation' as Screen },
   { icon: Map, label: 'Parcelas', screen: 'parcels' as Screen },
   { icon: BarChart3, label: 'Resultados', screen: 'results' as Screen },
-  { icon: Settings, label: 'Configuracion', screen: 'settings' as Screen },
+  { icon: Settings, label: 'Umbral de viabilidad', screen: 'settings' as Screen },
 ];
 
 const roleLabels: Record<string, string> = {

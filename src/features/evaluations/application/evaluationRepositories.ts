@@ -29,6 +29,9 @@ export interface EvaluationRepository {
   getMcdaResult(evaluationId: string, waterRegime?: WaterRegime): Promise<EvaluationMcdaResult>;
   getAgroenvVector(evaluationId: string): Promise<AgroenvVector>;
   getRecommendationsForEvaluation(evaluationId: string): Promise<EvaluationRecommendation[]>;
+  getRecommendationForCrop(evaluationId: string, cropId: string, waterRegime?: WaterRegime): Promise<EvaluationRecommendation | null>;
+  getRecommendationsForCrops(evaluationId: string, cropIds: string[], waterRegime?: WaterRegime): Promise<EvaluationRecommendation[]>;
+  startRecommendationForCrop(evaluationId: string, cropId: string, waterRegime?: WaterRegime): Promise<EvaluationRecommendation | null>;
   ensureRecommendationsForEvaluation(evaluationId: string, waterRegime?: WaterRegime): Promise<EvaluationRecommendation[]>;
   getFinalRecommendation(evaluationId: string, waterRegime?: WaterRegime): Promise<FinalRecommendationResult>;
   getRecommendation(recommendationId: string): Promise<EvaluationRecommendation>;

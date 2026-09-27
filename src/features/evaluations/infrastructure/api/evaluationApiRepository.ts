@@ -174,6 +174,12 @@ type RecommendationRequest = {
   force_regenerate?: boolean;
 };
 
+// Prevent duplicate generation requests while the same browser tab is still
+// waiting for a previous POST to finish. Persisted runs are also checked by
+// startRecommendationForCrop, so a reload remains idempotent after the POST
+// has completed.
+const recommendationStartPromises = new Map<string, Promise<EvaluationRecommendation | null>>();
+
 export class EvaluationApiRepository implements EvaluationRepository {
   async getCapabilities(): Promise<EvaluationCapabilities> {
     const response = await apiRequest<CapabilitiesResponse>('/v1/evaluation-capabilities', {
@@ -306,50 +312,91 @@ export class EvaluationApiRepository implements EvaluationRepository {
     return response.filter((run) => run.recommendation !== null).map(toRecommendation);
   }
 
+  async getRecommendationForCrop(
+    evaluationId: string,
+    cropId: string,
+    waterRegime: WaterRegime = 'rainfed',
+  ): Promise<EvaluationRecommendation | null> {
+    const runs = await this.listRecommendationRunsForCrop(evaluationId, cropId, waterRegime);
+    const latest = latestRecommendationRun(runs);
+    return latest ? toRecommendation(latest) : null;
+  }
+
+  async getRecommendationsForCrops(
+    evaluationId: string,
+    cropIds: string[],
+    waterRegime: WaterRegime = 'rainfed',
+  ): Promise<EvaluationRecommendation[]> {
+    const recommendations = await Promise.all(
+      cropIds.map((cropId) => this.getRecommendationForCrop(evaluationId, cropId, waterRegime)),
+    );
+    return recommendations.filter((item): item is EvaluationRecommendation => item !== null);
+  }
+
+  async startRecommendationForCrop(
+    evaluationId: string,
+    cropId: string,
+    waterRegime: WaterRegime = 'rainfed',
+  ): Promise<EvaluationRecommendation | null> {
+    const key = `${evaluationId}:${cropId}:${waterRegime}`;
+    const existingRequest = recommendationStartPromises.get(key);
+    if (existingRequest) return existingRequest;
+
+    const request = this.startRecommendationForCropOnce(evaluationId, cropId, waterRegime);
+    recommendationStartPromises.set(key, request);
+    try {
+      return await request;
+    } finally {
+      recommendationStartPromises.delete(key);
+    }
+  }
+
+  private async startRecommendationForCropOnce(
+    evaluationId: string,
+    cropId: string,
+    waterRegime: WaterRegime,
+  ): Promise<EvaluationRecommendation | null> {
+    // A persisted run is terminal in the current backend contract, including
+    // failed and insufficient_evidence runs. Never regenerate it implicitly.
+    const existing = await this.getRecommendationForCrop(evaluationId, cropId, waterRegime);
+    if (existing) return existing;
+
+    await apiRequest<RecommendationRunResponse>(
+      `/v1/decision-support/evaluations/${evaluationId}/recommendations`,
+      {
+        method: 'POST',
+        token: authToken(),
+        body: {
+          crop_id: cropId,
+          water_regime: waterRegime,
+          force_regenerate: false,
+        } satisfies RecommendationRequest,
+      },
+    );
+
+    // The POST persists the run. Read it back through the same GET contract
+    // that is used after reloads and during polling.
+    return this.getRecommendationForCrop(evaluationId, cropId, waterRegime);
+  }
+
   async ensureRecommendationsForEvaluation(
     evaluationId: string,
     waterRegime: WaterRegime = 'rainfed',
   ): Promise<EvaluationRecommendation[]> {
-    // Creation is still requested per eligible crop because the backend
-    // generation contract requires crop_id. Retrieval is grouped: after the
-    // creation requests, read all persisted recommendations in one GET.
-    const [existingRuns, result] = await Promise.all([
-      this.listRecommendationRuns(evaluationId),
-      this.getMcdaResult(evaluationId, waterRegime),
-    ]);
-    const existingCropIds = new Set(
-      existingRuns
-        .filter((run) => run.water_regime === waterRegime)
-        .map((run) => run.crop_id),
-    );
+    // Compatibility method for callers that still need the complete flow.
+    // Each crop is started at most once; subsequent reads use one GET per crop.
+    const result = await this.getMcdaResult(evaluationId, waterRegime);
     const eligibleCrops = result.results.filter((crop) => crop.calcCondition === 'succeeded');
 
     for (const crop of eligibleCrops) {
-      if (existingCropIds.has(crop.cropId)) continue;
-
-      try {
-        await apiRequest<RecommendationRunResponse>(
-          `/v1/decision-support/evaluations/${evaluationId}/recommendations`,
-          {
-            method: 'POST',
-            token: authToken(),
-            body: {
-              crop_id: crop.cropId,
-              water_regime: waterRegime,
-              force_regenerate: false,
-            } satisfies RecommendationRequest,
-          },
-        );
-      } catch {
-        // A failed creation must not prevent the remaining crops from being
-        // requested. The next polling attempt can retry it.
-      }
+      await this.startRecommendationForCrop(evaluationId, crop.cropId, waterRegime);
     }
 
-    const persistedRuns = await this.listRecommendationRuns(evaluationId);
-    return persistedRuns
-      .filter((run) => run.water_regime === waterRegime && run.recommendation !== null)
-      .map(toRecommendation);
+    return this.getRecommendationsForCrops(
+      evaluationId,
+      eligibleCrops.map((crop) => crop.cropId),
+      waterRegime,
+    );
   }
 
   async getFinalRecommendation(evaluationId: string, waterRegime: WaterRegime = 'rainfed'): Promise<FinalRecommendationResult> {
@@ -369,6 +416,18 @@ export class EvaluationApiRepository implements EvaluationRepository {
   private async listRecommendationRuns(evaluationId: string): Promise<RecommendationRunResponse[]> {
     return apiRequest<RecommendationRunResponse[]>(
       `/v1/decision-support/evaluations/${evaluationId}/recommendations`,
+      { token: authToken() },
+    );
+  }
+
+  private async listRecommendationRunsForCrop(
+    evaluationId: string,
+    cropId: string,
+    waterRegime: WaterRegime,
+  ): Promise<RecommendationRunResponse[]> {
+    const params = new URLSearchParams({ crop_id: cropId, water_regime: waterRegime });
+    return apiRequest<RecommendationRunResponse[]>(
+      `/v1/decision-support/evaluations/${evaluationId}/recommendations?${params.toString()}`,
       { token: authToken() },
     );
   }
@@ -444,4 +503,13 @@ function toRecommendation(response: RecommendationRunResponse): EvaluationRecomm
     createdAt: response.created_at,
     provider: response.provider,
   };
+}
+
+function latestRecommendationRun(runs: RecommendationRunResponse[]): RecommendationRunResponse | null {
+  return runs.reduce<RecommendationRunResponse | null>((latest, candidate) => {
+    if (!latest) return candidate;
+    const latestTime = Date.parse(latest.created_at);
+    const candidateTime = Date.parse(candidate.created_at);
+    return candidateTime >= latestTime ? candidate : latest;
+  }, null);
 }

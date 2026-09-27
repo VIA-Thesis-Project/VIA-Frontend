@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, ChevronLeft, RefreshCcw, Sprout } from 'lucide-react';
+import { CheckCircle2, ChevronLeft } from 'lucide-react';
 import { NavigateFn } from '@/app/navigation/navigation';
 import { toUserFriendlyFailureReason } from '@/features/evaluations/application/backendFailureMessages';
 import { getCropLabel } from '@/features/evaluations/application/cropCatalog';
@@ -9,7 +9,6 @@ import {
   CropEvaluationResult,
   EvaluationRecommendation,
   EvaluationMcdaResult,
-  FinalRecommendationResult,
 } from '@/features/evaluations/domain/evaluation';
 import { EvaluationApiRepository } from '@/features/evaluations/infrastructure/api/evaluationApiRepository';
 import { readCurrentEvaluation, readSelectedCropId } from '@/features/evaluations/infrastructure/session/currentEvaluationStorage';
@@ -46,16 +45,6 @@ function normalizeBackendText(value: string): string {
     .replaceAll('Ã±', 'n');
 }
 
-function humanizeProvider(provider: string): string {
-  const map: Record<string, string> = {
-    tavily_rag: 'Búsqueda web',
-    openai_file_search: 'Búsqueda documental',
-    openai: 'OpenAI',
-    claude: 'Claude',
-  };
-  return map[provider] ?? provider;
-}
-
 // La escala interna del backend (alta/media/baja) se presenta como nivel de
 // respaldo documental: mide cuan directa es la evidencia, no cuan buena es la
 // recomendacion. Color semantico para que el nivel se lea de un vistazo.
@@ -70,6 +59,51 @@ function supportLevel(confidence: string | null): { label: string; bg: string; c
     default:
       return { label: 'sin evidencia', bg: '#f1f5f9', color: '#94a3b8' };
   }
+}
+
+function isReadyRecommendation(item: EvaluationRecommendation | null): boolean {
+  return item?.status === 'succeeded' && item.sections.length > 0;
+}
+
+function isRecommendationInProgress(item: EvaluationRecommendation | null): boolean {
+  const status = item?.status?.toLowerCase();
+  return ['queued', 'pending', 'preparing', 'running', 'processing', 'generating', 'in_progress', 'in-progress'].includes(status ?? '');
+}
+
+function AnimatedDots({ color = 'currentColor' }: { color?: string }) {
+  return (
+    <span aria-hidden="true" style={{ display: 'inline-flex', gap: 2, marginLeft: 3 }}>
+      {[0, 1, 2].map((dot) => (
+        <span
+          key={dot}
+          style={{
+            width: 3,
+            height: 3,
+            borderRadius: '50%',
+            background: color,
+            animation: 'recommendation-dot 1.2s ease-in-out infinite',
+            animationDelay: `${dot * 0.16}s`,
+          }}
+        />
+      ))}
+    </span>
+  );
+}
+
+function mergeRecommendations(
+  current: EvaluationRecommendation[],
+  incoming: EvaluationRecommendation[],
+): EvaluationRecommendation[] {
+  const byCrop = new Map(current.map((item) => [`${item.cropId}:${item.waterRegime}`, item]));
+  incoming.forEach((item) => byCrop.set(`${item.cropId}:${item.waterRegime}`, item));
+  return Array.from(byCrop.values());
+}
+
+function latestReadyRecommendation(items: EvaluationRecommendation[]): EvaluationRecommendation | null {
+  return items
+    .filter((item) => isReadyRecommendation(item))
+    .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt))
+    .at(-1) ?? null;
 }
 
 function formatCitationPages(source: EvaluationRecommendation['evidence'][number]): string {
@@ -194,31 +228,30 @@ function renderMarkdownContent(text: string, evidence: EvaluationRecommendation[
 export default function Recommendations({ navigate }: Props) {
   const [currentEvaluation] = useState(() => readCurrentEvaluation());
   const [mcdaResult, setMcdaResult] = useState<EvaluationMcdaResult | null>(null);
-  const [recommendation, setRecommendation] = useState<FinalRecommendationResult | null>(null);
   const [allRecommendations, setAllRecommendations] = useState<EvaluationRecommendation[]>([]);
   const [activeRecommendationCropId, setActiveRecommendationCropId] = useState<string | null>(null);
+  const [startingCropIds, setStartingCropIds] = useState<Set<string>>(new Set());
+  const [generationErrors, setGenerationErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [pollAttempts, setPollAttempts] = useState(0);
-  const [lastPolledAt, setLastPolledAt] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(currentEvaluation ? null : 'No hay una evaluacion activa.');
 
   const fetchRecommendationSnapshot = async () => {
     if (!currentEvaluation) return false;
 
     const waterRegime = currentEvaluation.waterRegime ?? 'rainfed';
-    const recommendations = await evaluationRepository.ensureRecommendationsForEvaluation(
+    const eligibleCropIds = (mcdaResult?.results ?? [])
+      .filter((crop) => crop.calcCondition === 'succeeded')
+      .map((crop) => crop.cropId);
+    const recommendations = await evaluationRepository.getRecommendationsForCrops(
       currentEvaluation.evaluationId,
+      eligibleCropIds,
       waterRegime,
     );
     setAllRecommendations(recommendations);
-    const latestRecommendation = recommendations.at(-1) ?? null;
-    setRecommendation(latestRecommendation
-      ? { status: 'available', recommendation: latestRecommendation }
-      : { status: 'pending', detail: 'Las recomendaciones para los cultivos evaluados aun se estan preparando.' });
 
-    setLastPolledAt(new Date());
-    return recommendations.length > 0;
+    return recommendations.some((item) => isReadyRecommendation(item));
   };
 
   const refreshRecommendation = async () => {
@@ -247,26 +280,49 @@ export default function Recommendations({ navigate }: Props) {
     let cancelled = false;
     const loadRecommendation = async () => {
       try {
-        const [mcdaResultPromise, recommendationsPromise] = await Promise.allSettled([
-          evaluationRepository.getMcdaResult(currentEvaluation.evaluationId, currentEvaluation.waterRegime ?? 'rainfed'),
-          evaluationRepository.ensureRecommendationsForEvaluation(currentEvaluation.evaluationId, currentEvaluation.waterRegime ?? 'rainfed'),
-        ]);
+        const result = await evaluationRepository.getMcdaResult(
+          currentEvaluation.evaluationId,
+          currentEvaluation.waterRegime ?? 'rainfed',
+        );
+        if (cancelled) return;
 
-        if (!cancelled) {
-          if (mcdaResultPromise.status === 'fulfilled') {
-            setMcdaResult(mcdaResultPromise.value);
-            setError(toUserFriendlyFailureReason(mcdaResultPromise.value.failureReason));
-          } else {
-            setError(mcdaResultPromise.reason instanceof Error ? mcdaResultPromise.reason.message : 'No se pudo consultar el resultado de viabilidad.');
+        setMcdaResult(result);
+        setError(toUserFriendlyFailureReason(result.failureReason));
+        // The ranking is enough to display the cards. Generation starts in the
+        // background so each card can be updated as its own POST/GET cycle
+        // finishes instead of waiting for every crop.
+        setLoading(false);
+
+        const eligibleCrops = result.results.filter((crop) => crop.calcCondition === 'succeeded');
+        for (const crop of eligibleCrops) {
+          if (cancelled) return;
+
+          setStartingCropIds((current) => new Set(current).add(crop.cropId));
+          try {
+            const recommendation = await evaluationRepository.startRecommendationForCrop(
+              currentEvaluation.evaluationId,
+              crop.cropId,
+              currentEvaluation.waterRegime ?? 'rainfed',
+            );
+            if (!cancelled && recommendation) {
+              setAllRecommendations((current) => mergeRecommendations(current, [recommendation]));
+            }
+          } catch (err) {
+            if (!cancelled) {
+              setGenerationErrors((current) => ({
+                ...current,
+                [crop.cropId]: err instanceof Error ? err.message : 'No se pudo iniciar la recomendacion.',
+              }));
+            }
+          } finally {
+            if (!cancelled) {
+              setStartingCropIds((current) => {
+                const next = new Set(current);
+                next.delete(crop.cropId);
+                return next;
+              });
+            }
           }
-          if (recommendationsPromise.status === 'fulfilled') {
-            setAllRecommendations(recommendationsPromise.value);
-            const latestRecommendation = recommendationsPromise.value.at(-1) ?? null;
-            setRecommendation(latestRecommendation
-              ? { status: 'available', recommendation: latestRecommendation }
-              : { status: 'pending', detail: 'Las recomendaciones para los cultivos evaluados aun se estan preparando.' });
-          }
-          setLastPolledAt(new Date());
         }
       } catch (err) {
         if (!cancelled) {
@@ -294,23 +350,32 @@ export default function Recommendations({ navigate }: Props) {
 
   const activeCrop = sortedCrops.find((crop) => crop.cropId === activeRecommendationCropId) ?? topCrop;
   const cropLabel = activeCrop ? getCropLabel(activeCrop.cropId) : '-';
-  const finalRecommendation = recommendation?.status === 'available' ? recommendation.recommendation : null;
-  const selectedRecommendation = allRecommendations.find((item) => item.cropId === activeCrop?.cropId) ?? null;
-  const backendRecommendation = (finalRecommendation?.cropId === activeCrop?.cropId ? finalRecommendation : null) ?? selectedRecommendation;
-  const pendingDetail = !selectedRecommendation ? recommendation?.status === 'pending' ? recommendation.detail : 'La recomendacion para este cultivo aun se esta preparando.' : null;
+  const selectedRun = allRecommendations.find((item) => item.cropId === activeCrop?.cropId) ?? null;
+  const selectedRecommendation = isReadyRecommendation(selectedRun) ? selectedRun : null;
+  const backendRecommendation = selectedRecommendation;
   const mcdaPending = isEvaluationPending(mcdaResult?.status);
   const hasMcdaResults = (mcdaResult?.results.length ?? 0) > 0;
   const noRecommendableCrops = Boolean(!mcdaPending && hasMcdaResults && !hasRecommendableCrop(mcdaResult?.results ?? []));
   const backendSections = backendRecommendation?.sections ?? [];
   const gapRecommendations = backendRecommendation?.gapRecommendations ?? [];
-  const missingRecommendationCount = sortedCrops.filter(
-    (crop) => crop.calcCondition === 'succeeded' && !allRecommendations.some((item) => item.cropId === crop.cropId),
-  ).length;
+  const eligibleCropCount = sortedCrops.filter((crop) => crop.calcCondition === 'succeeded').length;
   const availableRecommendationCount = sortedCrops.filter(
-    (crop) => crop.calcCondition === 'succeeded' && allRecommendations.some((item) => item.cropId === crop.cropId),
+    (crop) => crop.calcCondition === 'succeeded' && allRecommendations.some((item) => item.cropId === crop.cropId && isReadyRecommendation(item)),
   ).length;
-  const shouldAutoPoll = Boolean(currentEvaluation && !loading && missingRecommendationCount > 0 && !mcdaPending && !noRecommendableCrops && pollAttempts < RECOMMENDATION_POLL_MAX_ATTEMPTS);
-  const pollLimitReached = Boolean(currentEvaluation && missingRecommendationCount > 0 && !mcdaPending && !noRecommendableCrops && pollAttempts >= RECOMMENDATION_POLL_MAX_ATTEMPTS);
+  const pendingRecommendationCount = sortedCrops.filter((crop) => {
+    if (crop.calcCondition !== 'succeeded') return false;
+    const recommendation = allRecommendations.find((item) => item.cropId === crop.cropId) ?? null;
+    return !isReadyRecommendation(recommendation)
+      && !isRecommendationInProgress(recommendation)
+      && !['failed', 'insufficient_evidence'].includes(recommendation?.status ?? '')
+      && !generationErrors[crop.cropId];
+  }).length;
+  const inProgressRecommendationCount = sortedCrops.filter((crop) => {
+    if (crop.calcCondition !== 'succeeded') return false;
+    const recommendation = allRecommendations.find((item) => item.cropId === crop.cropId) ?? null;
+    return startingCropIds.has(crop.cropId) || isRecommendationInProgress(recommendation);
+  }).length;
+  const shouldAutoPoll = Boolean(currentEvaluation && !loading && (pendingRecommendationCount > 0 || inProgressRecommendationCount > 0) && !mcdaPending && !noRecommendableCrops && pollAttempts < RECOMMENDATION_POLL_MAX_ATTEMPTS);
 
   useEffect(() => {
     if (!shouldAutoPoll || refreshing) return;
@@ -364,113 +429,93 @@ export default function Recommendations({ navigate }: Props) {
                   <div>
                     <div style={{ fontSize: 14, fontWeight: 800, color: '#0f172a' }}>Recomendaciones por cultivo</div>
                     <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>
-                      Selecciona un cultivo para consultar su recomendacion especifica.
+                      {inProgressRecommendationCount > 0
+                        ? 'Las recomendaciones se generan de forma independiente y se habilitan al estar listas.'
+                        : 'Selecciona un cultivo para consultar su recomendacion especifica.'}
                     </div>
                   </div>
-                  <div style={{ background: missingRecommendationCount > 0 ? '#fffbeb' : '#f0fdf4', color: missingRecommendationCount > 0 ? '#b45309' : '#15803d', fontSize: 11, fontWeight: 800, padding: '5px 9px', borderRadius: 999, whiteSpace: 'nowrap' }}>
-                    {availableRecommendationCount}/{sortedCrops.filter((crop) => crop.calcCondition === 'succeeded').length} disponibles
+                  <div style={{ background: availableRecommendationCount === eligibleCropCount ? '#f0fdf4' : '#fffbeb', color: availableRecommendationCount === eligibleCropCount ? '#15803d' : '#b45309', fontSize: 11, fontWeight: 800, padding: '5px 9px', borderRadius: 999, whiteSpace: 'nowrap' }}>
+                    {availableRecommendationCount}/{eligibleCropCount} listas
                   </div>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
                   {sortedCrops.map((crop) => {
-                    const cropRecommendation = allRecommendations.find((item) => item.cropId === crop.cropId) ?? null;
+                    const cropRun = allRecommendations.find((item) => item.cropId === crop.cropId) ?? null;
+                    const cropRecommendation = isReadyRecommendation(cropRun) ? cropRun : null;
                     const isActive = activeCrop?.cropId === crop.cropId;
                     const isEligible = crop.calcCondition === 'succeeded';
+                    const isStarting = startingCropIds.has(crop.cropId);
+                    const isFailed = cropRun?.status === 'failed' || Boolean(generationErrors[crop.cropId]);
+                    const hasInsufficientEvidence = cropRun?.status === 'insufficient_evidence';
+                    const isGenerating = isStarting || isRecommendationInProgress(cropRun);
+                    const recommendationState = !isEligible
+                      ? 'ineligible'
+                      : cropRecommendation
+                      ? 'ready'
+                      : isFailed
+                      ? 'failed'
+                      : hasInsufficientEvidence
+                      ? 'insufficient'
+                      : isGenerating
+                      ? 'generating'
+                      : 'queued';
+                    const recommendationLabel = recommendationState === 'ineligible'
+                      ? 'No elegible'
+                      : recommendationState === 'ready'
+                      ? 'Recomendacion lista'
+                      : recommendationState === 'failed'
+                      ? 'No se pudo generar'
+                      : recommendationState === 'insufficient'
+                      ? 'Sin evidencia suficiente'
+                      : recommendationState === 'generating'
+                      ? 'Generando'
+                      : 'En cola';
+                    const recommendationBadge = recommendationState === 'ready'
+                      ? { background: '#ecfeff', color: '#0e7490' }
+                      : recommendationState === 'failed'
+                      ? { background: '#fef2f2', color: '#b91c1c' }
+                      : recommendationState === 'insufficient'
+                      ? { background: '#fff7ed', color: '#c2410c' }
+                      : { background: '#fff7ed', color: '#c2410c' };
                     return (
                       <button
                         key={crop.cropId}
                         type="button"
-                        onClick={() => setActiveRecommendationCropId(crop.cropId)}
-                        style={{ textAlign: 'left', background: isActive ? '#f0fdf4' : '#fafafa', border: isActive ? '1.5px solid #86efac' : '1px solid #f1f5f9', borderRadius: 12, padding: '13px 14px', cursor: 'pointer', transition: 'border-color 120ms ease, background 120ms ease' }}
+                        onClick={() => cropRecommendation && setActiveRecommendationCropId(crop.cropId)}
+                        disabled={!cropRecommendation}
+                        aria-busy={recommendationState === 'generating' || recommendationState === 'queued'}
+                        aria-label={`${getCropLabel(crop.cropId)}: ${recommendationLabel}`}
+                        style={{ textAlign: 'left', background: isActive ? '#f0fdf4' : recommendationState === 'ready' ? '#fafafa' : '#f8fafc', border: isActive ? '1.5px solid #86efac' : recommendationState === 'ready' ? '1px solid #f1f5f9' : '1px solid #e2e8f0', borderRadius: 12, padding: '13px 14px', cursor: cropRecommendation ? 'pointer' : 'default', minHeight: 116, position: 'relative', overflow: 'hidden', transition: 'border-color 120ms ease, background 120ms ease' }}
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                          <span style={{ fontSize: 13, fontWeight: 800, color: '#0f172a' }}>{getCropLabel(crop.cropId)}</span>
-                          <span style={{ fontSize: 11, fontWeight: 800, color: '#475569' }}>Score {toPercent(crop.score)}%</span>
+                          <span style={{ fontSize: 13, fontWeight: 800, color: recommendationState === 'ready' ? '#0f172a' : '#475569' }}>{getCropLabel(crop.cropId)}</span>
+                          <span style={{ fontSize: 11, fontWeight: 800, color: '#64748b' }}>Aptitud {toPercent(crop.score)}%</span>
                         </div>
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                           <span style={{ background: isEligible ? '#dcfce7' : '#fef2f2', color: isEligible ? '#15803d' : '#b91c1c', fontSize: 10, fontWeight: 800, padding: '4px 7px', borderRadius: 999 }}>
                             {formatBackendStatus(crop.calcCondition)}
                           </span>
-                          <span style={{ background: cropRecommendation ? '#ecfeff' : '#fff7ed', color: cropRecommendation ? '#0e7490' : '#c2410c', fontSize: 10, fontWeight: 800, padding: '4px 7px', borderRadius: 999 }}>
-                            {cropRecommendation ? 'Recomendacion lista' : isEligible ? 'Pendiente' : 'No elegible'}
+                          <span style={{ ...recommendationBadge, fontSize: 10, fontWeight: 800, padding: '4px 7px', borderRadius: 999 }}>
+                            {recommendationLabel}
                           </span>
                         </div>
+                        {(recommendationState === 'generating' || recommendationState === 'queued') && (
+                          <div
+                            aria-live="polite"
+                            style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.82)', color: 'white', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, pointerEvents: 'none' }}
+                          >
+                            <AnimatedDots color="white" />
+                            <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.01em' }}>
+                              {recommendationState === 'generating' ? 'Generando recomendacion' : 'En cola'}
+                            </div>
+                          </div>
+                        )}
                       </button>
                     );
                   })}
                 </div>
               </div>
             )}
-
-            {/* Estado de recomendacion */}
-            <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', padding: '24px 28px', marginBottom: 20 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 8, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Sprout style={{ width: 18, height: 18, color: '#16a34a' }} />
-                </div>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>Estado de la recomendacion</div>
-                  <div style={{ fontSize: 12, color: '#94a3b8' }}>Generada con inteligencia artificial a partir de fuentes agronomicas</div>
-                </div>
-              </div>
-              <div style={{ background: '#fafafa', borderRadius: 12, padding: '18px 20px', border: '1px solid #f1f5f9' }}>
-                {backendRecommendation ? (
-                  <>
-                    <p style={{ fontSize: 14, color: '#334155', lineHeight: 1.75, margin: 0, marginBottom: 10 }}>
-                      <strong>{normalizeBackendText(backendRecommendation.title)}</strong>
-                    </p>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      <div style={{ background: '#f0fdf4', color: '#15803d', fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 999 }}>
-                        {formatBackendStatus(backendRecommendation.status)}
-                      </div>
-                      <div style={{ background: '#ecfeff', color: '#0891b2', fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 999 }}>
-                        Generado por IA: {humanizeProvider(backendRecommendation.provider)}
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 18 }}>
-                    <div>
-                      <div style={{ fontSize: 13, color: '#d97706', fontWeight: 800, marginBottom: 6 }}>
-                        {noRecommendableCrops ? 'Cultivos no elegibles para recomendacion' : pollLimitReached ? 'Tiempo de espera agotado' : 'Preparando recomendacion...'}
-                      </div>
-                      <p style={{ fontSize: 14, color: '#334155', lineHeight: 1.75, margin: 0 }}>
-                        {noRecommendableCrops
-                          ? 'Se completo el analisis de viabilidad, pero todos los cultivos quedaron como NO_VIABLE o NO_CONCLUYENTE. Solo se generan recomendaciones para cultivos VIABLE o CONDICIONAL.'
-                          : pollLimitReached
-                          ? 'La recomendacion aun no esta disponible. Puede estar procesandose; usa Actualizar para verificar nuevamente.'
-                          : `${normalizeBackendText(pendingDetail ?? 'La recomendacion se esta preparando.')} Puede tardar algunos minutos.`}
-                      </p>
-                      <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 8 }}>
-                        {noRecommendableCrops
-                          ? 'No se generaran recomendaciones para esta evaluacion.'
-                          : shouldAutoPoll
-                          ? `Verificando disponibilidad automaticamente. Intento ${pollAttempts + 1} de ${RECOMMENDATION_POLL_MAX_ATTEMPTS}.`
-                          : 'Verificacion automatica pausada.'}
-                        {lastPolledAt ? ` Ultima consulta: ${lastPolledAt.toLocaleTimeString()}.` : ''}
-                      </div>
-                    </div>
-                    {noRecommendableCrops ? (
-                      <button
-                        onClick={() => navigate('results')}
-                        style={{ background: 'white', color: '#475569', border: '1.5px solid #e2e8f0', padding: '9px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}
-                      >
-                        Ver ranking
-                      </button>
-                    ) : (
-                      <button
-                        onClick={refreshRecommendation}
-                        disabled={refreshing}
-                        style={{ background: 'white', color: '#475569', border: '1.5px solid #e2e8f0', padding: '9px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: refreshing ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0, opacity: refreshing ? 0.7 : 1 }}
-                      >
-                        <RefreshCcw style={{ width: 14, height: 14 }} />
-                        {refreshing ? 'Consultando...' : 'Actualizar'}
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
 
             {noRecommendableCrops && (
               <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', padding: '18px 22px', marginBottom: 20 }}>
@@ -573,6 +618,7 @@ export default function Recommendations({ navigate }: Props) {
 
           </>
         )}
+        <style>{`@keyframes recommendation-dot { 0%, 60%, 100% { opacity: .25; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-2px); } }`}</style>
       </main>
     </div>
   );

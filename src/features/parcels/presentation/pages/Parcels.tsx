@@ -15,6 +15,9 @@ type EditForm = {
 };
 
 const parcelRepository = new ParcelApiRepository();
+// Mantener la funcionalidad implementada, pero ocultar la acción hasta que
+// la edición de parcelas vuelva a estar habilitada para el usuario.
+const SHOW_PARCEL_EDIT_ACTION = false;
 
 function countGeometryPoints(parcel: Parcel): number {
   const [firstRing] = parcel.geometry.coordinates;
@@ -280,9 +283,11 @@ export default function Parcels({ navigate }: Props) {
                       <button onClick={() => openParcelDetail(parcel)} title="Ver detalle y evaluaciones" style={{ border: '1px solid #dbeafe', background: '#eff6ff', color: '#2563eb', borderRadius: 8, padding: 7, cursor: 'pointer' }}>
                         <Eye style={{ width: 14, height: 14 }} />
                       </button>
-                      <button onClick={() => openEdit(parcel)} title="Editar metadatos" style={{ border: '1px solid #e2e8f0', background: 'white', color: '#475569', borderRadius: 8, padding: 7, cursor: 'pointer' }}>
-                        <Edit3 style={{ width: 14, height: 14 }} />
-                      </button>
+                      {SHOW_PARCEL_EDIT_ACTION && (
+                        <button onClick={() => openEdit(parcel)} title="Editar metadatos" style={{ border: '1px solid #e2e8f0', background: 'white', color: '#475569', borderRadius: 8, padding: 7, cursor: 'pointer' }}>
+                          <Edit3 style={{ width: 14, height: 14 }} />
+                        </button>
+                      )}
                       <button onClick={() => deleteParcel(parcel)} disabled={deletingId === parcel.id} title="Eliminar parcela" style={{ border: '1px solid #fecaca', background: '#fef2f2', color: '#dc2626', borderRadius: 8, padding: 7, cursor: deletingId === parcel.id ? 'not-allowed' : 'pointer', opacity: deletingId === parcel.id ? 0.6 : 1 }}>
                         <Trash2 style={{ width: 14, height: 14 }} />
                       </button>

@@ -6,6 +6,7 @@ import { GeoJsonGeometry, Parcel } from '@/features/evaluations/domain/parcel';
 type StartEvaluationWorkflowInput = {
   name: string;
   district: string;
+  location: string;
   areaHa: string;
   selectedCropIds: string[];
   waterRegime: WaterRegime;
@@ -36,7 +37,7 @@ export async function startEvaluationWorkflow(
       geometry: input.geometry as GeoJsonGeometry,
       metadata: {
         name: input.name.trim() || 'Parcela demo',
-        description: `${input.district.trim() || 'Ubicacion no indicada'} - Area estimada: ${input.areaHa || '?'}`,
+        description: `Distrito: ${input.district.trim()} · Ubicacion: ${input.location.trim() || 'No indicada'}`,
         crs: 'EPSG:4326',
       },
     },
@@ -71,7 +72,9 @@ export async function startEvaluationWorkflow(
     waterRegime: input.waterRegime,
     parcelId: parcel.id,
     parcelName: parcel.metadata.name,
-    parcelLocation: input.existingParcel ? parcel.metadata.description : input.district,
+    parcelLocation: input.existingParcel
+      ? parcel.metadata.description
+      : `${input.district.trim()} · ${input.location.trim() || 'Ubicacion no indicada'}`,
     areaHa: input.existingParcel ? 'Area no registrada' : input.areaHa,
     evaluationId: accepted.evaluationId,
     cropCandidates: input.selectedCropIds.map((cropId) => ({ id: cropId, label: cropId })),

@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Eye, FileText, MapPin, Plus, Sprout, TrendingUp } from 'lucide-react';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
 import { NavigateFn } from '@/app/navigation/navigation';
-import { cropCatalog } from '@/features/evaluations/application/cropCatalog';
 import { Parcel } from '@/features/evaluations/domain/parcel';
+import { EvaluationApiRepository } from '@/features/evaluations/infrastructure/api/evaluationApiRepository';
 import { ParcelApiRepository } from '@/features/evaluations/infrastructure/api/parcelApiRepository';
 import { readCurrentEvaluation } from '@/features/evaluations/infrastructure/session/currentEvaluationStorage';
 import { readAuthSession } from '@/features/auth/infrastructure/session/authSessionStorage';
@@ -12,6 +12,7 @@ import Sidebar from '@/shared/presentation/layouts/Sidebar';
 interface Props { navigate: NavigateFn; }
 
 const parcelRepository = new ParcelApiRepository();
+const evaluationRepository = new EvaluationApiRepository();
 
 function countGeometryPoints(parcel: Parcel): number {
   const [firstRing] = parcel.geometry.coordinates;
@@ -48,6 +49,7 @@ function buildTrendData(parcels: Parcel[]) {
 export default function Dashboard({ navigate }: Props) {
   const [currentEvaluation] = useState(() => readCurrentEvaluation());
   const [parcels, setParcels] = useState<Parcel[]>([]);
+  const [availableCropCount, setAvailableCropCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -60,20 +62,32 @@ export default function Dashboard({ navigate }: Props) {
     }
 
     let cancelled = false;
-    const loadParcels = async () => {
-      try {
-        const result = await parcelRepository.listParcels(session.accessToken);
-        if (!cancelled) setParcels(result);
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'No se pudieron cargar las parcelas.');
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
+    const loadDashboardData = async () => {
+      const [parcelsResult, capabilitiesResult] = await Promise.allSettled([
+        parcelRepository.listParcels(session.accessToken),
+        evaluationRepository.getCapabilities(),
+      ]);
+
+      if (cancelled) return;
+
+      const errors: string[] = [];
+      if (parcelsResult.status === 'fulfilled') {
+        setParcels(parcelsResult.value);
+      } else {
+        errors.push(parcelsResult.reason instanceof Error ? parcelsResult.reason.message : 'No se pudieron cargar las parcelas.');
       }
+
+      if (capabilitiesResult.status === 'fulfilled') {
+        setAvailableCropCount(capabilitiesResult.value.crops.length);
+      } else {
+        errors.push(capabilitiesResult.reason instanceof Error ? capabilitiesResult.reason.message : 'No se pudieron cargar los cultivos disponibles.');
+      }
+
+      setError(errors.length > 0 ? errors.join(' ') : null);
+      setLoading(false);
     };
 
-    void loadParcels();
+    void loadDashboardData();
     return () => {
       cancelled = true;
     };
@@ -81,35 +95,14 @@ export default function Dashboard({ navigate }: Props) {
 
   const trendData = useMemo(() => buildTrendData(parcels), [parcels]);
   const recentParcels = parcels.slice(0, 5);
-  const geometryCount = parcels.filter((parcel) => Boolean(parcel.geometry?.type)).length;
   const localEvaluationCount = currentEvaluation ? 1 : 0;
   const localRecommendationCount = currentEvaluation ? 1 : 0;
-  const localSummary = [
-    {
-      label: 'Parcelas registradas',
-      value: String(parcels.length),
-      color: '#16a34a',
-      bg: '#f0fdf4',
-    },
-    {
-      label: 'Geometrias registradas',
-      value: String(geometryCount),
-      color: '#0891b2',
-      bg: '#ecfeff',
-    },
-    {
-      label: 'Evaluacion activa',
-      value: currentEvaluation ? currentEvaluation.parcelName : 'Ninguna',
-      color: '#7c3aed',
-      bg: '#faf5ff',
-    },
-  ];
 
   const stats = [
-    { icon: MapPin, label: 'Parcelas registradas', value: String(parcels.length), trend: loading ? 'Cargando...' : 'En linea', color: '#16a34a', bg: '#f0fdf4', iconBg: '#dcfce7' },
-    { icon: TrendingUp, label: 'Evaluacion activa', value: String(localEvaluationCount), trend: currentEvaluation ? 'En curso' : 'Ninguna', color: '#0891b2', bg: '#ecfeff', iconBg: '#cffafe' },
-    { icon: Sprout, label: 'Cultivos disponibles', value: String(cropCatalog.length), trend: 'Catalogo VIA', color: '#d97706', bg: '#fffbeb', iconBg: '#fef3c7' },
-    { icon: FileText, label: 'Recomendaciones', value: String(localRecommendationCount), trend: currentEvaluation ? 'Disponible' : 'Pendiente', color: '#7c3aed', bg: '#faf5ff', iconBg: '#ede9fe' },
+    { icon: MapPin, label: 'Parcelas registradas', value: String(parcels.length), color: '#16a34a', iconBg: '#dcfce7' },
+    { icon: TrendingUp, label: 'Evaluacion', value: String(localEvaluationCount), color: '#0891b2', iconBg: '#cffafe' },
+    { icon: Sprout, label: 'Cultivos disponibles', value: availableCropCount === null ? '—' : String(availableCropCount), color: '#d97706', iconBg: '#fef3c7' },
+    { icon: FileText, label: 'Recomendaciones', value: String(localRecommendationCount), color: '#7c3aed', iconBg: '#ede9fe' },
   ];
 
   return (
@@ -140,13 +133,12 @@ export default function Dashboard({ navigate }: Props) {
         )}
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 28 }}>
-          {stats.map(({ icon: Icon, label, value, trend, color, bg, iconBg }) => (
+          {stats.map(({ icon: Icon, label, value, color, iconBg }) => (
             <div key={label} style={{ background: 'white', borderRadius: 16, padding: 20, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                 <div style={{ width: 40, height: 40, borderRadius: 8, background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Icon style={{ width: 20, height: 20, color }} />
                 </div>
-                <div style={{ fontSize: 11, color, fontWeight: 600, background: bg, padding: '3px 8px', borderRadius: 999 }}>{trend}</div>
               </div>
               <div style={{ fontSize: 28, fontWeight: 800, color: '#0f172a', marginBottom: 4 }}>{value}</div>
               <div style={{ fontSize: 13, color: '#64748b' }}>{label}</div>
@@ -215,23 +207,6 @@ export default function Dashboard({ navigate }: Props) {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-              <div style={{ padding: '16px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <FileText style={{ width: 15, height: 15, color: '#16a34a' }} />
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>Resumen local</div>
-              </div>
-              <div style={{ padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {localSummary.map((item) => (
-                  <div key={item.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                    <span style={{ fontSize: 13, color: '#475569', fontWeight: 500 }}>{item.label}</span>
-                    <div style={{ background: item.bg, color: item.color, fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 999, maxWidth: 170, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {item.value}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
             <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', padding: '16px 20px' }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>Parcelas por mes</div>
               <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 14 }}>Parcelas registradas en los ultimos 6 meses</div>
@@ -268,7 +243,7 @@ export default function Dashboard({ navigate }: Props) {
             </div>
             <div style={{ textAlign: 'left' }}>
               <div style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>Ver resultados</div>
-              <div style={{ fontSize: 12, color: '#64748b' }}>Ranking MCDA de la evaluacion activa</div>
+              <div style={{ fontSize: 12, color: '#64748b' }}>Resultados de viabilidad de la evaluacion activa</div>
             </div>
           </button>
         </div>
