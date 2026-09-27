@@ -104,9 +104,13 @@ export default function Settings({ navigate }: Props) {
 
         {loading && <p role="status">Cargando umbrales...</p>}
         {!loading && !policy && <button onClick={() => window.location.reload()}>Reintentar carga</button>}
-        {!loading && policy && !canEdit && <p>Los umbrales globales son de solo lectura para tu cuenta.</p>}
+        {!loading && policy && !canEdit && (
+          <div style={{ maxWidth: 720, width: '100%', boxSizing: 'border-box', margin: '0 auto 16px', padding: '12px 14px', border: '1px solid #dbeafe', borderRadius: 10, background: '#eff6ff', color: '#1e40af', fontSize: 13, lineHeight: 1.5, fontWeight: 600 }}>
+            Los umbrales globales están disponibles en modo de solo lectura para tu cuenta.
+          </div>
+        )}
 
-        {policy && <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', padding: 24, maxWidth: 720 }}>
+        {policy && <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', padding: 24, width: '100%', maxWidth: 720, boxSizing: 'border-box', margin: '0 auto' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 6 }}>
             <SlidersHorizontal style={{ width: 16, height: 16, color: '#16a34a' }} />
             <div style={{ fontSize: 14, fontWeight: 800, color: '#0f172a' }}>Configuración del umbral</div>

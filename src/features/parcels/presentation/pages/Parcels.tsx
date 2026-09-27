@@ -15,6 +15,10 @@ type EditForm = {
 };
 
 const parcelRepository = new ParcelApiRepository();
+// Estas acciones quedan conservadas en el código para habilitarlas cuando
+// el flujo correspondiente vuelva a estar contemplado en la interfaz.
+const SHOW_PARCEL_EDIT_ACTION = false;
+const SHOW_PARCEL_SYNC_ACTION = false;
 
 function countGeometryPoints(parcel: Parcel): number {
   const [firstRing] = parcel.geometry.coordinates;
@@ -28,6 +32,7 @@ export default function Parcels({ navigate }: Props) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [parcelToDelete, setParcelToDelete] = useState<Parcel | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [query, setQuery] = useState('');
@@ -122,11 +127,16 @@ export default function Parcels({ navigate }: Props) {
     }
   };
 
+  const requestDelete = (parcel: Parcel) => {
+    if (!session) return;
+    setError(null);
+    setNotice(null);
+    setParcelToDelete(parcel);
+  };
+
   const deleteParcel = async (parcel: Parcel) => {
     if (!session) return;
-    const confirmed = window.confirm(`Eliminar "${parcel.metadata.name}"? Esta accion no se puede deshacer.`);
-    if (!confirmed) return;
-
+    setParcelToDelete(null);
     setDeletingId(parcel.id);
     setError(null);
     setNotice(null);
@@ -168,14 +178,16 @@ export default function Parcels({ navigate }: Props) {
             <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>Gestion de parcelas registradas en VIA</p>
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
-            <button
-              onClick={loadParcels}
-              disabled={loading}
-              style={{ background: 'white', color: '#475569', border: '1.5px solid #e2e8f0', padding: '9px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}
-            >
-              <RefreshCcw style={{ width: 15, height: 15 }} />
-              Sincronizar
-            </button>
+            {SHOW_PARCEL_SYNC_ACTION && (
+              <button
+                onClick={loadParcels}
+                disabled={loading}
+                style={{ background: 'white', color: '#475569', border: '1.5px solid #e2e8f0', padding: '9px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}
+              >
+                <RefreshCcw style={{ width: 15, height: 15 }} />
+                Sincronizar
+              </button>
+            )}
             <button
               onClick={() => navigate('new-evaluation')}
               title="Delimita una parcela nueva e inicia su evaluacion"
@@ -281,10 +293,12 @@ export default function Parcels({ navigate }: Props) {
                       <button onClick={() => openParcelDetail(parcel)} title="Ver detalle y evaluaciones" style={{ border: '1px solid #dbeafe', background: '#eff6ff', color: '#2563eb', borderRadius: 8, padding: 7, cursor: 'pointer' }}>
                         <Eye style={{ width: 14, height: 14 }} />
                       </button>
-                      <button onClick={() => openEdit(parcel)} title="Editar metadatos" style={{ border: '1px solid #e2e8f0', background: 'white', color: '#475569', borderRadius: 8, padding: 7, cursor: 'pointer' }}>
-                        <Edit3 style={{ width: 14, height: 14 }} />
-                      </button>
-                      <button onClick={() => deleteParcel(parcel)} disabled={deletingId === parcel.id} title="Eliminar parcela" style={{ border: '1px solid #fecaca', background: '#fef2f2', color: '#dc2626', borderRadius: 8, padding: 7, cursor: deletingId === parcel.id ? 'not-allowed' : 'pointer', opacity: deletingId === parcel.id ? 0.6 : 1 }}>
+                      {SHOW_PARCEL_EDIT_ACTION && (
+                        <button onClick={() => openEdit(parcel)} title="Editar metadatos" style={{ border: '1px solid #e2e8f0', background: 'white', color: '#475569', borderRadius: 8, padding: 7, cursor: 'pointer' }}>
+                          <Edit3 style={{ width: 14, height: 14 }} />
+                        </button>
+                      )}
+                      <button onClick={() => requestDelete(parcel)} disabled={deletingId === parcel.id} title="Eliminar parcela" style={{ border: '1px solid #fecaca', background: '#fef2f2', color: '#dc2626', borderRadius: 8, padding: 7, cursor: deletingId === parcel.id ? 'not-allowed' : 'pointer', opacity: deletingId === parcel.id ? 0.6 : 1 }}>
                         <Trash2 style={{ width: 14, height: 14 }} />
                       </button>
                     </div>
@@ -322,6 +336,52 @@ export default function Parcels({ navigate }: Props) {
               <button onClick={closeEdit} disabled={saving} style={{ background: 'white', color: '#475569', border: '1.5px solid #e2e8f0', padding: '9px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Cancelar</button>
               <button onClick={saveEdit} disabled={saving} style={{ background: '#16a34a', color: 'white', border: 'none', padding: '9px 16px', borderRadius: 8, fontSize: 13, fontWeight: 800, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}>
                 {saving ? 'Guardando...' : 'Guardar cambios'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {parcelToDelete && (
+        <div
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setParcelToDelete(null);
+          }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.48)', zIndex: 90, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-parcel-title"
+            style={{ width: 'min(430px, 100%)', background: 'white', borderRadius: 18, border: '1px solid #e2e8f0', boxShadow: '0 24px 60px rgba(15,23,42,0.24)', overflow: 'hidden' }}
+          >
+            <div style={{ padding: '24px 24px 18px', display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+              <div style={{ width: 42, height: 42, borderRadius: 12, background: '#fef2f2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <AlertTriangle style={{ width: 21, height: 21 }} />
+              </div>
+              <div>
+                <div id="delete-parcel-title" style={{ fontSize: 17, fontWeight: 800, color: '#0f172a', marginBottom: 6 }}>¿Eliminar parcela?</div>
+                <p style={{ margin: 0, fontSize: 13, lineHeight: 1.55, color: '#64748b' }}>
+                  Vas a eliminar <strong style={{ color: '#334155' }}>{parcelToDelete.metadata.name}</strong>. Esta acción no se puede deshacer.
+                </p>
+              </div>
+            </div>
+            <div style={{ padding: '14px 24px 20px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+              <button
+                type="button"
+                onClick={() => setParcelToDelete(null)}
+                style={{ background: 'white', color: '#475569', border: '1.5px solid #e2e8f0', padding: '9px 16px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => void deleteParcel(parcelToDelete)}
+                style={{ background: '#dc2626', color: 'white', border: 'none', padding: '9px 16px', borderRadius: 8, fontSize: 13, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}
+              >
+                <Trash2 style={{ width: 14, height: 14 }} />
+                Eliminar parcela
               </button>
             </div>
           </div>
