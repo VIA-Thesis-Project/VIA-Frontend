@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, ChevronRight, Eye, Sprout, TrendingUp } from 'lucide-react';
+import { AlertTriangle, ChevronRight, Eye, Plus, Sprout, TrendingUp } from 'lucide-react';
 import Sidebar from '@/shared/presentation/layouts/Sidebar';
 import { NavigateFn } from '@/app/navigation/navigation';
 import { isNoRankedCropFailure, toUserFriendlyFailureReason } from '@/features/evaluations/application/backendFailureMessages';
@@ -105,6 +105,41 @@ export default function Results({ navigate }: Props) {
     cropId: result.cropId,
     factor,
   }))).slice(0, 4);
+
+  if (!currentEvaluation) {
+    return (
+      <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc' }}>
+        <Sidebar active="results" navigate={navigate} />
+        <main style={{ marginLeft: 240, flex: 1, padding: '28px 32px', minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <div style={{ fontSize: 12, color: '#94a3b8', cursor: 'pointer' }} onClick={() => navigate('dashboard')}>Dashboard</div>
+            <span style={{ color: '#e2e8f0' }}>/</span>
+            <div style={{ fontSize: 12, color: '#16a34a', fontWeight: 600 }}>Resultados de aptitud</div>
+          </div>
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: '#0f172a', margin: '0 0 24px' }}>Resultados de aptitud de cultivos</h1>
+
+          <div style={{ minHeight: 'calc(100vh - 190px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 'min(520px, 100%)', background: 'white', border: '1px solid #e2e8f0', borderRadius: 18, boxShadow: '0 8px 24px rgba(15,23,42,0.05)', padding: '48px 32px', textAlign: 'center' }}>
+              <div style={{ width: 56, height: 56, borderRadius: 16, background: '#f0fdf4', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px' }}>
+                <TrendingUp style={{ width: 26, height: 26 }} />
+              </div>
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', margin: '0 0 8px' }}>Resultados no disponibles</h2>
+              <p style={{ fontSize: 14, color: '#64748b', lineHeight: 1.6, margin: '0 auto 24px', maxWidth: 390 }}>
+                Crea una nueva evaluación para consultar la aptitud de tus cultivos y sus recomendaciones.
+              </p>
+              <button
+                onClick={() => navigate('new-evaluation')}
+                style={{ background: '#16a34a', color: 'white', border: 'none', padding: '11px 18px', borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}
+              >
+                <Plus style={{ width: 16, height: 16 }} />
+                Nueva evaluación
+              </button>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc' }}>
