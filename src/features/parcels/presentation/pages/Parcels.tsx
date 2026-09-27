@@ -4,7 +4,7 @@ import { NavigateFn } from '@/app/navigation/navigation';
 import { readAuthSession } from '@/features/auth/infrastructure/session/authSessionStorage';
 import { Parcel } from '@/features/evaluations/domain/parcel';
 import { ParcelApiRepository } from '@/features/evaluations/infrastructure/api/parcelApiRepository';
-import { saveDetailParcelId } from '@/features/evaluations/infrastructure/session/selectedParcelStorage';
+import { clearDeletedParcelSelection, saveDetailParcelId } from '@/features/evaluations/infrastructure/session/selectedParcelStorage';
 import Sidebar from '@/shared/presentation/layouts/Sidebar';
 
 interface Props { navigate: NavigateFn; }
@@ -15,9 +15,6 @@ type EditForm = {
 };
 
 const parcelRepository = new ParcelApiRepository();
-// Mantener la funcionalidad implementada, pero ocultar la acción hasta que
-// la edición de parcelas vuelva a estar habilitada para el usuario.
-const SHOW_PARCEL_EDIT_ACTION = false;
 
 function countGeometryPoints(parcel: Parcel): number {
   const [firstRing] = parcel.geometry.coordinates;
@@ -88,8 +85,8 @@ export default function Parcels({ navigate }: Props) {
   };
 
   const closeEdit = () => {
+    if (saving) return;
     setEditingParcel(null);
-    setSaving(false);
   };
 
   const saveEdit = async () => {
@@ -108,7 +105,7 @@ export default function Parcels({ navigate }: Props) {
         {
           metadata: {
             name: editForm.name.trim(),
-            description: editForm.description.trim() || 'Sin descripcion registrada',
+            description: editForm.description.trim(),
             crs: editingParcel.metadata.crs,
           },
         },
@@ -117,7 +114,7 @@ export default function Parcels({ navigate }: Props) {
 
       setParcels((current) => current.map((parcel) => parcel.id === updated.id ? updated : parcel));
       setNotice('Parcela actualizada correctamente.');
-      closeEdit();
+      setEditingParcel(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo actualizar la parcela.');
     } finally {
@@ -135,10 +132,11 @@ export default function Parcels({ navigate }: Props) {
     setNotice(null);
     try {
       await parcelRepository.deleteParcel(parcel.id, session.accessToken);
+      clearDeletedParcelSelection(parcel.id);
       setParcels((current) => current.filter((item) => item.id !== parcel.id));
       setNotice('Parcela eliminada correctamente.');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'El backend actual no permite eliminar parcelas.');
+      setError(err instanceof Error ? err.message : 'No se pudo eliminar la parcela.');
     } finally {
       setDeletingId(null);
     }
@@ -283,11 +281,9 @@ export default function Parcels({ navigate }: Props) {
                       <button onClick={() => openParcelDetail(parcel)} title="Ver detalle y evaluaciones" style={{ border: '1px solid #dbeafe', background: '#eff6ff', color: '#2563eb', borderRadius: 8, padding: 7, cursor: 'pointer' }}>
                         <Eye style={{ width: 14, height: 14 }} />
                       </button>
-                      {SHOW_PARCEL_EDIT_ACTION && (
-                        <button onClick={() => openEdit(parcel)} title="Editar metadatos" style={{ border: '1px solid #e2e8f0', background: 'white', color: '#475569', borderRadius: 8, padding: 7, cursor: 'pointer' }}>
-                          <Edit3 style={{ width: 14, height: 14 }} />
-                        </button>
-                      )}
+                      <button onClick={() => openEdit(parcel)} title="Editar metadatos" style={{ border: '1px solid #e2e8f0', background: 'white', color: '#475569', borderRadius: 8, padding: 7, cursor: 'pointer' }}>
+                        <Edit3 style={{ width: 14, height: 14 }} />
+                      </button>
                       <button onClick={() => deleteParcel(parcel)} disabled={deletingId === parcel.id} title="Eliminar parcela" style={{ border: '1px solid #fecaca', background: '#fef2f2', color: '#dc2626', borderRadius: 8, padding: 7, cursor: deletingId === parcel.id ? 'not-allowed' : 'pointer', opacity: deletingId === parcel.id ? 0.6 : 1 }}>
                         <Trash2 style={{ width: 14, height: 14 }} />
                       </button>
@@ -308,22 +304,22 @@ export default function Parcels({ navigate }: Props) {
                 <div style={{ fontSize: 16, fontWeight: 800, color: '#0f172a' }}>Editar parcela</div>
                 <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>ID {editingParcel.id}</div>
               </div>
-              <button onClick={closeEdit} style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 8, padding: 7, cursor: 'pointer', color: '#64748b' }}>
+              <button onClick={closeEdit} disabled={saving} style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 8, padding: 7, cursor: 'pointer', color: '#64748b' }}>
                 <X style={{ width: 15, height: 15 }} />
               </button>
             </div>
             <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 13 }}>
               <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 12, color: '#475569', fontWeight: 700 }}>
                 Nombre
-                <input value={editForm.name} onChange={(event) => setEditForm((current) => ({ ...current, name: event.target.value }))} style={{ padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 13, color: '#0f172a', outline: 'none' }} />
+                <input value={editForm.name} maxLength={120} disabled={saving} onChange={(event) => setEditForm((current) => ({ ...current, name: event.target.value }))} style={{ padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 13, color: '#0f172a', outline: 'none' }} />
               </label>
               <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 12, color: '#475569', fontWeight: 700 }}>
                 Descripcion
-                <textarea value={editForm.description} onChange={(event) => setEditForm((current) => ({ ...current, description: event.target.value }))} rows={4} style={{ padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 13, color: '#0f172a', outline: 'none', resize: 'vertical' }} />
+                <textarea value={editForm.description} maxLength={2000} disabled={saving} onChange={(event) => setEditForm((current) => ({ ...current, description: event.target.value }))} rows={4} style={{ padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: 8, fontSize: 13, color: '#0f172a', outline: 'none', resize: 'vertical' }} />
               </label>
             </div>
             <div style={{ padding: '14px 20px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-              <button onClick={closeEdit} style={{ background: 'white', color: '#475569', border: '1.5px solid #e2e8f0', padding: '9px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Cancelar</button>
+              <button onClick={closeEdit} disabled={saving} style={{ background: 'white', color: '#475569', border: '1.5px solid #e2e8f0', padding: '9px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Cancelar</button>
               <button onClick={saveEdit} disabled={saving} style={{ background: '#16a34a', color: 'white', border: 'none', padding: '9px 16px', borderRadius: 8, fontSize: 13, fontWeight: 800, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}>
                 {saving ? 'Guardando...' : 'Guardar cambios'}
               </button>

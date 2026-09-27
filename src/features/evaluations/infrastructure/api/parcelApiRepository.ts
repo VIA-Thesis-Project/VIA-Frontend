@@ -18,6 +18,7 @@ type ParcelResponse = {
   id: string;
   project_id: string;
   name: string;
+  description: string | null;
   current_version: number;
   versions: ParcelVersionResponse[];
   created_at: string;
@@ -45,6 +46,7 @@ export class ParcelApiRepository implements ParcelRepository {
       token: accessToken,
       body: {
         name: input.metadata.name.trim() || 'Parcela sin nombre',
+        description: input.metadata.description.trim() || null,
         geometry: input.geometry,
       },
     });
@@ -58,27 +60,26 @@ export class ParcelApiRepository implements ParcelRepository {
   }
 
   async updateParcel(parcelId: string, input: Partial<CreateParcelInput>, accessToken: string): Promise<Parcel> {
-    if (!input.geometry) {
-      throw new ApiError(
-        'El backend actual solo permite revisar la geometria creando una nueva version de la parcela.',
-        405,
-      );
-    }
-
     const parcel = await this.getParcel(parcelId, accessToken);
+    const isGeometry = input.geometry !== undefined;
     const response = await apiRequest<ParcelResponse>(
-      `/projects/${parcel.projectId}/parcels/${parcel.id}/versions`,
+      `/projects/${parcel.projectId}/parcels/${parcel.id}${isGeometry ? '/versions' : ''}`,
       {
-        method: 'POST',
+        method: isGeometry ? 'POST' : 'PATCH',
         token: accessToken,
-        body: { geometry: input.geometry },
+        body: isGeometry
+          ? { geometry: input.geometry }
+          : { name: input.metadata?.name, description: input.metadata?.description ?? null },
       },
     );
     return toParcel(response);
   }
 
-  async deleteParcel(_parcelId: string, _accessToken: string): Promise<void> {
-    throw new ApiError('El backend actual no expone eliminacion de parcelas.', 405);
+  async deleteParcel(parcelId: string, accessToken: string): Promise<void> {
+    const parcel = await this.getParcel(parcelId, accessToken);
+    await apiRequest<void>(`/projects/${parcel.projectId}/parcels/${parcel.id}`, {
+      method: 'DELETE', token: accessToken,
+    });
   }
 
   private async listParcelsForProject(projectId: string, accessToken: string): Promise<Parcel[]> {
@@ -120,7 +121,7 @@ function toParcel(response: ParcelResponse): Parcel {
     geometry: current.geometry,
     metadata: {
       name: response.name,
-      description: `Proyecto ${response.project_id} · Version ${response.current_version}`,
+      description: response.description ?? '',
       crs: 'EPSG:4326',
     },
     createdAt: response.created_at,

@@ -9,7 +9,7 @@ import { EvaluationApiRepository } from '@/features/evaluations/infrastructure/a
 import { ParcelApiRepository } from '@/features/evaluations/infrastructure/api/parcelApiRepository';
 import { saveCurrentEvaluation } from '@/features/evaluations/infrastructure/session/currentEvaluationStorage';
 import { readDetailParcelId, saveSelectedParcelId } from '@/features/evaluations/infrastructure/session/selectedParcelStorage';
-import { calculateAreaHa, geoJsonToPoints, ParcelDrawMap, ParcelMapView, pointsToGeoJson } from '@/features/evaluations/presentation/components/ParcelDrawMap';
+import { calculateAreaHa, geoJsonToPoints, ParcelDrawMap, ParcelMapView } from '@/features/evaluations/presentation/components/ParcelDrawMap';
 import Sidebar from '@/shared/presentation/layouts/Sidebar';
 
 interface Props { navigate: NavigateFn; }
@@ -38,14 +38,6 @@ function formatDate(value: string | null): string {
   if (!value) return 'Sin fecha';
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? 'Sin fecha' : date.toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' });
-}
-
-function updateAreaInDescription(description: string, areaHa: number): string {
-  const areaText = `Area estimada: ${areaHa.toFixed(2)}`;
-  if (/Area estimada:\s*[0-9.,]+/i.test(description)) {
-    return description.replace(/Area estimada:\s*[0-9.,]+/i, areaText);
-  }
-  return description ? `${description} - ${areaText}` : areaText;
 }
 
 export default function ParcelDetail({ navigate }: Props) {
@@ -130,17 +122,9 @@ export default function ParcelDetail({ navigate }: Props) {
     setSaving(true);
     setError(null);
     try {
-      const newAreaHa = calculateAreaHa(draftPoints);
       const updated = await parcelRepository.updateParcel(
         parcel.id,
-        {
-          geometry: draftGeometry,
-          metadata: {
-            name: parcel.metadata.name,
-            description: updateAreaInDescription(parcel.metadata.description, newAreaHa),
-            crs: parcel.metadata.crs,
-          },
-        },
+        { geometry: draftGeometry },
         session.accessToken,
       );
       setParcel(updated);

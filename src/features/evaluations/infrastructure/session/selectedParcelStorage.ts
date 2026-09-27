@@ -20,3 +20,8 @@ export function saveDetailParcelId(parcelId: string): void {
 export function readDetailParcelId(): string | null {
   return window.sessionStorage.getItem(DETAIL_PARCEL_KEY);
 }
+
+export function clearDeletedParcelSelection(parcelId: string): void {
+  if (readSelectedParcelId() === parcelId) clearSelectedParcelId();
+  if (readDetailParcelId() === parcelId) window.sessionStorage.removeItem(DETAIL_PARCEL_KEY);
+}
