@@ -4,7 +4,7 @@ import Sidebar from '@/shared/presentation/layouts/Sidebar';
 import { NavigateFn } from '@/app/navigation/navigation';
 import { isNoRankedCropFailure, toUserFriendlyFailureReason } from '@/features/evaluations/application/backendFailureMessages';
 import { getCropLabel } from '@/features/evaluations/application/cropCatalog';
-import { formatBackendStatus, formatCriterionLabel } from '@/features/evaluations/application/displayFormatters';
+import { formatBackendStatus, formatCriterionLabel, formatSuitability } from '@/features/evaluations/application/displayFormatters';
 import { hasRecommendableCrop, isEvaluationFailed, isEvaluationPending } from '@/features/evaluations/application/evaluationStatus';
 import { CropEvaluationResult, EvaluationMcdaResult } from '@/features/evaluations/domain/evaluation';
 import { EvaluationApiRepository } from '@/features/evaluations/infrastructure/api/evaluationApiRepository';
@@ -14,13 +14,13 @@ interface Props { navigate: NavigateFn; }
 
 const evaluationRepository = new EvaluationApiRepository();
 
-function ScoreBar({ score, color }: { score: number; color: string }) {
+function ScoreBar({ score, color }: { score: number | null; color: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-      <div style={{ flex: 1, height: 8, background: '#f1f5f9', borderRadius: 4, overflow: 'hidden' }}>
+      {score !== null && <div style={{ flex: 1, height: 8, background: '#f1f5f9', borderRadius: 4, overflow: 'hidden' }}>
         <div style={{ width: `${score}%`, minWidth: score === 0 ? 4 : undefined, height: '100%', background: `linear-gradient(90deg, ${color}, ${color}cc)`, borderRadius: 4 }} />
-      </div>
-      <span style={{ fontSize: 16, fontWeight: 800, color, minWidth: 48 }}>{score}%</span>
+      </div>}
+      <span style={{ fontSize: 16, fontWeight: 800, color, minWidth: 48 }}>{formatSuitability(score)}</span>
     </div>
   );
 }
@@ -36,23 +36,14 @@ function outcomeStatusStyle(status: string) {
   return { color: '#dc2626', bg: '#fee2e2', border: '#fecaca' };
 }
 
-function toPercent(score: number | null): number {
-  if (score === null) return 0;
-  return Math.round(score <= 1 ? score * 100 : score);
-}
-
 function sortResults(results: CropEvaluationResult[]): CropEvaluationResult[] {
   return [...results].sort((a, b) => {
     const aRanked = a.rankPosition !== null;
     const bRanked = b.rankPosition !== null;
     if (aRanked && bRanked) return Number(a.rankPosition) - Number(b.rankPosition);
     if (aRanked !== bRanked) return aRanked ? -1 : 1;
-    return (b.score ?? -1) - (a.score ?? -1);
+    return 0;
   });
-}
-
-function countGapCriteria(crop: CropEvaluationResult): number {
-  return new Set(crop.gaps.map((gap) => gap.criterionId)).size;
 }
 
 export default function Results({ navigate }: Props) {
@@ -80,7 +71,7 @@ export default function Results({ navigate }: Props) {
         }
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'No se pudo consultar el resultado MCDA.');
+          setError(err instanceof Error ? err.message : 'No se pudieron consultar los resultados.');
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -171,7 +162,7 @@ export default function Results({ navigate }: Props) {
               <button
                 onClick={() => navigate('recommendations')}
                 disabled={!canRequestRecommendations}
-                title={canRequestRecommendations ? undefined : 'No hay recomendaciones: ningun cultivo alcanzo categoria VIABLE o CONDICIONAL.'}
+                title={canRequestRecommendations ? undefined : 'No hay cultivos con un resultado disponible para generar recomendaciones.'}
                 style={{ background: canRequestRecommendations ? '#16a34a' : '#f1f5f9', color: canRequestRecommendations ? 'white' : '#94a3b8', border: canRequestRecommendations ? 'none' : '1.5px solid #e2e8f0', padding: '9px 18px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: canRequestRecommendations ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', gap: 7 }}
               >
                 <Sprout style={{ width: 14, height: 14 }} />
@@ -183,7 +174,7 @@ export default function Results({ navigate }: Props) {
 
         {noRecommendableCrops && (
           <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', borderRadius: 12, padding: 16, marginBottom: 16, fontSize: 13, lineHeight: 1.6 }}>
-            No se generaron recomendaciones para esta evaluacion: ningun cultivo alcanzo la categoria <strong>VIABLE</strong> ni <strong>CONDICIONAL</strong>. Revisa las brechas por criterio en el detalle de cada cultivo, ajusta el umbral de viabilidad, o evalua otra parcela u otros cultivos.
+            No hay resultados suficientes para generar recomendaciones. Revisa el detalle de cada cultivo para conocer si faltan datos o si ocurrió un error.
           </div>
         )}
 
@@ -195,8 +186,8 @@ export default function Results({ navigate }: Props) {
 
         {commonSupport && (
           <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'center', fontSize: 12 }}>
-            <strong>Soporte espacial: {formatBackendStatus(commonSupport.status)}</strong>
-            <span>Cobertura comparable: {(commonSupport.commonCoverageFraction * 100).toFixed(1)}%</span>
+            <strong>Comparación de cultivos: {formatBackendStatus(commonSupport.status)}</strong>
+            <span>Área de la parcela con datos para comparar: {(commonSupport.commonCoverageFraction * 100).toFixed(1)}%</span>
             <span>Cultivos comparables: {commonSupport.eligibleCrops.length}</span>
           </div>
         )}
@@ -206,23 +197,23 @@ export default function Results({ navigate }: Props) {
             <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', overflow: 'hidden', marginBottom: 16 }}>
               <div style={{ padding: '18px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: 10 }}>
                 <TrendingUp style={{ width: 16, height: 16, color: '#16a34a' }} />
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>Ranking de aptitud de cultivos</div>
-                <div style={{ marginLeft: 'auto', fontSize: 12, color: '#94a3b8' }}>Datos reales de CropSuitLite</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>Resultados de aptitud de cultivos</div>
+                <div style={{ marginLeft: 'auto', fontSize: 12, color: '#94a3b8' }}>Mayor puntaje = mayor aptitud</div>
               </div>
 
-              {loading && <div style={{ padding: 24, color: '#64748b', fontSize: 14 }}>Consultando resultado MCDA...</div>}
+              {loading && <div style={{ padding: 24, color: '#64748b', fontSize: 14 }}>Consultando resultados...</div>}
 
               {!loading && sortedResults.length === 0 && (
                 <div style={{ padding: 24, color: '#64748b', fontSize: 14 }}>
                   <div style={{ fontWeight: 700, color: failed ? '#991b1b' : '#0f172a', marginBottom: 6 }}>
-                    {failed ? 'La evaluacion fallo en backend' : pending ? 'Resultado MCDA aun en procesamiento' : 'Sin resultados MCDA disponibles'}
+                    {failed ? 'No se pudo completar la evaluación' : pending ? 'La evaluación sigue en proceso' : 'Aún no hay resultados disponibles'}
                   </div>
                   <div style={{ lineHeight: 1.6, marginBottom: 14 }}>
                     {failed
-                      ? (toUserFriendlyFailureReason(mcdaResult?.failureReason) ?? 'El backend marco la evaluacion como fallida.')
+                      ? (toUserFriendlyFailureReason(mcdaResult?.failureReason) ?? 'No se pudo completar la evaluación.')
                       : pending
-                      ? `Estado actual: ${formatBackendStatus(mcdaResult?.status)}. Vuelve a procesamiento o reconsulta cuando el backend complete la saga.`
-                        : 'El backend respondio sin cultivos rankeados para esta evaluacion.'}
+                      ? `Estado actual: ${formatBackendStatus(mcdaResult?.status)}. Puedes consultar el progreso o actualizar los resultados cuando termine la evaluación.`
+                        : 'No hay resultados de cultivos disponibles para esta evaluación.'}
                   </div>
                   <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                     <button
@@ -235,20 +226,19 @@ export default function Results({ navigate }: Props) {
                       onClick={() => setRefreshCount((count) => count + 1)}
                       style={{ background: 'white', color: '#475569', border: '1.5px solid #e2e8f0', padding: '9px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
                     >
-                      Reconsultar MCDA
+                      Actualizar resultados
                     </button>
                   </div>
                 </div>
               )}
 
               {sortedResults.map((crop, i) => {
-                const score = toPercent(crop.score);
+                const score = crop.rankPosition !== null ? crop.comparableScore : crop.score;
                 const style = outcomeStatusStyle(crop.calcCondition);
-                const gapCriteriaCount = countGapCriteria(crop);
                 return (
                   <div key={crop.cropId} style={{ padding: '18px 24px', borderBottom: i < sortedResults.length - 1 ? '1px solid #f8fafc' : 'none', display: 'flex', gap: 16 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 4, background: i === 0 ? '#fef3c7' : '#f8fafc', border: `1.5px solid ${i === 0 ? '#fbbf24' : '#e2e8f0'}` }}>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: i === 0 ? '#d97706' : '#94a3b8' }}>#{crop.rankPosition ?? i + 1}</span>
+                    <div style={{ width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 4, background: crop.rankPosition === 1 ? '#fef3c7' : '#f8fafc', border: `1.5px solid ${crop.rankPosition === 1 ? '#fbbf24' : '#e2e8f0'}` }}>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: crop.rankPosition === 1 ? '#d97706' : '#94a3b8' }}>{crop.rankPosition !== null ? `#${crop.rankPosition}` : '—'}</span>
                     </div>
 
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -263,13 +253,13 @@ export default function Results({ navigate }: Props) {
 
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10 }}>
                         <div>
-                          <div style={{ fontSize: 11, fontWeight: 600, color: '#16a34a', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Estado del calculo</div>
-                          <div style={{ fontSize: 12, color: '#475569' }}>{formatBackendStatus(crop.calcCondition)}</div>
+                          <div style={{ fontSize: 11, fontWeight: 600, color: '#16a34a', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Datos utilizados</div>
+                          <div style={{ fontSize: 12, color: '#475569' }}>{crop.rankPosition !== null ? 'Área común para comparar cultivos' : 'Resultado individual; sin posición en la comparación'}</div>
                         </div>
                         <div>
                           <div style={{ fontSize: 11, fontWeight: 600, color: '#d97706', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Limitaciones</div>
                           <div style={{ fontSize: 12, color: '#475569' }}>
-                            {crop.limitingFactors.length} factores · {crop.gaps.length} brechas agronomicas
+                            {crop.limitationAvailability === 'unavailable' ? 'Información no disponible' : `${crop.limitingFactors.length} factores reportados`}
                           </div>
                         </div>
                       </div>
@@ -295,17 +285,17 @@ export default function Results({ navigate }: Props) {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', padding: '20px' }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 14 }}>Resumen de scores</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 14 }}>Resumen de aptitud</div>
               {sortedResults.map((crop) => {
-                const score = toPercent(crop.score);
+                const score = crop.rankPosition !== null ? crop.comparableScore : crop.score;
                 const style = outcomeStatusStyle(crop.calcCondition);
                 return (
-                  <div key={crop.cropId} style={{ display: 'grid', gridTemplateColumns: '112px 1fr 44px', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                  <div key={crop.cropId} style={{ display: 'grid', gridTemplateColumns: '112px 1fr auto', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                     <span title={getCropLabel(crop.cropId)} style={{ fontSize: 13, color: '#475569', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{getCropLabel(crop.cropId)}</span>
                     <div style={{ height: 6, background: '#f1f5f9', borderRadius: 3 }}>
-                      <div style={{ width: `${score}%`, height: '100%', background: style.color, borderRadius: 3, opacity: 0.85 }} />
+                      <div style={{ width: `${score ?? 0}%`, height: '100%', background: style.color, borderRadius: 3, opacity: 0.85 }} />
                     </div>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: style.color, textAlign: 'right' }}>{score}%</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: style.color, textAlign: 'right' }}>{formatSuitability(score)}</span>
                   </div>
                 );
               })}
@@ -328,7 +318,7 @@ export default function Results({ navigate }: Props) {
             <button
               onClick={() => navigate('recommendations')}
               disabled={!canRequestRecommendations}
-              title={canRequestRecommendations ? undefined : 'No hay recomendaciones: ningun cultivo alcanzo categoria VIABLE o CONDICIONAL.'}
+              title={canRequestRecommendations ? undefined : 'No hay cultivos con un resultado disponible para generar recomendaciones.'}
               style={{ background: canRequestRecommendations ? 'linear-gradient(135deg, #15803d, #0891b2)' : '#f1f5f9', color: canRequestRecommendations ? 'white' : '#94a3b8', border: canRequestRecommendations ? 'none' : '1.5px solid #e2e8f0', padding: '14px', borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: canRequestRecommendations ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
             >
               {canRequestRecommendations ? 'Ver recomendaciones' : 'Sin recomendaciones disponibles'}

@@ -16,6 +16,12 @@ const STATUS_LABELS: Record<string, string> = {
   failed: 'Fallida',
   cancelled: 'Cancelada',
   no_coverage: 'Sin cobertura',
+  comparable: 'Comparación disponible',
+  no_common_coverage: 'Sin área con datos comunes para comparar',
+  no_successful_crops: 'Sin cultivos con resultados disponibles',
+  available: 'Disponible',
+  partial: 'Parcial',
+  unavailable: 'No disponible',
   INICIADA: 'Iniciada',
   EXTRACCION_COMPLETADA: 'Extraccion completada',
   EVALUACION_COMPLETADA: 'Evaluacion completada',
@@ -59,4 +65,10 @@ export function formatPhaseLabel(item: CriterionLike): string {
 export function formatNumberWithUnit(value: number, unit?: string | null): string {
   const formatted = Number.isInteger(value) ? String(value) : value.toFixed(2);
   return unit ? `${formatted} ${unit}` : formatted;
+}
+
+export function formatSuitability(score: number | null): string {
+  return score === null
+    ? 'Sin datos'
+    : `${score.toLocaleString('es-PE', { maximumFractionDigits: 2 })}%`;
 }

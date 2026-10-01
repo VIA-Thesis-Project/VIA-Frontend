@@ -91,7 +91,7 @@ export default function Settings({ navigate }: Props) {
           </div>
           <h1 style={{ fontSize: 20, fontWeight: 800, color: '#0f172a', margin: 0, marginBottom: 4 }}>Umbral de viabilidad</h1>
           <p style={{ fontSize: 13, color: '#64748b', margin: 0, maxWidth: 640 }}>
-            Define los rangos de score que determinan la categoria de viabilidad de cada cultivo.
+            Define los rangos de puntaje que determinan la categoria de viabilidad de cada cultivo.
           </p>
         </div>
 
@@ -116,7 +116,7 @@ export default function Settings({ navigate }: Props) {
             <div style={{ fontSize: 14, fontWeight: 800, color: '#0f172a' }}>Configuración del umbral</div>
           </div>
           <p style={{ fontSize: 13, color: '#64748b', margin: '0 0 20px', lineHeight: 1.55 }}>
-            Cada cultivo recibe un score entre 0% y 100%. El score define su categoria segun estos
+            Cada cultivo recibe un puntaje entre 0% y 100%. El puntaje define su categoria segun estos
             umbrales: <strong>viable</strong> desde el umbral superior, <strong>condicional</strong> entre
             ambos, y <strong>no viable</strong> por debajo. Los cambios aplican a las evaluaciones que
             inicies a partir de ahora; los resultados ya calculados no se modifican.
@@ -148,7 +148,7 @@ export default function Settings({ navigate }: Props) {
           {[
             {
               label: 'Umbral viable',
-              hint: 'Score minimo para que un cultivo sea VIABLE.',
+              hint: 'Puntaje mínimo para que un cultivo sea VIABLE.',
               value: viablePct,
               setValue: setViablePct,
               color: '#15803d',
@@ -157,7 +157,7 @@ export default function Settings({ navigate }: Props) {
             },
             {
               label: 'Umbral condicional',
-              hint: 'Score minimo para que un cultivo sea CONDICIONAL. Debe ser menor que el umbral viable.',
+              hint: 'Puntaje mínimo para que un cultivo sea CONDICIONAL. Debe ser menor que el umbral viable.',
               value: condicionalPct,
               setValue: setCondicionalPct,
               color: '#d97706',

@@ -98,6 +98,7 @@ export type LimitingFactor = {
 export type CropEvaluationResult = {
   cropId: string;
   score: number | null;
+  comparableScore: number | null;
   rankPosition: number | null;
   calcCondition: string;
   viabilityCategory: string | null;

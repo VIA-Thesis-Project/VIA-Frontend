@@ -5,7 +5,7 @@ import { NavigateFn } from '@/app/navigation/navigation';
 import { isNoRankedCropFailure, toUserFriendlyFailureReason } from '@/features/evaluations/application/backendFailureMessages';
 import { formatBackendStatus } from '@/features/evaluations/application/displayFormatters';
 import { EvaluationMcdaResult, EvaluationStatusSnapshot } from '@/features/evaluations/domain/evaluation';
-import { hasRecommendableCrop, isEvaluationFailed, isMcdaReadyStatus, isRecommendationReadyStatus } from '@/features/evaluations/application/evaluationStatus';
+import { hasRecommendableCrop, isEvaluationFailed, isMcdaReadyStatus } from '@/features/evaluations/application/evaluationStatus';
 import { EvaluationApiRepository } from '@/features/evaluations/infrastructure/api/evaluationApiRepository';
 import { readCurrentEvaluation } from '@/features/evaluations/infrastructure/session/currentEvaluationStorage';
 
@@ -14,16 +14,15 @@ interface Props { navigate: NavigateFn; }
 const evaluationRepository = new EvaluationApiRepository();
 const processingSteps = [
   { id: 1, label: 'Evaluacion iniciada', sub: 'La evaluacion fue registrada correctamente' },
-  { id: 2, label: 'Extraccion agroambiental', sub: 'Se analizan los datos climaticos y de suelo de tu parcela' },
-  { id: 3, label: 'Evaluacion de viabilidad', sub: 'Se calcula la viabilidad de cada cultivo y se identifican las brechas' },
-  { id: 4, label: 'Recomendacion', sub: 'Se genera la recomendacion agronomica para los cultivos viables' },
+  { id: 2, label: 'Preparación de los datos', sub: 'Se preparan los datos de clima y suelo de tu parcela' },
+  { id: 3, label: 'Evaluación de cultivos', sub: 'Se calcula la aptitud y se identifican los factores que limitan cada cultivo' },
 ];
 const stepByStatus: Record<string, number> = {
-  queued: 1,
-  preparing: 2,
-  running: 3,
-  summarizing: 3,
-  succeeded: processingSteps.length - 1,
+  queued: 0,
+  preparing: 1,
+  running: 2,
+  summarizing: 2,
+  succeeded: processingSteps.length,
 };
 
 function inferFailureStep(snapshot: EvaluationStatusSnapshot | null): number {
@@ -32,7 +31,7 @@ function inferFailureStep(snapshot: EvaluationStatusSnapshot | null): number {
     return 1;
   }
   if (text.includes('recomend') || text.includes('llm') || text.includes('openai') || text.includes('rag')) {
-    return 3;
+    return 2;
   }
   if (text.includes('evaluacion') || text.includes('mcda') || text.includes('rulebook')) {
     return 2;
@@ -53,7 +52,7 @@ export default function Processing({ navigate }: Props) {
     let timeoutId: number | undefined;
 
     const scheduleNextFetch = (nextStatus: string) => {
-      if (cancelled || isEvaluationFailed(nextStatus) || isRecommendationReadyStatus(nextStatus)) return;
+      if (cancelled || isEvaluationFailed(nextStatus) || isMcdaReadyStatus(nextStatus)) return;
       const delayMs = isMcdaReadyStatus(nextStatus) ? 10000 : 3000;
       timeoutId = window.setTimeout(() => void fetchStatus(), delayMs);
     };
@@ -101,13 +100,12 @@ export default function Processing({ navigate }: Props) {
 
   const currentStep = status ? stepByStatus[status.status] ?? 1 : 0;
   const done = isMcdaReadyStatus(status?.status);
-  const recommendationDone = isRecommendationReadyStatus(status?.status);
   const failed = isEvaluationFailed(status?.status);
   const failedStep = failed ? inferFailureStep(status) : null;
   const visualStep = failedStep ?? currentStep;
   const noRecommendableCrops = Boolean(done && mcdaResult && mcdaResult.results.length > 0 && !hasRecommendableCrop(mcdaResult.results));
   const noRankedCropFailure = isNoRankedCropFailure(status?.failureReason);
-  const progress = failed ? Math.round((visualStep / (processingSteps.length - 1)) * 100) : done ? 100 : Math.round((currentStep / (processingSteps.length - 1)) * 100);
+  const progress = failed ? Math.round((visualStep / processingSteps.length) * 100) : done ? 100 : Math.round((currentStep / processingSteps.length) * 100);
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc' }}>
@@ -122,7 +120,7 @@ export default function Processing({ navigate }: Props) {
             <span style={{ color: '#e2e8f0' }}>/</span>
             <div style={{ fontSize: 12, color: '#16a34a', fontWeight: 600 }}>Procesamiento</div>
           </div>
-          <h1 style={{ fontSize: 20, fontWeight: 700, color: '#0f172a', margin: 0 }}>Procesamiento de variables agroambientales</h1>
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: '#0f172a', margin: 0 }}>Evaluando tu parcela</h1>
           <p style={{ fontSize: 14, color: '#64748b', marginTop: 4 }}>
             Parcela: <strong style={{ color: '#0f172a' }}>{currentEvaluation?.parcelName ?? 'Sin parcela activa'}</strong>
           </p>
@@ -146,8 +144,8 @@ export default function Processing({ navigate }: Props) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                 {processingSteps.map((step, i) => {
                   const failedHere = failed && i === visualStep;
-                  const completed = failed ? i < visualStep : recommendationDone || i < currentStep;
-                  const active = !failed && !noRecommendableCrops && ((done && !recommendationDone && i === processingSteps.length - 1) || (!done && i === currentStep));
+                  const completed = failed ? i < visualStep : done || i < currentStep;
+                  const active = !failed && !done && i === currentStep;
                   const iconBg = failedHere ? '#fee2e2' : completed ? '#f0fdf4' : active ? '#ecfeff' : '#f8fafc';
                   const iconBorder = failedHere ? '#dc2626' : completed ? '#16a34a' : active ? '#0891b2' : '#e2e8f0';
                   const labelColor = failedHere ? '#dc2626' : completed ? '#15803d' : active ? '#0891b2' : '#94a3b8';
@@ -175,8 +173,8 @@ export default function Processing({ navigate }: Props) {
           </div>
 
           <div>
-            <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', padding: 24, marginBottom: 16 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 6 }}>Detalle del proceso</div>
+            <details style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', padding: 24, marginBottom: 16 }}>
+              <summary style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', cursor: 'pointer', marginBottom: 6 }}>Detalles técnicos</summary>
               <div style={{ fontSize: 13, color: '#64748b', lineHeight: 1.6, marginBottom: 18 }}>
                 Informacion sobre el estado actual del analisis de tu parcela.
               </div>
@@ -185,7 +183,7 @@ export default function Processing({ navigate }: Props) {
                   { label: 'Evaluacion', value: currentEvaluation?.evaluationId ?? '-' },
                   { label: 'Estado', value: status?.status ? formatBackendStatus(status.status) : 'Consultando...' },
                   { label: 'Fase actual', value: status?.currentPhase ? formatBackendStatus(status.currentPhase) : '-' },
-                  { label: 'Ultima transicion', value: status?.lastTransition ? new Date(status.lastTransition).toLocaleString() : '-' },
+                  { label: 'Última actualización', value: status?.lastTransition ? new Date(status.lastTransition).toLocaleString() : '-' },
                 ].map(({ label, value }) => (
                   <div key={label} style={{ background: '#fafafa', borderRadius: 12, padding: 14, border: '1px solid #f1f5f9' }}>
                     <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</div>
@@ -193,15 +191,15 @@ export default function Processing({ navigate }: Props) {
                   </div>
                 ))}
               </div>
-            </div>
+            </details>
 
             <div style={{ background: failed ? '#fee2e2' : 'linear-gradient(135deg, #f0fdf4, #ecfeff)', borderRadius: 16, border: failed ? '1px solid #fecaca' : '1px solid #bbf7d0', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: failed ? '#991b1b' : '#0f172a', marginBottom: 6 }}>
-                  {failed ? 'Evaluacion fallida' : recommendationDone ? 'Analisis y recomendacion completados' : noRecommendableCrops ? 'Analisis completado sin cultivos recomendables' : done ? 'Analisis completado, recomendacion en proceso' : 'Procesando analisis de viabilidad...'}
+                  {failed ? 'No se pudo completar la evaluación' : done ? 'Evaluación completada' : 'Evaluando los cultivos de tu parcela...'}
                 </div>
                 <div style={{ fontSize: 13, color: '#475569' }}>
-                  {recommendationDone ? 'Resultado y recomendacion disponibles para consulta' : noRecommendableCrops ? 'Solo se generan recomendaciones para cultivos con viabilidad VIABLE o CONDICIONAL' : done ? 'Puedes ver el ranking mientras se prepara la recomendacion' : status ? `Estado actual: ${formatBackendStatus(status.status)}` : 'Iniciando analisis...'}
+                  {noRecommendableCrops ? 'Revisa los resultados para conocer por qué no hay datos suficientes para generar recomendaciones.' : done ? 'Puedes consultar los resultados y solicitar recomendaciones.' : status ? `Estado actual: ${formatBackendStatus(status.status)}` : 'Iniciando la evaluación...'}
                 </div>
                 {error && <div style={{ fontSize: 12, color: failed ? '#991b1b' : '#92400e', marginTop: 8 }}>{error}</div>}
               </div>

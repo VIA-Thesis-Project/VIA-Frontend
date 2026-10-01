@@ -245,7 +245,7 @@ export class EvaluationApiRepository implements EvaluationRepository {
       status: response.status,
       currentPhase: response.status,
       lastTransition: response.created_at,
-      failureReason: response.failed ? 'La evaluacion fallo en el backend.' : null,
+      failureReason: response.failed ? 'No se pudo completar la evaluación.' : null,
     };
   }
 
@@ -261,7 +261,7 @@ export class EvaluationApiRepository implements EvaluationRepository {
     return {
       evaluationId: result.evaluation_id,
       status: result.evaluation_status,
-      failureReason: result.availability === 'failed' ? 'La evaluacion fallo en el backend.' : null,
+      failureReason: result.availability === 'failed' ? 'No se pudo completar la evaluación.' : null,
       results: outcomes.map((outcome) => {
         const rank = comparable.find((item) => item.crop_id === outcome.crop_id);
         const cropLimitations = limitations.limitations.find(
@@ -270,6 +270,7 @@ export class EvaluationApiRepository implements EvaluationRepository {
         return {
           cropId: outcome.crop_id,
           score: outcome.suitability?.mean ?? null,
+          comparableScore: rank?.mean ?? null,
           rankPosition: rank?.rank ?? null,
           calcCondition: outcome.status,
           viabilityCategory: null,

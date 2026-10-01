@@ -7,7 +7,7 @@ export function toUserFriendlyFailureReason(reason: string | null | undefined): 
   if (!reason) return null;
 
   if (reason.includes(NO_RANKED_CROP_REASON)) {
-    return 'La evaluacion no produjo un cultivo rankeable para generar una recomendacion. Prueba con otros cultivos o ajusta la delimitacion de la parcela.';
+    return 'No hay un cultivo con datos comparables para generar una recomendación. Revisa los resultados y la delimitación de la parcela.';
   }
 
   return reason;

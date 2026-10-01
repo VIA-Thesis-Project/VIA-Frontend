@@ -3,7 +3,7 @@ import { CheckCircle2, ChevronLeft } from 'lucide-react';
 import { NavigateFn } from '@/app/navigation/navigation';
 import { toUserFriendlyFailureReason } from '@/features/evaluations/application/backendFailureMessages';
 import { getCropLabel } from '@/features/evaluations/application/cropCatalog';
-import { formatBackendStatus } from '@/features/evaluations/application/displayFormatters';
+import { formatBackendStatus, formatSuitability } from '@/features/evaluations/application/displayFormatters';
 import { hasRecommendableCrop, isEvaluationPending } from '@/features/evaluations/application/evaluationStatus';
 import {
   CropEvaluationResult,
@@ -20,18 +20,13 @@ const evaluationRepository = new EvaluationApiRepository();
 const RECOMMENDATION_POLL_INTERVAL_MS = 15000;
 const RECOMMENDATION_POLL_MAX_ATTEMPTS = 24;
 
-function toPercent(score: number | null): number {
-  if (score === null) return 0;
-  return Math.round(score <= 1 ? score * 100 : score);
-}
-
 function sortResults(results: CropEvaluationResult[]): CropEvaluationResult[] {
   return [...results].sort((a, b) => {
     const aRanked = a.rankPosition !== null;
     const bRanked = b.rankPosition !== null;
     if (aRanked && bRanked) return Number(a.rankPosition) - Number(b.rankPosition);
     if (aRanked !== bRanked) return aRanked ? -1 : 1;
-    return (b.score ?? -1) - (a.score ?? -1);
+    return 0;
   });
 }
 
@@ -419,7 +414,7 @@ export default function Recommendations({ navigate }: Props) {
           <>
             {mcdaPending && (
               <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', borderRadius: 12, padding: 16, marginBottom: 16, fontSize: 13, lineHeight: 1.6 }}>
-                El analisis de viabilidad aun no esta disponible. Estado actual: <strong>{formatBackendStatus(mcdaResult?.status)}</strong>. Vuelve a la pantalla de procesamiento y espera que el analisis se complete.
+                Los resultados de la evaluación aún no están disponibles. Estado actual: <strong>{formatBackendStatus(mcdaResult?.status)}</strong>. Vuelve a la pantalla de procesamiento y espera que el analisis se complete.
               </div>
             )}
 
@@ -489,7 +484,7 @@ export default function Recommendations({ navigate }: Props) {
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                           <span style={{ fontSize: 13, fontWeight: 800, color: recommendationState === 'ready' ? '#0f172a' : '#475569' }}>{getCropLabel(crop.cropId)}</span>
-                          <span style={{ fontSize: 11, fontWeight: 800, color: '#64748b' }}>Aptitud {toPercent(crop.score)}%</span>
+                          <span style={{ fontSize: 11, fontWeight: 800, color: '#64748b' }}>Aptitud {formatSuitability(crop.score)}</span>
                         </div>
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                           <span style={{ background: isEligible ? '#dcfce7' : '#fef2f2', color: isEligible ? '#15803d' : '#b91c1c', fontSize: 10, fontWeight: 800, padding: '4px 7px', borderRadius: 999 }}>
@@ -526,7 +521,7 @@ export default function Recommendations({ navigate }: Props) {
                       <div style={{ fontSize: 13, fontWeight: 800, color: '#0f172a', marginBottom: 6 }}>{getCropLabel(crop.cropId)}</div>
                       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                         <span style={{ background: '#fee2e2', color: '#dc2626', fontSize: 11, fontWeight: 800, padding: '4px 9px', borderRadius: 999 }}>{formatBackendStatus(crop.calcCondition)}</span>
-                        <span style={{ background: '#f8fafc', color: '#475569', fontSize: 11, fontWeight: 700, padding: '4px 9px', borderRadius: 999 }}>Score {toPercent(crop.score)}%</span>
+                        <span style={{ background: '#f8fafc', color: '#475569', fontSize: 11, fontWeight: 700, padding: '4px 9px', borderRadius: 999 }}>Aptitud {formatSuitability(crop.score)}</span>
                       </div>
                     </div>
                   ))}
@@ -596,7 +591,7 @@ export default function Recommendations({ navigate }: Props) {
             {/* Recomendaciones por brecha */}
             {gapRecommendations.length > 0 && (
               <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', padding: '18px 22px', marginBottom: 20 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 12 }}>Recomendaciones priorizadas por brecha</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 12 }}>Acciones recomendadas por limitación</div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12 }}>
                   {gapRecommendations.slice(0, 5).map((item, index) => {
                     const recommendationText = String(item.recommendation ?? item.mapping_validation_note ?? 'Recomendacion pendiente de evidencia suficiente.');

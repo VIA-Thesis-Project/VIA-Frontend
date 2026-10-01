@@ -124,7 +124,7 @@ export default function NewEvaluation({ navigate }: Props) {
       })
       .catch(() => {
         setCropOptions([]);
-        setCropOptionsError('No se pudo cargar la lista de cultivos desde el backend.');
+        setCropOptionsError('No se pudo cargar la lista de cultivos. Inténtalo de nuevo.');
       })
       .finally(() => {
         if (!cancelled) setCropOptionsLoading(false);
@@ -333,7 +333,7 @@ export default function NewEvaluation({ navigate }: Props) {
               <div style={{ fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 8 }}>Metodo de ingreso de parcela</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                 {[
-                  { id: 'draw' as InputMethod, label: 'Dibujar poligono en mapa', icon: Edit3 },
+                  { id: 'draw' as InputMethod, label: 'Dibujar el límite de la parcela en el mapa', icon: Edit3 },
                   { id: 'upload' as InputMethod, label: 'Cargar archivo GeoJSON', icon: Upload },
                   { id: 'select' as InputMethod, label: 'Seleccionar parcela existente', icon: Square },
                 ].map(({ id, label, icon: Icon }) => (
@@ -492,7 +492,7 @@ export default function NewEvaluation({ navigate }: Props) {
                 {selectedParcel ? 'Parcela existente lista para evaluar' : hasValidGeometry ? 'Parcela delimitada correctamente' : 'Parcela pendiente de delimitar'}
               </div>
               <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
-                {selectedParcel ? `ID ${selectedParcel.id.slice(0, 8)} · ${selectedParcel.metadata.crs}` : `Vertices: ${mapPoints.length}`}
+                {selectedParcel ? 'Se utilizará la delimitación guardada de esta parcela.' : `Puntos del límite: ${mapPoints.length}`}
               </div>
             </div>
 
@@ -507,7 +507,7 @@ export default function NewEvaluation({ navigate }: Props) {
               disabled={loading}
               style={{ width: '100%', background: loading ? '#86efac' : '#16a34a', color: 'white', border: 'none', padding: '10px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
             >
-              {loading ? 'Registrando e iniciando evaluacion...' : 'Procesar variables agroambientales'}
+              {loading ? 'Registrando e iniciando evaluacion...' : 'Evaluar parcela'}
               <ChevronRight style={{ width: 16, height: 16 }} />
             </button>
           </div>
