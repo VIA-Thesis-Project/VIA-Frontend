@@ -27,10 +27,10 @@ function ScoreBar({ score, color }: { score: number | null; color: string }) {
 
 function outcomeStatusStyle(status: string) {
   const normalized = status.toUpperCase();
-  if (normalized === 'SUCCEEDED') {
+  if (normalized === 'SUCCEEDED' || normalized === 'VIABLE') {
     return { color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' };
   }
-  if (normalized === 'NO_COVERAGE') {
+  if (normalized === 'NO_COVERAGE' || normalized === 'CONDITIONAL') {
     return { color: '#d97706', bg: '#fffbeb', border: '#fde68a' };
   }
   return { color: '#dc2626', bg: '#fee2e2', border: '#fecaca' };
@@ -234,7 +234,7 @@ export default function Results({ navigate }: Props) {
 
               {sortedResults.map((crop, i) => {
                 const score = crop.rankPosition !== null ? crop.comparableScore : crop.score;
-                const style = outcomeStatusStyle(crop.calcCondition);
+                const style = outcomeStatusStyle(crop.viabilityCategory ?? crop.calcCondition);
                 return (
                   <div key={crop.cropId} style={{ padding: '18px 24px', borderBottom: i < sortedResults.length - 1 ? '1px solid #f8fafc' : 'none', display: 'flex', gap: 16 }}>
                     <div style={{ width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 4, background: crop.rankPosition === 1 ? '#fef3c7' : '#f8fafc', border: `1.5px solid ${crop.rankPosition === 1 ? '#fbbf24' : '#e2e8f0'}` }}>
@@ -245,7 +245,7 @@ export default function Results({ navigate }: Props) {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                         <span style={{ fontSize: 16, fontWeight: 700, color: '#0f172a' }}>{getCropLabel(crop.cropId)}</span>
                         <div style={{ fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 999, background: style.bg, color: style.color, border: `1px solid ${style.border}` }}>
-                          {formatBackendStatus(crop.calcCondition)}
+                          {formatBackendStatus(crop.viabilityCategory ?? crop.calcCondition)}
                         </div>
                       </div>
 
@@ -288,7 +288,7 @@ export default function Results({ navigate }: Props) {
               <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 14 }}>Resumen de aptitud</div>
               {sortedResults.map((crop) => {
                 const score = crop.rankPosition !== null ? crop.comparableScore : crop.score;
-                const style = outcomeStatusStyle(crop.calcCondition);
+                const style = outcomeStatusStyle(crop.viabilityCategory ?? crop.calcCondition);
                 return (
                   <div key={crop.cropId} style={{ display: 'grid', gridTemplateColumns: '112px 1fr auto', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                     <span title={getCropLabel(crop.cropId)} style={{ fontSize: 13, color: '#475569', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{getCropLabel(crop.cropId)}</span>

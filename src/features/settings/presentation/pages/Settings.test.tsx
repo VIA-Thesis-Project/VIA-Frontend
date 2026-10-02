@@ -66,22 +66,25 @@ describe('viability settings', () => {
     render(<Settings navigate={vi.fn()} />);
     const fields = await screen.findAllByRole('spinbutton');
     fireEvent.click(screen.getByRole('button', { name: /Guardar umbrales/i }));
-    await screen.findByText(/Otro administrador cambió los umbrales/);
+    await screen.findByText(/Tus umbrales cambiaron en otra sesión/);
     expect(getViabilityPolicy).toHaveBeenCalledTimes(2);
     expect((fields[0] as HTMLInputElement).value).toBe('75');
     expect((fields[1] as HTMLInputElement).value).toBe('45');
   });
 
-  it('keeps USER read only', async () => {
+  it('lets USER edit and save personal thresholds', async () => {
     vi.mocked(readAuthSession).mockReturnValue({
       accessToken: 'test-token', tokenType: 'bearer', expiresInSeconds: 3600,
       expiresAt: '', user: { id: 'user-id', email: 'user@example.com', role: 'user' },
     });
     render(<Settings navigate={vi.fn()} />);
     const fields = await screen.findAllByRole('spinbutton');
-    expect((fields[0] as HTMLInputElement).disabled).toBe(true);
-    expect(screen.queryByRole('button', { name: /Guardar umbrales/i })).toBeNull();
-    expect(updateViabilityPolicy).not.toHaveBeenCalled();
+    expect((fields[0] as HTMLInputElement).disabled).toBe(false);
+    fireEvent.change(fields[0], { target: { value: '75' } });
+    fireEvent.change(fields[1], { target: { value: '45' } });
+    fireEvent.click(screen.getByRole('button', { name: /Guardar umbrales/i }));
+    await waitFor(() => expect(updateViabilityPolicy).toHaveBeenCalledWith(first, 45, 75));
+    await screen.findByText('Umbrales guardados para tus próximas evaluaciones.');
   });
 
   it('shows validation and permission errors', async () => {
@@ -93,7 +96,7 @@ describe('viability settings', () => {
     expect((screen.getByRole('button', { name: /Guardar umbrales/i }) as HTMLButtonElement).disabled).toBe(true);
     fireEvent.change(fields[1], { target: { value: '45' } });
     fireEvent.click(screen.getByRole('button', { name: /Guardar umbrales/i }));
-    await screen.findByText(/Solo un administrador/);
+    await screen.findByText(/falta de permisos/);
   });
 
   it('disables save during the request and displays a server validation error', async () => {

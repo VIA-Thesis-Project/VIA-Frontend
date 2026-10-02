@@ -88,6 +88,13 @@ it('shows the actual affected area rather than its complement or an invented sev
   expect(screen.getByText('Detalles técnicos de las limitaciones').closest('details')?.open).toBe(false);
 });
 
+it('shows the evaluation classification separately from calculation completion', async () => {
+  getMcdaResult.mockResolvedValue(result([crop({ viabilityCategory: 'conditional' })]));
+  render(<CropDetail navigate={vi.fn()} />);
+  await screen.findByText('Condicional');
+  expect(screen.getByText('Completada')).toBeTruthy();
+});
+
 it('does not announce recommendations as ready when only the scientific evaluation has finished', async () => {
   getEvaluationStatus.mockResolvedValue({ status: 'succeeded', failureReason: null });
   getMcdaResult.mockResolvedValue(result([crop()]));

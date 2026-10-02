@@ -12,7 +12,7 @@ export type ViabilityPolicy = {
   };
 };
 
-const path = '/v1/decision-support/viability-policy';
+const path = '/v1/decision-support/my-viability-policy';
 
 export function getViabilityPolicy(): Promise<ViabilityPolicy> {
   return apiRequest<ViabilityPolicy>(path, {

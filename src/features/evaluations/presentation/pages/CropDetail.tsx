@@ -28,10 +28,10 @@ const PHASE_PILL_STYLES = [
 
 function outcomeStatusStyle(status: string) {
   const normalized = status.toUpperCase();
-  if (normalized === 'SUCCEEDED') {
+  if (normalized === 'SUCCEEDED' || normalized === 'VIABLE') {
     return { color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' };
   }
-  if (normalized === 'NO_COVERAGE') {
+  if (normalized === 'NO_COVERAGE' || normalized === 'CONDITIONAL') {
     return { color: '#d97706', bg: '#fffbeb', border: '#fde68a' };
   }
   return { color: '#dc2626', bg: '#fee2e2', border: '#fecaca' };
@@ -182,7 +182,7 @@ export default function CropDetail({ navigate }: Props) {
     }), [groupedCards]);
 
   const score = crop?.score ?? null;
-  const style = outcomeStatusStyle(crop?.calcCondition ?? '');
+  const style = outcomeStatusStyle(crop?.viabilityCategory ?? crop?.calcCondition ?? '');
   const cropCanReceiveRecommendation = isRecommendableCropOutcome(crop?.calcCondition);
 
   return (
@@ -227,7 +227,7 @@ export default function CropDetail({ navigate }: Props) {
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
                   <h1 style={{ fontSize: 20, fontWeight: 800, color: '#0f172a', margin: 0 }}>{getCropLabel(crop.cropId)}</h1>
-                  <div style={{ background: style.bg, color: style.color, fontSize: 12, fontWeight: 700, padding: '5px 14px', borderRadius: 999, border: `1px solid ${style.border}` }}>{formatBackendStatus(crop.calcCondition)}</div>
+                  <div style={{ background: style.bg, color: style.color, fontSize: 12, fontWeight: 700, padding: '5px 14px', borderRadius: 999, border: `1px solid ${style.border}` }}>{formatBackendStatus(crop.viabilityCategory ?? crop.calcCondition)}</div>
                 </div>
                 <p style={{ fontSize: 14, color: '#475569', margin: 0, lineHeight: 1.6, maxWidth: 700 }}>
                   Evaluación: <strong style={{ color: '#0f172a' }}>{formatBackendStatus(crop.calcCondition)}</strong>. Área de la parcela con datos para evaluar: {crop.coverageFraction !== null && crop.coverageFraction !== undefined ? `${(crop.coverageFraction * 100).toFixed(1)}%` : 'sin datos'}.

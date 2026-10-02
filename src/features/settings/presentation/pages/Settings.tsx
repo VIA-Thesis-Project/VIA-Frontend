@@ -16,7 +16,7 @@ export default function Settings({ navigate }: Props) {
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const canEdit = readAuthSession()?.user.role === 'admin';
+  const canEdit = Boolean(readAuthSession());
 
   const showPolicy = (snapshot: ViabilityPolicy) => {
     setPolicy(snapshot);
@@ -45,17 +45,17 @@ export default function Settings({ navigate }: Props) {
     setSaving(true);
     try {
       showPolicy(await updateViabilityPolicy(policy, condicionalPct, viablePct));
-      setNotice('Umbrales guardados para las próximas evaluaciones.');
+      setNotice('Umbrales guardados para tus próximas evaluaciones.');
     } catch (reason) {
       if (reason instanceof ApiError && reason.status === 409) {
         try {
           showPolicy(await getViabilityPolicy());
-          setError('Otro administrador cambió los umbrales. Se cargó la configuración vigente.');
+          setError('Tus umbrales cambiaron en otra sesión. Se cargó la configuración vigente.');
         } catch {
-          setError('Otro administrador cambió los umbrales. Recarga la pantalla.');
+          setError('Tus umbrales cambiaron en otra sesión. Recarga la pantalla.');
         }
       } else if (reason instanceof ApiError && reason.status === 403) {
-        setError('Solo un administrador puede modificar los umbrales.');
+        setError('No se pudieron guardar tus umbrales por falta de permisos.');
       } else {
         setError(reason instanceof Error ? reason.message : 'No se pudieron guardar los umbrales.');
       }
@@ -91,7 +91,7 @@ export default function Settings({ navigate }: Props) {
           </div>
           <h1 style={{ fontSize: 20, fontWeight: 800, color: '#0f172a', margin: 0, marginBottom: 4 }}>Umbral de viabilidad</h1>
           <p style={{ fontSize: 13, color: '#64748b', margin: 0, maxWidth: 640 }}>
-            Define los rangos de puntaje que determinan la categoria de viabilidad de cada cultivo.
+            Define los rangos de puntaje para clasificar los cultivos en tus evaluaciones.
           </p>
         </div>
 
@@ -104,11 +104,6 @@ export default function Settings({ navigate }: Props) {
 
         {loading && <p role="status">Cargando umbrales...</p>}
         {!loading && !policy && <button onClick={() => window.location.reload()}>Reintentar carga</button>}
-        {!loading && policy && !canEdit && (
-          <div style={{ maxWidth: 720, width: '100%', boxSizing: 'border-box', margin: '0 auto 16px', padding: '12px 14px', border: '1px solid #dbeafe', borderRadius: 10, background: '#eff6ff', color: '#1e40af', fontSize: 13, lineHeight: 1.5, fontWeight: 600 }}>
-            Los umbrales globales están disponibles en modo de solo lectura para tu cuenta.
-          </div>
-        )}
 
         {policy && <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', padding: 24, width: '100%', maxWidth: 720, boxSizing: 'border-box', margin: '0 auto' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 6 }}>
@@ -118,8 +113,8 @@ export default function Settings({ navigate }: Props) {
           <p style={{ fontSize: 13, color: '#64748b', margin: '0 0 20px', lineHeight: 1.55 }}>
             Cada cultivo recibe un puntaje entre 0% y 100%. El puntaje define su categoria segun estos
             umbrales: <strong>viable</strong> desde el umbral superior, <strong>condicional</strong> entre
-            ambos, y <strong>no viable</strong> por debajo. Los cambios aplican a las evaluaciones que
-            inicies a partir de ahora; los resultados ya calculados no se modifican.
+            ambos, y <strong>no viable</strong> por debajo. Los cambios se guardan en tu cuenta y aplican
+            a tus próximas evaluaciones. Cada evaluación conserva los umbrales con los que se creó.
           </p>
 
           {/* Vista previa de rangos */}

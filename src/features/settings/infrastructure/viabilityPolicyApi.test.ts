@@ -20,7 +20,7 @@ beforeEach(() => {
 
 it('reads the authoritative policy with the bearer token', async () => {
   await getViabilityPolicy();
-  expect(apiRequest).toHaveBeenCalledWith('/v1/decision-support/viability-policy', {
+  expect(apiRequest).toHaveBeenCalledWith('/v1/decision-support/my-viability-policy', {
     token: 'test-token',
   });
 });
@@ -31,7 +31,7 @@ it('sends the server-issued version without inventing a new identity', async () 
     conditional_from: 40, viable_from: 70,
     default_configuration: { conditional_from: 40, viable_from: 70 },
   }, 45, 75);
-  expect(apiRequest).toHaveBeenCalledWith('/v1/decision-support/viability-policy', {
+  expect(apiRequest).toHaveBeenCalledWith('/v1/decision-support/my-viability-policy', {
     method: 'PUT',
     token: 'test-token',
     body: {

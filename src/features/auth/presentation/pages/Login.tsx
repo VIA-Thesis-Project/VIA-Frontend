@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Eye, EyeOff, Shield, Users, Lock } from 'lucide-react';
+import { Eye, EyeOff, Shield, Lock } from 'lucide-react';
 import { NavigateFn } from '@/app/navigation/navigation';
 import { authenticateUser } from '@/features/auth/application/authenticateUser';
 import { registerUser } from '@/features/auth/application/registerUser';
@@ -154,14 +154,6 @@ export default function Login({ navigate }: Props) {
               {mode === 'login' ? 'Crear cuenta de usuario agricola' : 'Ya tengo cuenta'}
             </button>
 
-            <div style={{ marginTop: 24, padding: 14, background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                <Users style={{ width: 15, height: 15, color: '#16a34a', marginTop: 1, flexShrink: 0 }} />
-                <p style={{ fontSize: 12, color: '#166534', lineHeight: 1.55, margin: 0 }}>
-                  Acceso para <strong>productores, técnicos agrónomos</strong> y equipo de validación. Rol determinado automáticamente al ingresar.
-                </p>
-              </div>
-            </div>
           </div>
         </div>
 

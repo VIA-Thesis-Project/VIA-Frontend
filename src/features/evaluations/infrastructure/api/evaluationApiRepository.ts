@@ -113,6 +113,10 @@ type CommonSupportResponse = {
   excluded_without_coverage: string[];
 };
 
+type ViabilityResponse = {
+  assessments: Array<{ crop_id: string; viability: string }>;
+};
+
 type LimitationsResponse = {
   limitations: Array<{
     crop_id: string;
@@ -257,6 +261,12 @@ export class EvaluationApiRepository implements EvaluationRepository {
     const scenario = result.scenarios.find((item) => item.water_regime === waterRegime) ?? result.scenarios[0];
     const outcomes = scenario?.outcomes ?? result.outcomes;
     const comparable = scenario?.comparable_crops ?? [];
+    const viability = result.evaluation_status === 'succeeded'
+      ? await apiRequest<ViabilityResponse>(
+        `/v1/decision-support/evaluations/${evaluationId}/viability?water_regime=${scenario?.water_regime ?? waterRegime}`,
+        { token: authToken() },
+      ).catch(() => null)
+      : null;
 
     return {
       evaluationId: result.evaluation_id,
@@ -273,7 +283,7 @@ export class EvaluationApiRepository implements EvaluationRepository {
           comparableScore: rank?.mean ?? null,
           rankPosition: rank?.rank ?? null,
           calcCondition: outcome.status,
-          viabilityCategory: null,
+          viabilityCategory: viability?.assessments.find((item) => item.crop_id === outcome.crop_id)?.viability ?? null,
           gaps: [],
           limitingFactors: (cropLimitations?.limitation_evidence.factors ?? []).map((factor) => ({
             criterionId: factor.factor_code,
