@@ -23,6 +23,61 @@ const HUAURA_BOUNDS: mapboxgl.LngLatBoundsLike = [
   [-76.50, -10.55],
 ];
 
+const ESRI_HYBRID_STYLE: mapboxgl.StyleSpecification = {
+  version: 8,
+  sources: {
+    'esri-satellite': {
+      type: 'raster',
+      tiles: [
+        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      ],
+      tileSize: 256,
+      maxzoom: 17,
+      attribution:
+        '&copy; <a href="https://www.esri.com/">Esri</a>, Maxar, Earthstar Geographics, USDA, USGS',
+    },
+    'esri-transportation': {
+      type: 'raster',
+      tiles: [
+        'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}',
+      ],
+      tileSize: 256,
+      maxzoom: 17,
+    },
+    'esri-labels': {
+      type: 'raster',
+      tiles: [
+        'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+      ],
+      tileSize: 256,
+      maxzoom: 17,
+    },
+  },
+  layers: [
+    {
+      id: 'esri-satellite-layer',
+      type: 'raster',
+      source: 'esri-satellite',
+      minzoom: 0,
+      maxzoom: 22,
+    },
+    {
+      id: 'esri-transportation-layer',
+      type: 'raster',
+      source: 'esri-transportation',
+      minzoom: 0,
+      maxzoom: 22,
+    },
+    {
+      id: 'esri-labels-layer',
+      type: 'raster',
+      source: 'esri-labels',
+      minzoom: 0,
+      maxzoom: 22,
+    },
+  ],
+};
+
 export function pointsToGeoJson(points: LatLngPoint[]): GeoJsonGeometry | null {
   if (points.length < 3) return null;
 
@@ -117,7 +172,9 @@ function updateSourceData(map: mapboxgl.Map, points: LatLngPoint[]) {
 
 function setTerrain(map: mapboxgl.Map, enabled: boolean) {
   if (enabled) {
-    map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.15 });
+    if (map.getSource('terrain-dem')) {
+      map.setTerrain({ source: 'terrain-dem', exaggeration: 1.15 });
+    }
     map.easeTo({ pitch: 48, duration: 600 });
   } else {
     map.setTerrain(null);
@@ -149,9 +206,10 @@ export function ParcelDrawMap({
     mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
     const map = new mapboxgl.Map({
       container: containerRef.current,
-      style: 'mapbox://styles/mapbox/satellite-streets-v12',
+      style: ESRI_HYBRID_STYLE,
       center: points[0] ? [points[0].lng, points[0].lat] : HUAURA_CENTER,
       zoom: points.length > 0 ? 15 : 10,
+      maxZoom: 18.5,
       pitch: 48,
       maxBounds: HUAURA_BOUNDS,
       attributionControl: true,
@@ -161,13 +219,14 @@ export function ParcelDrawMap({
     map.addControl(new mapboxgl.ScaleControl({ maxWidth: 120, unit: 'metric' }), 'bottom-left');
 
     map.once('load', () => {
-      map.addSource('mapbox-dem', {
+      map.addSource('terrain-dem', {
         type: 'raster-dem',
-        url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
-        tileSize: 512,
-        maxzoom: 14,
+        tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+        encoding: 'terrarium',
+        tileSize: 256,
+        maxzoom: 15,
       });
-      map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.15 });
+      map.setTerrain({ source: 'terrain-dem', exaggeration: 1.15 });
 
       map.addSource('huaura-boundary', {
         type: 'geojson',
